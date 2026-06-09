@@ -1,0 +1,35 @@
+---
+description: Mecha combat game constraints for 240×240 round touch display (mekaDoseSigma)
+globs: mekaDoseSigma/**/*
+alwaysApply: false
+---
+
+# mekaDoseSigma — agent constraints
+
+Read `mekaDoseSigma/DESIGN.md` for full context. When editing this project, follow these non‑negotiables:
+
+## Platform
+- Seeed XIAO ESP32-S3, GC9A01 240×240 round display, CHSC6X touch (I2C 0x2e).
+- Jet renderer config lives in `managed_components/jet/src/JetConfig.hpp` only.
+- Reference implementation: `basic_engine_test_game/` (display swap, touch rotation, camera patterns).
+
+## Touch-first design (most important)
+- **Finger blocks the screen.** Prefer controls that do not require looking at where you tap.
+- **Unique input solutions** Using swipes, circle motions, or other unique inputs when possible and appropriate
+- Prefer: hold-to-move / release-to-stop, tap edges, or single-thumb zones — not precision taps on actors.
+- Keep HUD minimal and in **safe corners** (avoid center 120×120 where finger sits).
+- Combat feedback must be readable **peripherally** (color flash, screen edge pulse, large HP bar).
+
+## Scope & performance
+- FPS performance is very important, optimization in all areas possible
+- Few moving objects on screen; low triangle count; UNLIT where possible.
+- One enemy or small squad max until FPS is proven.
+- No feature without a playable touch test on device.
+
+## Code layout (target)
+- `main/game/` — game logic only; no display driver code in game files.
+- Shared touch zones in one header; one place for input semantics.
+- Constants for hit radii, spawn distance, and UI zones — no magic numbers scattered.
+
+## When unsure
+- Choose the option that is **easier to play on a 240px circle**, not the option that looks coolest in a screenshot.

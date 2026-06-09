@@ -1,0 +1,101 @@
+#pragma once
+
+#include "Jet.hpp"
+#include "types.hpp"
+#include <array>
+#include <cstdint>
+
+namespace Game {
+
+class ProjectileSystem {
+public:
+    explicit ProjectileSystem(Renderer::Scene& scene);
+
+    void firePlayerAtTarget(float x, float y, float z, float targetX, float targetZ,
+                            float targetAimY);
+    void firePlayerStraight(float x, float y, float z, float targetX, float targetZ,
+                            float targetAimY);
+    void fireEnemyAtTarget(float x, float z, float targetX, float targetZ);
+
+    void update(float deltaTime);
+    bool checkMissileTargetImpact(float* outX = nullptr, float* outZ = nullptr);
+    void reset();
+
+    bool checkPlayerHit(float playerX, float playerZ, float playerWidth);
+    bool checkEnemyHit(float enemyX, float enemyZ, float enemyAimY, float enemyWidth);
+
+private:
+    struct Projectile {
+        Renderer::Object* obj = nullptr;
+        float x = 0;
+        float z = 0;
+        float prevX = 0;
+        float prevZ = 0;
+        float vx = 0;
+        float vz = 0;
+        float y = 0;
+        float vy = 0;
+        float targetX = 0;
+        float targetZ = 0;
+        float targetAimY = 0;
+        float launchWorldY = 0;
+        float targetHoverY = 0;
+        float targetYOffset = 0;
+        float launchDist = 0;
+        float arcPathLen = 0;
+        float pathTraveled = 0;
+        float peakArcY = 0;
+        float life = 0;
+        float trailTimer = 0;
+        bool active = false;
+        bool isPlayerProjectile = false;
+        bool isHomingMissile = false;
+    };
+
+    struct TrailPuff {
+        Renderer::Object* obj = nullptr;
+        float life = 0;
+        float maxLife = 0;
+        bool active = false;
+    };
+
+    void destroyProjectile(Projectile& p);
+    void detonateMissile(Projectile& p);
+    void applyProjectileVisual(Projectile& p, bool isPlayer);
+    void updateHomingMissile(Projectile& p, float deltaTime);
+    void updateStraightProjectile(Projectile& p, float deltaTime);
+    void updateMissileVisual(Projectile& p);
+    void spawnTrailPuff(float x, float y, float z);
+    float missileWorldY(const Projectile& p) const;
+    float computeMissileDesiredYOffset(const Projectile& p, float progress) const;
+
+    static constexpr int MAX_PROJECTILES = 16;
+    static constexpr int TRAIL_PUFFS = 14;
+
+    Renderer::Scene& m_scene;
+    Renderer::Material m_missileMat;
+    Renderer::Material m_enemyProjMat;
+
+    std::array<Projectile, MAX_PROJECTILES> m_projectiles;
+    std::array<TrailPuff, TRAIL_PUFFS> m_trailPuffs;
+    std::array<Renderer::Material, TRAIL_PUFFS> m_trailMats;
+
+    static constexpr float PROJECTILE_SPEED = 650.0f;
+    static constexpr float PROJECTILE_LIFE = 2.8f;
+    static constexpr float ENEMY_HIT_RADIUS = 36.0f;
+    static constexpr float ENEMY_HIT_Y_TOLERANCE = 10.0f;
+
+    static constexpr float MISSILE_PEAK_ARC_Y = 24.0f;
+
+    static constexpr float MISSILE_LAUNCH_SPEED = 240.0f;
+    static constexpr float MISSILE_CRUISE_SPEED = 520.0f;
+    static constexpr float MISSILE_SWOOP_DEG = 52.0f;
+    static constexpr float MISSILE_CLIMB_VY = 140.0f;
+    static constexpr float MISSILE_GRAVITY = 110.0f;
+    static constexpr float MISSILE_TURN_RATE = 200.0f;
+    static constexpr float MISSILE_TRAIL_INTERVAL = 0.045f;
+    static constexpr float MISSILE_TRAIL_LIFE = 0.44f;
+    static constexpr uint8_t MISSILE_TRAIL_BASE_ALPHA = 150;
+};
+
+} // namespace Game

@@ -1,0 +1,11 @@
+CMake Error at /home/jon/esp/esp-idf/tools/cmake/component.cmake:155 (message):
+  Directory '/home/jon/esp32_testing/mekaDoseSigma/managed_components/jet'
+  does not contain a component.
+Call Stack (most recent call first):
+  /home/jon/esp/esp-idf/tools/cmake/build.cmake:258 (__component_add)
+  build/managed_components_list.temp.cmake:5 (idf_build_component)
+  /home/jon/esp/esp-idf/tools/cmake/build.cmake:547 (include)
+  /home/jon/esp/esp-idf/tools/cmake/project.cmake:605 (idf_build_process)
+  CMakeLists.txt:4 (project)
+
+

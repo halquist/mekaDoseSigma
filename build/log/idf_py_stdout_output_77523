@@ -1,0 +1,154 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40048c2b
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce3820,len:0x1918
+load:0x403c9700,len:0x4
+load:0x403c9704,len:0xe5c
+load:0x403cc700,len:0x3028
+entry 0x403c993c
+[0;32mI (26) boot: ESP-IDF v5.2.2 2nd stage bootloader[0m
+[0;32mI (27) boot: compile time Jun  9 2026 13:10:47[0m
+[0;32mI (27) boot: Multicore bootloader[0m
+[0;32mI (30) boot: chip revision: v0.2[0m
+[0;32mI (34) qio_mode: Enabling default flash chip QIO[0m
+[0;32mI (39) boot.esp32s3: Boot SPI Speed : 80MHz[0m
+[0;32mI (44) boot.esp32s3: SPI Mode       : QIO[0m
+[0;32mI (48) boot.esp32s3: SPI Flash Size : 8MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (59) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (69) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (84) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3c040020 size=14428h ( 82984) map[0m
+[0;32mI (117) esp_image: segment 1: paddr=00024450 vaddr=3fc98700 size=02eb0h ( 11952) load[0m
+[0;32mI (120) esp_image: segment 2: paddr=00027308 vaddr=40374000 size=08d10h ( 36112) load[0m
+[0;32mI (130) esp_image: segment 3: paddr=00030020 vaddr=42000020 size=31a58h (203352) map[0m
+[0;32mI (162) esp_image: segment 4: paddr=00061a80 vaddr=4037cd10 size=0b958h ( 47448) load[0m
+[0;32mI (180) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (180) boot: Disabling RNG early entropy source...[0m
+[0;32mI (191) cpu_start: Multicore app[0m
+[0;32mI (192) octal_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (192) octal_psram: dev id       : 0x02 (generation 3)[0m
+[0;32mI (195) octal_psram: density      : 0x03 (64 Mbit)[0m
+[0;32mI (200) octal_psram: good-die     : 0x01 (Pass)[0m
+[0;32mI (205) octal_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (211) octal_psram: VCC          : 0x01 (3V)[0m
+[0;32mI (216) octal_psram: SRF          : 0x01 (Fast Refresh)[0m
+[0;32mI (222) octal_psram: BurstType    : 0x01 (Hybrid Wrap)[0m
+[0;32mI (227) octal_psram: BurstLen     : 0x01 (32 Byte)[0m
+[0;32mI (233) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)[0m
+[0;32mI (239) octal_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (245) MSPI Timing: PSRAM timing tuning index: 4[0m
+[0;32mI (250) esp_psram: Found 8MB PSRAM device[0m
+[0;32mI (254) esp_psram: Speed: 80MHz[0m
+[0;32mI (665) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (674) cpu_start: Pro cpu start user code[0m
+[0;32mI (674) cpu_start: cpu freq: 240000000 Hz[0m
+[0;32mI (674) cpu_start: Application information:[0m
+[0;32mI (677) cpu_start: Project name:     mekadose_sigma[0m
+[0;32mI (682) cpu_start: App version:      1285446-dirty[0m
+[0;32mI (688) cpu_start: Compile time:     Jun  9 2026 13:10:42[0m
+[0;32mI (694) cpu_start: ELF file SHA256:  3cd18e6fc...[0m
+[0;32mI (699) cpu_start: ESP-IDF:          v5.2.2[0m
+[0;32mI (704) cpu_start: Min chip rev:     v0.0[0m
+[0;32mI (709) cpu_start: Max chip rev:     v0.99 [0m
+[0;32mI (714) cpu_start: Chip rev:         v0.2[0m
+[0;32mI (718) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (725) heap_init: At 3FCA03F0 len 00049320 (292 KiB): RAM[0m
+[0;32mI (732) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM[0m
+[0;32mI (738) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM[0m
+[0;32mI (744) heap_init: At 600FE010 len 00001FD8 (7 KiB): RTCRAM[0m
+[0;32mI (750) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator[0m
+[0;32mI (758) spi_flash: detected chip: gd[0m
+[0;32mI (762) spi_flash: flash io: qio[0m
+[0;33mW (766) i2c: This driver is an old driver, please migrate your application code to adapt `driver/i2c_master.h`[0m
+[0;32mI (776) sleep: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (783) sleep: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (791) main_task: Started on CPU0[0m
+[0;32mI (795) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (804) main_task: Calling app_main()[0m
+[0;32mI (808) mekadose: === mekaDoseSigma M0 ===[0m
+[0;32mI (813) mekadose: Initializing display...[0m
+[0;32mI (818) gpio: GPIO[43]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (827) gpio: GPIO[4]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (836) gc9a01: LCD panel create success, version: 2.0.4[0m
+[0;32mI (963) mekadose: Display initialized[0m
+[0;32mI (1025) gpio: GPIO[44]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (1026) touch: CHSC6X touch input initialized[0m
+[0;32mI (1043) mekadose: M2 combat loop — tap center to fire, tap to restart after win/lose[0m
+[0;32mI (3101) mekadose: FPS: 24.3[0m
+[0;32mI (5125) mekadose: FPS: 23.7[0m
+[0;32mI (7148) mekadose: FPS: 23.7[0m
+[0;32mI (9177) mekadose: FPS: 23.7[0m
+[0;32mI (11200) mekadose: FPS: 23.7[0m
+[0;32mI (13226) mekadose: FPS: 23.7[0m
+[0;32mI (15232) mekadose: FPS: 23.9[0m
+[0;32mI (17271) mekadose: FPS: 22.6[0m
+[0;32mI (19301) mekadose: FPS: 21.2[0m
+[0;32mI (21339) mekadose: FPS: 22.6[0m
+[0;32mI (23348) mekadose: FPS: 19.9[0m
+[0;32mI (25358) mekadose: FPS: 21.4[0m
+[0;32mI (27389) mekadose: FPS: 20.2[0m
+[0;32mI (29423) mekadose: FPS: 23.1[0m
+[0;32mI (31422) mekadose: FPS: 20.9[0m
+[0;32mI (33436) mekadose: FPS: 23.8[0m
+[0;32mI (35455) mekadose: FPS: 23.7[0m
+[0;32mI (37484) mekadose: FPS: 25.6[0m
+[0;32mI (39513) mekadose: FPS: 25.6[0m
+[0;32mI (41542) mekadose: FPS: 25.6[0m
+[0;32mI (43571) mekadose: FPS: 25.6[0m
+[0;32mI (45612) mekadose: FPS: 24.5[0m
+[0;32mI (47635) mekadose: FPS: 21.3[0m
+[0;32mI (49657) mekadose: FPS: 21.2[0m
+[0;32mI (51663) mekadose: FPS: 23.5[0m
+[0;32mI (53671) mekadose: FPS: 20.4[0m
+[0;32mI (55692) mekadose: FPS: 23.3[0m
+[0;32mI (57707) mekadose: FPS: 20.4[0m
+[0;32mI (59717) mekadose: FPS: 21.9[0m
+[0;32mI (61719) mekadose: FPS: 21.5[0m
+[0;32mI (63745) mekadose: FPS: 22.2[0m
+[0;32mI (65766) mekadose: FPS: 22.8[0m
+[0;32mI (67791) mekadose: FPS: 20.8[0m
+[0;32mI (69803) mekadose: FPS: 20.8[0m
+[0;32mI (71850) mekadose: FPS: 22.5[0m
+[0;32mI (73896) mekadose: FPS: 21.1[0m
+[0;32mI (75920) mekadose: FPS: 20.7[0m
+[0;32mI (77937) mekadose: FPS: 21.4[0m
+[0;32mI (79949) mekadose: FPS: 21.3[0m
+[0;32mI (81968) mekadose: FPS: 23.8[0m
+[0;32mI (83986) mekadose: FPS: 23.3[0m
+[0;32mI (86009) mekadose: FPS: 23.2[0m
+[0;32mI (88010) mekadose: FPS: 25.0[0m
+[0;32mI (90010) mekadose: FPS: 25.0[0m
+[0;32mI (92010) mekadose: FPS: 25.0[0m
+[0;32mI (94010) mekadose: FPS: 25.0[0m
+[0;32mI (96010) mekadose: FPS: 25.0[0m
+[0;32mI (98010) mekadose: FPS: 25.0[0m
+[0;32mI (100010) mekadose: FPS: 25.0[0m
+[0;32mI (102010) mekadose: FPS: 25.0[0m
+[0;32mI (104010) mekadose: FPS: 25.0[0m
+[0;32mI (106010) mekadose: FPS: 25.0[0m
+[0;32mI (108010) mekadose: FPS: 25.0[0m
+[0;32mI (110010) mekadose: FPS: 25.0[0m
+[0;32mI (112010) mekadose: FPS: 25.0[0m
+[0;32mI (114010) mekadose: FPS: 25.0[0m
+[0;32mI (116010) mekadose: FPS: 25.0[0m
+[0;32mI (118010) mekadose: FPS: 25.0[0m
+[0;32mI (120010) mekadose: FPS: 25.0[0m
+[0;32mI (122010) mekadose: FPS: 25.0[0m
+[0;32mI (124010) mekadose: FPS: 25.0[0m
+[0;32mI (126050) mekadose: FPS: 24.5[0m
+[0;32mI (128061) mekadose: FPS: 24.4[0m
+[0;32mI (130115) mekadose: FPS: 22.0[0m
+[0;32mI (132150) mekadose: FPS: 20.6[0m
+[0;32mI (134182) mekadose: FPS: 24.1[0m
+[0;32mI (136190) mekadose: FPS: 20.5[0m
+[0;32mI (138204) mekadose: FPS: 24.2[0m
+[0;32mI (140225) mekadose: FPS: 24.2[0m
+[0;32mI (142240) mekadose: FPS: 24.3[0m
+[0;32mI (144261) mekadose: FPS: 24.2[0m

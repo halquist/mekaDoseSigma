@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/jon/esp32_testing/mekaDoseSigma/build/CMakeFiles/bootloader
+/home/jon/esp32_testing/mekaDoseSigma/build/CMakeFiles/bootloader.rule
+/home/jon/esp32_testing/mekaDoseSigma/build/CMakeFiles/bootloader-complete.rule
+/home/jon/esp32_testing/mekaDoseSigma/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/jon/esp32_testing/mekaDoseSigma/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/jon/esp32_testing/mekaDoseSigma/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/jon/esp32_testing/mekaDoseSigma/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/jon/esp32_testing/mekaDoseSigma/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/jon/esp32_testing/mekaDoseSigma/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/jon/esp32_testing/mekaDoseSigma/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

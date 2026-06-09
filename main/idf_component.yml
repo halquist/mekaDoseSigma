@@ -1,0 +1,5 @@
+dependencies:
+  jet:
+    git: https://github.com/CubeCoders/Jet.git
+  espressif/esp_lcd_gc9a01:
+    version: "^2.0.0"
