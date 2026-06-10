@@ -39,6 +39,13 @@ Mech::Mech(Renderer::Scene& scene, const MechLoadoutPreset& preset)
     rebuildVisual();
 }
 
+void Mech::refreshShieldCapacity() {
+    AbilityDef def = AbilityCatalog::SHIELD;
+    def.shieldCapacity =
+        AbilityCatalog::SHIELD.shieldCapacity + m_loadout.bonuses().shieldCapacity;
+    m_ability.equip(def);
+}
+
 void Mech::rebuildVisual() {
     m_rig.rebuild(m_loadout);
     snapHoverHeight();
@@ -91,6 +98,8 @@ void Mech::updateVisual(float deltaTime) {
 }
 
 void Mech::reset() {
+    m_loadout.applyPreset(MechCatalog::LOADOUT_STRIKER_HOVER);
+    refreshShieldCapacity();
     m_x = 0;
     m_z = 0;
     m_angle = 0;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "mech_config.hpp"
+#include "run_bonuses.hpp"
 
 namespace Game {
 
@@ -11,6 +12,7 @@ public:
 
     void applyPreset(const MechLoadoutPreset& preset);
     void setFrame(const MechFrameDef* frame);
+    void resetBonuses();
 
     bool equipPart(const MechComponentDef* part);
     bool equipWeapon(int slotIndex, const WeaponDef* weapon);
@@ -22,6 +24,9 @@ public:
     const WeaponDef* weapon(int slotIndex) const;
     int activeWeaponSlot() const { return m_activeWeaponSlot; }
     void setActiveWeaponSlot(int slotIndex);
+
+    const RunBonuses& bonuses() const { return m_bonuses; }
+    RunBonuses& bonuses() { return m_bonuses; }
 
     float moveSpeed() const;
     float turnRate() const;
@@ -35,6 +40,7 @@ private:
     const MechComponentDef* m_parts[static_cast<uint8_t>(MechPartSlot::COUNT)] = {};
     const WeaponDef* m_weapons[MECH_WEAPON_SLOTS] = {};
     int m_activeWeaponSlot = 0;
+    RunBonuses m_bonuses;
 };
 
 } // namespace Game

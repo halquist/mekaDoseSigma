@@ -12,10 +12,19 @@ enum class EnvLightingMode : uint8_t {
     Night,
 };
 
+enum class MapTheme : uint8_t {
+    RURAL,
+    DESERT,
+    INDUSTRIAL,
+    CITY,
+};
+
 struct EnvPalette {
     uint16_t sky = Colors::SKY_BLUE;
     uint16_t grass = Colors::GRASS;
     uint16_t treeFoliage = Colors::TREE_FOLIAGE;
+    uint16_t treeTrunk = Colors::TREE_TRUNK;
+    uint16_t rock = Colors::ROCK;
     Renderer::Color sunColor{255, 240, 220};
     uint16_t sunIntensity = 140;
     int32_t sunAzimuth = 20;
@@ -23,6 +32,6 @@ struct EnvPalette {
     Renderer::Color ambientColor{100, 120, 90};
 };
 
-const EnvPalette& envPaletteFor(EnvLightingMode mode);
+const EnvPalette& envPaletteFor(MapTheme theme, EnvLightingMode mode);
 
 } // namespace Game

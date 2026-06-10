@@ -13,6 +13,8 @@
 #include "obstacles.hpp"
 #include "objective.hpp"
 #include "objective_hud.hpp"
+#include "score.hpp"
+#include "run_upgrades.hpp"
 
 namespace Game {
 
@@ -33,7 +35,12 @@ private:
     void handleAutoFire();
     void handleEnemyCombat();
     void handleObjectiveCombat();
-    void resetMatch();
+    void handleMeleeCombat();
+    void beginUpgradePick();
+    void finishUpgradePick(int choiceIndex);
+    void startNewRun();
+    void returnToMenu();
+    void onPlayerDefeat();
     void randomizeSession();
     void drawEdgeFlash(uint16_t color, int thickness);
 
@@ -56,21 +63,22 @@ private:
     ParticleSystem* m_particles = nullptr;
 
     MapConfig m_mapConfig;
+    RunScore m_score;
+    UpgradePicker m_upgradePicker;
+    int m_bestScore = 0;
+    bool m_newHighScore = false;
+    float m_uiPulseSec = 0.0f;
 
-    GameState m_state = GameState::PLAYING;
+    GameState m_state = GameState::MENU;
     int m_health = 100;
     int m_maxHealth = 100;
 
     float m_damageFlash = 0;
 
     float m_cameraDistance = 118.0f;
-    /// Height above mech base (world Y follows terrain hover).
     float m_cameraHeightAboveMech = 34.0f;
     float m_cameraLookAhead = 520.0f;
-    /// Look target below mech base; larger = steeper downward view.
     float m_cameraLookDown = 90.0f;
-    /// Parallel shift applied to camera and look-at together (same angle).
-    /// Increase to push the mech lower on screen.
     float m_cameraRigOffsetY = 55.0f;
 };
 

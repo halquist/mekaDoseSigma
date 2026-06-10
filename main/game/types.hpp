@@ -57,7 +57,9 @@ namespace Colors {
 }
 
 enum class GameState {
+    MENU,
     PLAYING,
+    UPGRADE_PICK,
     VICTORY,
     DEFEAT
 };

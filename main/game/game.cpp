@@ -3,6 +3,8 @@
 #include "FramebufferIO.hpp"
 #include "terrain.hpp"
 #include "rng.hpp"
+#include "high_scores.hpp"
+#include "game_ui.hpp"
 #include <cmath>
 
 #ifndef M_PI
@@ -57,12 +59,18 @@ MekaGame::~MekaGame() {
 void MekaGame::randomizeSession() {
     Rng::init();
     m_mapConfig.worldSeed = Rng::nextU32() | 1u;
+    m_mapConfig.theme = Rng::coinFlip() ? MapTheme::RURAL : MapTheme::DESERT;
     m_mapConfig.lighting =
         static_cast<EnvLightingMode>(Rng::nextRange(3));
     Terrain::setMapConfig(&m_mapConfig);
 }
 
 bool MekaGame::init() {
+    if (!HighScores::init()) {
+        return false;
+    }
+    m_bestScore = HighScores::best();
+
     randomizeSession();
 
     m_camera = new Renderer::Camera();
@@ -95,6 +103,10 @@ bool MekaGame::init() {
     updateCamera();
     applyEnvironment();
 
+    m_state = GameState::MENU;
+    m_score.reset();
+    m_uiPulseSec = 0.0f;
+
     return true;
 }
 
@@ -116,7 +128,8 @@ void MekaGame::setupLighting() {
 }
 
 void MekaGame::applyEnvironment() {
-    const EnvPalette& palette = envPaletteFor(m_mapConfig.lighting);
+    const EnvPalette& palette =
+        envPaletteFor(m_mapConfig.theme, m_mapConfig.lighting);
 
     m_scene->setBackcolor(palette.sky);
     m_sunLight->color = palette.sunColor;
@@ -217,7 +230,8 @@ void MekaGame::handleObjectiveCombat() {
     if (m_objective->isDestroyed()) {
         m_particles->spawnDeathEffect(
             m_objective->getX(), m_objective->getAimY(), m_objective->getZ());
-        m_objective->respawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+        m_score.objectives++;
+        beginUpgradePick();
     }
 }
 
@@ -234,12 +248,14 @@ void MekaGame::handleEnemyCombat() {
                                          enemyMinY,
                                          enemyMaxY,
                                          enemy.getWidth())) {
+            const bool wasAlive = enemy.isAlive();
             bool hitEnemyShield = false;
             enemy.takeDamage(m_mech->getWeaponDamage(), &hitEnemyShield);
             m_particles->spawnHitEffect(
                 enemy.getX(), enemy.getAimY(), enemy.getZ(),
                 hitEnemyShield ? Colors::SHIELD_ENEMY : Colors::SPARK_ORANGE);
-            if (!enemy.isAlive()) {
+            if (wasAlive && !enemy.isAlive()) {
+                m_score.kills++;
                 m_particles->spawnDeathEffect(
                     enemy.getX(), enemy.getAimY(), enemy.getZ());
             }
@@ -247,9 +263,65 @@ void MekaGame::handleEnemyCombat() {
     }
 }
 
-void MekaGame::resetMatch() {
+void MekaGame::handleMeleeCombat() {
+    const float playerX = m_mech->getX();
+    const float playerZ = m_mech->getZ();
+
+    for (int i = 0; i < EnemyManager::MAX_ENEMIES; ++i) {
+        Enemy& enemy = m_enemies->enemy(i);
+        const int rawDamage = enemy.pollMeleeDamage(playerX, playerZ);
+        if (rawDamage <= 0) {
+            continue;
+        }
+
+        const ShieldDamageResult absorbed = m_mech->absorbDamage(rawDamage);
+        if (absorbed.healthDamage > 0) {
+            m_health -= absorbed.healthDamage;
+            if (m_health < 0) {
+                m_health = 0;
+            }
+            m_damageFlash = 0.35f;
+            m_particles->spawnHitEffect(
+                m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
+                Colors::SPARK_ORANGE);
+        } else if (absorbed.hitShield) {
+            float fx = m_mech->getX();
+            float fy = m_mech->getBaseY();
+            float fz = m_mech->getZ();
+            MechAbility::shieldHitPosition(
+                m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
+                fx, fy, fz, fx, fy, fz);
+            m_particles->spawnHitEffect(fx, fy, fz, Colors::SHIELD_BLUE);
+        }
+    }
+}
+
+void MekaGame::beginUpgradePick() {
+    m_upgradePicker.roll(m_mech->loadout());
+    m_state = GameState::UPGRADE_PICK;
+}
+
+void MekaGame::finishUpgradePick(int choiceIndex) {
+    if (choiceIndex < 0 || choiceIndex > 1) {
+        return;
+    }
+
+    UpgradePicker::apply(m_upgradePicker.option(choiceIndex).id,
+                         *m_mech, m_health, m_maxHealth);
+    m_maxHealth = m_mech->getMaxHp();
+    if (m_health > m_maxHealth) {
+        m_health = m_maxHealth;
+    }
+
+    m_objective->respawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_state = GameState::PLAYING;
+}
+
+void MekaGame::startNewRun() {
     randomizeSession();
     m_state = GameState::PLAYING;
+    m_score.reset();
+    m_newHighScore = false;
     m_maxHealth = m_mech->getMaxHp();
     m_health = m_maxHealth;
     m_damageFlash = 0;
@@ -264,6 +336,24 @@ void MekaGame::resetMatch() {
     m_particles->reset();
     updateCamera();
     applyEnvironment();
+}
+
+void MekaGame::returnToMenu() {
+    m_state = GameState::MENU;
+    m_score.reset();
+    m_newHighScore = false;
+    m_damageFlash = 0;
+    m_mech->reset();
+    m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_projectiles->reset();
+    m_particles->reset();
+    updateCamera();
+}
+
+void MekaGame::onPlayerDefeat() {
+    m_newHighScore = HighScores::tryAddScore(m_score.total());
+    m_bestScore = HighScores::best();
+    m_state = GameState::DEFEAT;
 }
 
 void MekaGame::drawEdgeFlash(uint16_t color, int thickness) {
@@ -282,6 +372,7 @@ void MekaGame::drawEdgeFlash(uint16_t color, int thickness) {
 
 void MekaGame::update(float deltaTime) {
     TouchInput touch = m_input->read();
+    m_uiPulseSec += deltaTime;
 
     if (m_damageFlash > 0) {
         m_damageFlash -= deltaTime;
@@ -289,7 +380,35 @@ void MekaGame::update(float deltaTime) {
 
     m_particles->update(deltaTime);
 
+    if (m_state == GameState::MENU) {
+        if (touch.touched) {
+            startNewRun();
+        }
+        return;
+    }
+
+    if (m_state == GameState::UPGRADE_PICK) {
+        if (touch.touched) {
+            const int choice =
+                GameUi::upgradePickFromTouch(touch.x, touch.y, m_width, m_height);
+            if (choice >= 0) {
+                finishUpgradePick(choice);
+            }
+        }
+        return;
+    }
+
+    if (m_state == GameState::DEFEAT) {
+        m_projectiles->update(deltaTime);
+        if (touch.touched) {
+            returnToMenu();
+        }
+        return;
+    }
+
     if (m_state == GameState::PLAYING) {
+        m_score.timeSec += deltaTime;
+
         m_mech->update(touch, deltaTime, m_width, m_obstacles);
         handleAutoFire();
 
@@ -306,6 +425,7 @@ void MekaGame::update(float deltaTime) {
 
         handleEnemyCombat();
         handleObjectiveCombat();
+        handleMeleeCombat();
 
         float impactX = 0.0f;
         float impactZ = 0.0f;
@@ -348,12 +468,7 @@ void MekaGame::update(float deltaTime) {
             m_mech->explode();
             m_particles->spawnDeathEffect(
                 m_mech->getX(), m_mech->getBaseY(), m_mech->getZ());
-            m_state = GameState::DEFEAT;
-        }
-    } else {
-        m_projectiles->update(deltaTime);
-        if (touch.touched) {
-            resetMatch();
+            onPlayerDefeat();
         }
     }
 }
@@ -391,6 +506,22 @@ void MekaGame::render() {
                                 m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
                                 m_objective->getX(), m_objective->getAimY(),
                                 m_objective->getZ(), Colors::OBJECTIVE_ARROW);
+    }
+
+    if (m_state == GameState::PLAYING) {
+        Digits::drawNumber(m_framebuffer, m_width, m_height, m_score.total(),
+                           m_width - 12, 34, 2, Colors::HUD_TEXT);
+    }
+
+    if (m_state == GameState::MENU) {
+        GameUi::drawMenu(m_framebuffer, m_width, m_height, m_bestScore, m_uiPulseSec);
+    } else if (m_state == GameState::DEFEAT) {
+        GameUi::drawDefeat(m_framebuffer, m_width, m_height,
+                           m_score, m_bestScore, m_newHighScore);
+    } else if (m_state == GameState::UPGRADE_PICK) {
+        GameUi::drawUpgradePick(m_framebuffer, m_width, m_height,
+                                m_upgradePicker.option(0),
+                                m_upgradePicker.option(1));
     }
 
     if (m_damageFlash > 0) {

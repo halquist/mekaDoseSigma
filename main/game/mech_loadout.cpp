@@ -4,7 +4,12 @@ namespace Game {
 
 MechLoadout::MechLoadout() = default;
 
+void MechLoadout::resetBonuses() {
+    m_bonuses = RunBonuses{};
+}
+
 void MechLoadout::applyPreset(const MechLoadoutPreset& preset) {
+    resetBonuses();
     setFrame(preset.frame);
     for (uint8_t i = 0; i < static_cast<uint8_t>(MechPartSlot::COUNT); ++i) {
         m_parts[i] = nullptr;
@@ -78,6 +83,7 @@ float MechLoadout::moveSpeed() const {
     for (const WeaponDef* w : m_weapons) {
         if (w) speed += w->stats.speed;
     }
+    speed += m_bonuses.speed;
     if (speed < 40.0f) speed = 40.0f;
     return speed;
 }
@@ -90,6 +96,7 @@ float MechLoadout::turnRate() const {
     for (const WeaponDef* w : m_weapons) {
         if (w) turn += w->stats.turnRate;
     }
+    turn += m_bonuses.turnRate;
     return turn;
 }
 
@@ -109,16 +116,19 @@ int MechLoadout::maxHp() const {
     for (const WeaponDef* w : m_weapons) {
         if (w) hp += w->stats.hp;
     }
+    hp += m_bonuses.hp;
     if (hp < 1) hp = 1;
     return hp;
 }
 
 int MechLoadout::weaponDamage() const {
     const WeaponDef* w = weapon(m_activeWeaponSlot);
-    if (!w || w->damage < 1) {
-        return 1;
+    int damage = (w && w->damage >= 1) ? w->damage : 1;
+    damage += m_bonuses.weaponDamage;
+    if (damage < 1) {
+        damage = 1;
     }
-    return w->damage;
+    return damage;
 }
 
 int8_t MechLoadout::visualPitch() const {

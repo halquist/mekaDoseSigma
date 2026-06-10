@@ -43,6 +43,7 @@ public:
     float getWidth() const { return m_loadout.hitWidth(); }
     int getMaxHp() const { return m_loadout.maxHp(); }
     int getWeaponDamage() const { return m_loadout.weaponDamage(); }
+    void refreshShieldCapacity();
 
     MechAbility& ability() { return m_ability; }
     const MechAbility& ability() const { return m_ability; }

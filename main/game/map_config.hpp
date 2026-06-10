@@ -5,13 +5,6 @@
 
 namespace Game {
 
-enum class MapTheme : uint8_t {
-    RURAL,
-    DESERT,
-    INDUSTRIAL,
-    CITY,
-};
-
 /// Tunables for one play session / map module. Extend for bosses and victory rules.
 struct MapConfig {
     uint32_t worldSeed = 0x53495341u; // "SISA"

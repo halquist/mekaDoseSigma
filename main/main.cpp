@@ -139,7 +139,7 @@ extern "C" void app_main(void)
         return;
     }
 
-    ESP_LOGI(TAG, "M2 combat loop — tap center to fire, tap to restart after win/lose");
+    ESP_LOGI(TAG, "M2 combat loop — menu tap to start, destroy objectives to upgrade");
 
     int64_t lastTime = esp_timer_get_time();
     int frameCount = 0;

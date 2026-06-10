@@ -20,6 +20,10 @@ idf_component_register(
           "game/projectile.cpp"
           "game/particles.cpp"
           "game/digits.cpp"
+          "game/score.cpp"
+          "game/high_scores.cpp"
+          "game/run_upgrades.cpp"
+          "game/game_ui.cpp"
     INCLUDE_DIRS "."
-    REQUIRES driver esp_lcd esp_timer
+    REQUIRES driver esp_lcd esp_timer nvs_flash
 )
