@@ -606,8 +606,13 @@ void Enemy::updateVisual(float deltaTime) {
     m_tankBarrel->setRotation(0, angle, 0);
 }
 
-void Enemy::takeDamage(int damage) {
-    if (!m_active || m_health <= 0 || damage <= 0) return;
+int Enemy::takeDamage(int damage, bool* outHitShield) {
+    if (outHitShield) {
+        *outHitShield = false;
+    }
+    if (!m_active || m_health <= 0 || damage <= 0) {
+        return 0;
+    }
 
     if (m_kind == EnemyKind::Mech) {
         if (m_willUseShield && !m_shieldActivated && m_ability.isReady() &&
@@ -616,17 +621,22 @@ void Enemy::takeDamage(int damage) {
                 m_shieldActivated = true;
             }
         }
-        damage = m_ability.absorbDamage(damage);
+        const ShieldDamageResult absorbed = m_ability.absorbDamage(damage);
+        if (outHitShield) {
+            *outHitShield = absorbed.hitShield;
+        }
+        damage = absorbed.healthDamage;
     }
 
     if (damage <= 0) {
-        return;
+        return 0;
     }
 
     m_health -= damage;
     if (m_health <= 0) {
         deactivate();
     }
+    return damage;
 }
 
 } // namespace Game

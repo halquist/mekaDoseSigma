@@ -47,7 +47,7 @@ public:
     MechAbility& ability() { return m_ability; }
     const MechAbility& ability() const { return m_ability; }
     void equipAbility(const AbilityDef& def) { m_ability.equip(def); }
-    int absorbDamage(int damage) { return m_ability.absorbDamage(damage); }
+    ShieldDamageResult absorbDamage(int damage) { return m_ability.absorbDamage(damage); }
 
     bool isAlive() const { return m_alive; }
     void explode();

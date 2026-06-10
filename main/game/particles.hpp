@@ -10,7 +10,8 @@ class ParticleSystem {
 public:
     explicit ParticleSystem(Renderer::Scene& scene);
 
-    void spawnHitEffect(float x, float y, float z);
+    void spawnHitEffect(float x, float y, float z,
+                        uint16_t color = Colors::SPARK_ORANGE);
     void spawnDeathEffect(float x, float y, float z);
 
     void update(float deltaTime);
@@ -19,6 +20,7 @@ public:
 private:
     struct Particle {
         Renderer::Object* obj = nullptr;
+        Renderer::Material mat;
         float x, y, z;
         float vx, vy, vz;
         float life;
@@ -26,12 +28,9 @@ private:
     };
 
     void spawnParticle(float x, float y, float z, float speed, float life,
-                       Renderer::Material* mat);
+                       uint16_t color);
 
     Renderer::Scene& m_scene;
-    Renderer::Material m_cyanMat;
-    Renderer::Material m_orangeMat;
-    Renderer::Material m_pinkMat;
 
     static constexpr int MAX_PARTICLES = 20;
     std::array<Particle, MAX_PARTICLES> m_particles;

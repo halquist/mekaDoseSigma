@@ -12,22 +12,17 @@ namespace Game {
 
 ParticleSystem::ParticleSystem(Renderer::Scene& scene)
     : m_scene(scene)
-    , m_cyanMat(Colors::SPARK_ORANGE)
-    , m_orangeMat(Colors::SPARK_ORANGE)
-    , m_pinkMat(Colors::SPARK_RUST)
 {
-    m_cyanMat.shadingMode = Renderer::ShadingMode::UNLIT;
-    m_orangeMat.shadingMode = Renderer::ShadingMode::UNLIT;
-    m_pinkMat.shadingMode = Renderer::ShadingMode::UNLIT;
-
     for (auto& p : m_particles) {
         p.obj = nullptr;
         p.active = false;
+        p.mat = Renderer::Material(Colors::SPARK_ORANGE);
+        p.mat.shadingMode = Renderer::ShadingMode::UNLIT;
     }
 }
 
 void ParticleSystem::spawnParticle(float x, float y, float z, float speed, float life,
-                                   Renderer::Material* mat) {
+                                   uint16_t color) {
     Particle* slot = nullptr;
     for (auto& p : m_particles) {
         if (!p.active) {
@@ -37,12 +32,14 @@ void ParticleSystem::spawnParticle(float x, float y, float z, float speed, float
     }
     if (!slot) return;
 
+    slot->mat.color = color;
+
     if (!slot->obj) {
-        slot->obj = Primitives::createCube(5, 5, 5, mat);
+        slot->obj = Primitives::createCube(5, 5, 5, &slot->mat);
         m_scene.addObject(slot->obj);
     } else {
         for (auto& tri : slot->obj->triangles) {
-            tri.material = mat;
+            tri.material = &slot->mat;
         }
     }
 
@@ -64,18 +61,18 @@ void ParticleSystem::spawnParticle(float x, float y, float z, float speed, float
                     static_cast<int32_t>(slot->z));
 }
 
-void ParticleSystem::spawnHitEffect(float x, float y, float z) {
+void ParticleSystem::spawnHitEffect(float x, float y, float z, uint16_t color) {
     for (int i = 0; i < 4; i++) {
-        spawnParticle(x, y, z, 70 + Rng::nextRange(30), 0.25f, &m_cyanMat);
+        spawnParticle(x, y, z, 70 + Rng::nextRange(30), 0.25f, color);
     }
 }
 
 void ParticleSystem::spawnDeathEffect(float x, float y, float z) {
     for (int i = 0; i < 6; i++) {
-        spawnParticle(x, y, z, 90 + Rng::nextRange(40), 0.5f, &m_orangeMat);
+        spawnParticle(x, y, z, 90 + Rng::nextRange(40), 0.5f, Colors::SPARK_ORANGE);
     }
     for (int i = 0; i < 6; i++) {
-        spawnParticle(x, y, z, 90 + Rng::nextRange(40), 0.5f, &m_pinkMat);
+        spawnParticle(x, y, z, 90 + Rng::nextRange(40), 0.5f, Colors::SPARK_RUST);
     }
 }
 

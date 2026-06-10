@@ -12,16 +12,6 @@ float smoothStep(float t) {
     return t * t * (3.0f - 2.0f * t);
 }
 
-uint16_t brightenRgb565(uint16_t color) {
-    const uint8_t r = ((color >> 11) & 0x1F) << 3;
-    const uint8_t g = ((color >> 5) & 0x3F) << 2;
-    const uint8_t b = (color & 0x1F) << 3;
-    const uint8_t nr = (r + (r >> 2) > 255) ? 255 : static_cast<uint8_t>(r + (r >> 2));
-    const uint8_t ng = (g + (g >> 2) > 255) ? 255 : static_cast<uint8_t>(g + (g >> 2));
-    const uint8_t nb = (b + (b >> 2) > 255) ? 255 : static_cast<uint8_t>(b + (b >> 2));
-    return Colors::rgb(nr, ng, nb);
-}
-
 } // namespace
 
 namespace AbilityCatalog {
@@ -34,7 +24,7 @@ const AbilityDef SHIELD = {
 
 const AbilityDef SHIELD_ENEMY = {
     AbilityKind::Shield,
-    24,
+    48,
     0.0f,
 };
 
@@ -160,7 +150,7 @@ void MechAbility::updateShieldVisual(float deltaTime, int32_t x, int32_t z, floa
         case VisualPhase::BreakAnim: {
             const float t = smoothStep(m_animTimer / BREAK_ANIM_SEC);
             const float scale = 1.0f + (BREAK_SCALE_END - 1.0f) * t;
-            m_shieldMat.color = brightenRgb565(m_shieldColorBase);
+            m_shieldMat.color = Colors::DAMAGE_RED;
             m_shieldMat.alpha = static_cast<uint8_t>(SHIELD_BREAK_ALPHA * (1.0f - t));
             applyShieldScale(scale);
             showShieldMesh(m_shieldMat.alpha > 0);
@@ -189,7 +179,7 @@ void MechAbility::startBreakVisual() {
     m_animTimer = 0.0f;
     ensureShieldMesh();
     applyShieldScale(1.0f);
-    m_shieldMat.color = brightenRgb565(m_shieldColorBase);
+    m_shieldMat.color = Colors::DAMAGE_RED;
     m_shieldMat.alpha = SHIELD_BREAK_ALPHA;
     showShieldMesh(true);
 }
@@ -257,23 +247,56 @@ void MechAbility::beginCooldown() {
     m_cooldownRemaining = m_def.cooldownSec;
 }
 
-int MechAbility::absorbDamage(int damage) {
+ShieldDamageResult MechAbility::absorbDamage(int damage) {
+    ShieldDamageResult result;
+    result.healthDamage = damage;
+
     if (damage <= 0 || m_state != State::Active || m_shieldHp <= 0) {
-        return damage;
+        return result;
     }
 
+    result.hitShield = true;
     if (damage >= m_shieldHp) {
-        const int overflow = damage - m_shieldHp;
         breakShield();
-        return overflow;
+    } else {
+        m_shieldHp -= damage;
     }
-
-    m_shieldHp -= damage;
-    return 0;
+    result.healthDamage = 0;
+    return result;
 }
 
 float MechAbility::cooldownRemaining() const {
     return m_cooldownRemaining;
+}
+
+void MechAbility::shieldHitPosition(float mechX, float baseY, float mechZ,
+                                    float hitX, float hitY, float hitZ,
+                                    float& outX, float& outY, float& outZ) {
+    const float cx = mechX;
+    const float cy = baseY + SHIELD_CENTER_Y;
+    const float cz = mechZ;
+
+    float dx = hitX - cx;
+    float dy = hitY - cy;
+    float dz = hitZ - cz;
+    float len = sqrtf(dx * dx + dy * dy + dz * dz);
+    if (len < 1.0f) {
+        dx = hitX - mechX;
+        dz = hitZ - mechZ;
+        len = sqrtf(dx * dx + dz * dz);
+        if (len < 1.0f) {
+            outX = cx;
+            outY = cy;
+            outZ = cz + SHIELD_RADIUS;
+            return;
+        }
+        dy = 0.0f;
+    }
+
+    const float scale = static_cast<float>(SHIELD_RADIUS) / len;
+    outX = cx + dx * scale;
+    outY = cy + dy * scale;
+    outZ = cz + dz * scale;
 }
 
 } // namespace Game

@@ -1,0 +1,75 @@
+[1/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/input.cpp.obj
+[2/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/TrigLUT.cpp.obj
+[3/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/PostFX.cpp.obj
+[4/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/Material.cpp.obj
+[5/37] Performing build step for 'bootloader'
+[1/1] cd /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/bootloader.bin
+Bootloader binary size 0x5800 bytes. 0x2800 bytes (31%) free.
+[6/37] No install step for 'bootloader'
+[7/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/Texture.cpp.obj
+[8/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/environment.cpp.obj
+[9/37] Completed 'bootloader'
+[10/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/Light.cpp.obj
+[11/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/terrain.cpp.obj
+[12/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/worldgen.cpp.obj
+[13/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/Camera.cpp.obj
+[14/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/digits.cpp.obj
+[15/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/objective_hud.cpp.obj
+[16/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/world.cpp.obj
+[17/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/Object.cpp.obj
+[18/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/enemy_manager.cpp.obj
+[19/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/objective.cpp.obj
+[20/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/main.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp: In function 'void init_display()':
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data4_io_num' [-Wmissing-field-initializers]
+   70 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data5_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data6_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data7_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::isr_cpu_id' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::intr_flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:91:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_high_on_cmd' [-Wmissing-field-initializers]
+   91 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:91:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_low_on_param' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::data_endian' [-Wmissing-field-initializers]
+   98 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::vendor_config' [-Wmissing-field-initializers]
+[21/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_rig.cpp.obj
+[22/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/Primitives.cpp.obj
+[23/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech.cpp.obj
+[24/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/particles.cpp.obj
+[25/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/obstacles.cpp.obj
+[26/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/Renderer.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/managed_components/jet/src/Renderer.cpp: In member function 'bool Renderer::Rasterizer::drawTriangle(const Renderer::Object::Vertex&, const Renderer::Object::Vertex&, const Renderer::Object::Vertex&, Renderer::Material*, Renderer::DirectionalLight*, Renderer::AmbientLight*, bool, bool, bool, int, uint8_t, bool)':
+/home/jon/esp32_testing/mekaDoseSigma/managed_components/jet/src/Renderer.cpp:596:17: warning: variable 'uv' set but not used [-Wunused-but-set-variable]
+  596 |         Vector2 uv = {0, 0};
+      |                 ^~
+/home/jon/esp32_testing/mekaDoseSigma/managed_components/jet/src/Renderer.cpp:718:20: warning: unused variable 'plainOpaqueReplace' [-Wunused-variable]
+  718 |         const bool plainOpaqueReplace = (alpha == 255 && !isWaterReflect && !isAdditive);
+      |                    ^~~~~~~~~~~~~~~~~~
+[27/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/game.cpp.obj
+[28/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/ability.cpp.obj
+[29/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/projectile.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/main/game/projectile.cpp: In member function 'void Game::ProjectileSystem::updateHomingMissile(Projectile&, float)':
+/home/jon/esp32_testing/mekaDoseSigma/main/game/projectile.cpp:420:17: warning: unused variable 'horizDist' [-Wunused-variable]
+  420 |     const float horizDist = sqrtf(dx * dx + dz * dz);
+      |                 ^~~~~~~~~
+[30/37] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/enemy.cpp.obj
+[31/37] Building CXX object esp-idf/jet/CMakeFiles/__idf_jet.dir/src/Scene.cpp.obj
+[32/37] Linking C static library esp-idf/jet/libjet.a
+[33/37] Linking C static library esp-idf/main/libmain.a
+[34/37] Generating ld/sections.ld
+[35/37] Linking CXX executable mekadose_sigma.elf
+[36/37] Generating binary image from built executable
+esptool.py v4.11.0
+Creating esp32s3 image...
+Merged 2 ELF sections
+Successfully created esp32s3 image.
+Generated /home/jon/esp32_testing/mekaDoseSigma/build/mekadose_sigma.bin
+[37/37] cd /home/jon/esp32_testing/mekaDoseSigma/build/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/jon/esp32_testing/mekaDoseSigma/build/partition_table/partition-table.bin /home/jon/esp32_testing/mekaDoseSigma/build/mekadose_sigma.bin
+mekadose_sigma.bin binary size 0x634f0 bytes. Smallest app partition is 0x100000 bytes. 0x9cb10 bytes (61%) free.

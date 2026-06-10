@@ -6,6 +6,13 @@ namespace Game {
 
 class Digits {
 public:
+    /// Health arc with optional inner shield arc in the same pixel pass.
+    static void drawHealthAndShieldArcs(uint16_t* framebuffer, int screenWidth, int screenHeight,
+                                        int health, int maxHealth,
+                                        uint16_t healthFillColor, uint16_t bgColor,
+                                        bool showShield, int shieldHp, int maxShieldHp,
+                                        uint16_t shieldFillColor);
+
     /// Upper semicircular health arc hugging the round screen bezel.
     static void drawHealthArc(uint16_t* framebuffer, int screenWidth, int screenHeight,
                               int health, int maxHealth,

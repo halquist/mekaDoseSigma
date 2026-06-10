@@ -234,9 +234,11 @@ void MekaGame::handleEnemyCombat() {
                                          enemyMinY,
                                          enemyMaxY,
                                          enemy.getWidth())) {
-            enemy.takeDamage(m_mech->getWeaponDamage());
+            bool hitEnemyShield = false;
+            enemy.takeDamage(m_mech->getWeaponDamage(), &hitEnemyShield);
             m_particles->spawnHitEffect(
-                enemy.getX(), enemy.getAimY(), enemy.getZ());
+                enemy.getX(), enemy.getAimY(), enemy.getZ(),
+                hitEnemyShield ? Colors::SHIELD_ENEMY : Colors::SPARK_ORANGE);
             if (!enemy.isAlive()) {
                 m_particles->spawnDeathEffect(
                     enemy.getX(), enemy.getAimY(), enemy.getZ());
@@ -312,20 +314,33 @@ void MekaGame::update(float deltaTime) {
             m_particles->spawnHitEffect(impactX, impactY, impactZ);
         }
 
+        float hitX = 0.0f;
+        float hitY = 0.0f;
+        float hitZ = 0.0f;
         const int rawDamage = m_projectiles->checkPlayerHit(m_mech->getX(),
                                                          m_mech->getZ(),
                                                          m_mech->getBaseY(),
-                                                         m_mech->getWidth());
+                                                         m_mech->getWidth(),
+                                                         &hitX, &hitZ, &hitY);
         if (rawDamage > 0) {
-            const int damage = m_mech->absorbDamage(rawDamage);
-            if (damage > 0) {
-                m_health -= damage;
+            const ShieldDamageResult absorbed = m_mech->absorbDamage(rawDamage);
+            if (absorbed.healthDamage > 0) {
+                m_health -= absorbed.healthDamage;
                 if (m_health < 0) {
                     m_health = 0;
                 }
                 m_damageFlash = 0.35f;
                 m_particles->spawnHitEffect(
-                    m_mech->getX(), m_mech->getBaseY(), m_mech->getZ());
+                    m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
+                    Colors::SPARK_ORANGE);
+            } else if (absorbed.hitShield) {
+                float fx = hitX;
+                float fy = hitY;
+                float fz = hitZ;
+                MechAbility::shieldHitPosition(
+                    m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
+                    hitX, hitY, hitZ, fx, fy, fz);
+                m_particles->spawnHitEffect(fx, fy, fz, Colors::SHIELD_BLUE);
             }
         }
 
@@ -351,21 +366,23 @@ void MekaGame::render() {
         displayHealth = 0;
     }
 
-    Digits::drawHealthArc(m_framebuffer, m_width, m_height,
-                          displayHealth, m_maxHealth,
-                          Colors::HEALTH_FILL, Colors::HUD_BG);
-
+    const MechAbility* ability = nullptr;
     if (m_state == GameState::PLAYING && m_mech->isAlive()) {
-        const MechAbility& ability = m_mech->ability();
-        if (ability.showShieldBar()) {
-            Digits::drawShieldArc(m_framebuffer, m_width, m_height,
-                                  ability.shieldHp(), ability.maxShieldHp(),
-                                  Colors::SHIELD_HUD, Colors::HUD_BG);
-        }
-        if (ability.showReadyIcon()) {
-            Digits::drawAbilityReadyIcon(m_framebuffer, m_width, m_height,
-                                         Colors::SHIELD_HUD);
-        }
+        ability = &m_mech->ability();
+    }
+
+    Digits::drawHealthAndShieldArcs(
+        m_framebuffer, m_width, m_height,
+        displayHealth, m_maxHealth,
+        Colors::HEALTH_FILL, Colors::HUD_BG,
+        ability != nullptr && ability->showShieldBar(),
+        ability != nullptr ? ability->shieldHp() : 0,
+        ability != nullptr ? ability->maxShieldHp() : 1,
+        Colors::SHIELD_HUD);
+
+    if (ability != nullptr && ability->showReadyIcon()) {
+        Digits::drawAbilityReadyIcon(m_framebuffer, m_width, m_height,
+                                     Colors::SHIELD_HUD);
     }
 
     if (m_state == GameState::PLAYING &&

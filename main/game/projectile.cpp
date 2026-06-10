@@ -539,8 +539,21 @@ void ProjectileSystem::update(float deltaTime) {
 }
 
 int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerAimY,
-                                     float playerWidth) {
+                                     float playerWidth,
+                                     float* outHitX, float* outHitZ, float* outHitY) {
     const float hitDist = playerWidth / 2 + 18;
+
+    auto recordHit = [&](float x, float y, float z) {
+        if (outHitX) {
+            *outHitX = x;
+        }
+        if (outHitY) {
+            *outHitY = y;
+        }
+        if (outHitZ) {
+            *outHitZ = z;
+        }
+    };
 
     for (auto& p : m_projectiles) {
         if (!p.active || p.isPlayerProjectile) continue;
@@ -558,6 +571,7 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
             const float yDist = fabsf(missileWorldY - playerAimY);
 
             if (closest < ENEMY_HIT_RADIUS && yDist < ENEMY_HIT_Y_TOLERANCE) {
+                recordHit(p.x, missileWorldY, p.z);
                 detonateMissile(p);
                 return PLAYER_DAMAGE_ENEMY_MISSILE;
             }
@@ -576,6 +590,7 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
             const float closest = (dist < segDist) ? dist : segDist;
 
             if (closest < BOMB_SPLASH_RADIUS) {
+                recordHit(p.x, p.y, p.z);
                 destroyProjectile(p);
                 return PLAYER_DAMAGE_BOMB;
             }
@@ -587,6 +602,7 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
         const float dist = sqrtf(dx * dx + dz * dz);
 
         if (dist < hitDist) {
+            recordHit(p.x, Terrain::hoverHeight(p.x, p.z), p.z);
             destroyProjectile(p);
             return PLAYER_DAMAGE_TANK_BOLT;
         }

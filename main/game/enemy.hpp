@@ -29,7 +29,7 @@ public:
     float getMissileAimY() const;
     void getHitVerticalRange(float& minY, float& maxY) const;
 
-    void takeDamage(int damage = 1);
+    int takeDamage(int damage = 1, bool* outHitShield = nullptr);
     bool isAlive() const { return m_active && m_health > 0; }
 
 private:

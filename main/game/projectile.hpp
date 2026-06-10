@@ -32,7 +32,9 @@ public:
                                   float* outY = nullptr);
     void reset();
 
-    int checkPlayerHit(float playerX, float playerZ, float playerAimY, float playerWidth);
+    int checkPlayerHit(float playerX, float playerZ, float playerAimY, float playerWidth,
+                       float* outHitX = nullptr, float* outHitZ = nullptr,
+                       float* outHitY = nullptr);
     bool checkEnemyHit(float enemyX, float enemyZ, float enemyMinY, float enemyMaxY,
                        float enemyWidth);
 

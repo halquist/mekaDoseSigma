@@ -24,6 +24,11 @@ namespace AbilityCatalog {
     extern const AbilityDef SHIELD_ENEMY;
 }
 
+struct ShieldDamageResult {
+    int healthDamage = 0;
+    bool hitShield = false;
+};
+
 /// Runtime ability state with optional scene visual (shield sphere).
 class MechAbility {
 public:
@@ -43,8 +48,8 @@ public:
     void setShieldColor(uint16_t color, uint8_t alpha = 120);
     void setSingleUse(bool singleUse) { m_singleUse = singleUse; }
 
-    /// Returns damage that passes through to HP after the shield absorbs what it can.
-    int absorbDamage(int damage);
+    /// Absorbs damage with the shield when active. No overflow on shield break.
+    ShieldDamageResult absorbDamage(int damage);
 
     bool isReady() const { return m_state == State::Ready; }
     bool isActive() const { return m_state == State::Active; }
@@ -54,6 +59,11 @@ public:
     int shieldHp() const { return m_shieldHp; }
     int maxShieldHp() const { return m_maxShieldHp; }
     float cooldownRemaining() const;
+
+    /// World position on the shield sphere facing an incoming hit.
+    static void shieldHitPosition(float mechX, float baseY, float mechZ,
+                                  float hitX, float hitY, float hitZ,
+                                  float& outX, float& outY, float& outZ);
 
 private:
     enum class State : uint8_t {
@@ -108,9 +118,9 @@ private:
     static constexpr int SHIELD_SPHERE_SEGMENTS = 6;
     static constexpr float SHIELD_CENTER_Y = 30.0f;
     static constexpr float SHIELD_SCALE_START = 0.12f;
-    static constexpr float DEPLOY_GROW_SEC = 0.22f;
-    static constexpr float DEPLOY_FADE_SEC = 0.2f;
-    static constexpr float BREAK_ANIM_SEC = 0.38f;
+    static constexpr float DEPLOY_GROW_SEC = 0.7f;
+    static constexpr float DEPLOY_FADE_SEC = 0.7f;
+    static constexpr float BREAK_ANIM_SEC = 0.7f;
     static constexpr float BREAK_SCALE_END = 1.35f;
     static constexpr uint8_t SHIELD_PEAK_ALPHA = 130;
     static constexpr uint8_t SHIELD_BREAK_ALPHA = 200;
