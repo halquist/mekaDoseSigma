@@ -237,4 +237,8 @@ void ObstacleField::reset() {
     m_placedCount = 0;
 }
 
+void ObstacleField::applyEnvironment(const EnvPalette& palette) {
+    m_treeMat.color = palette.treeFoliage;
+}
+
 } // namespace Game

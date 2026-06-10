@@ -33,14 +33,14 @@ MECH_PART( fin_r_low,  ArmLowerR, Pyramid, 3, 22, 0, SPARK_ORANGE,   11, 22, -5,
 
 // ---- weapons: muzzle x,y,z = local spawn (missiles: center back) ----
 MECH_WEAPON( homing_missile_mk2, "Homing Missile Mk2", HomingMissile,
-             0.28f, 380.0f, 50.0f,  0.0f, 29.0f, -7.0f, MECH_STAT_NONE )
+             0.28f, 380.0f, 50.0f,  0.0f, 29.0f, -7.0f, 8, MECH_STAT_NONE )
 
 MECH_WEAPON_UPG( homing_missile_mk1, "Homing Missile Mk1", HomingMissile,
-                 0.35f, 350.0f, 45.0f,  0.0f, 29.0f, -7.0f,
+                 0.35f, 350.0f, 45.0f,  0.0f, 29.0f, -7.0f, 6,
                  homing_missile_mk2, MECH_STAT_NONE )
 
 MECH_WEAPON( rapid_bolt_mk1, "Rapid Bolt", StraightBolt,
-             0.18f, 280.0f, 55.0f, 14.0f, 28.0f,  0.0f, MECH_STAT(-4, 0, 0, 0) )
+             0.18f, 280.0f, 55.0f, 14.0f, 28.0f,  0.0f, 5, MECH_STAT(-4, 0, 0, 0) )
 
 static const MechComponentDef* const STRIKER_HOVER_PARTS[] = {
     &PART_thruster_l,

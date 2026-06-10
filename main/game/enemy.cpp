@@ -87,6 +87,7 @@ Enemy::Enemy(Renderer::Scene& scene, ProjectileSystem& projectiles,
     , m_projectiles(projectiles)
     , m_mapConfig(mapConfig)
     , m_rig(scene)
+    , m_ability(scene)
     , m_tankBodyMat(Colors::TANK_BODY)
     , m_tankTurretMat(Colors::TANK_TURRET)
     , m_tankBarrelMat(Colors::TANK_BARREL)
@@ -126,12 +127,16 @@ void Enemy::hide() {
     m_rig.setHidden(true);
     hideTankParts();
     hideAirJet();
+    m_ability.reset();
 }
 
 void Enemy::configureForKind() {
     hideTankParts();
     hideAirJet();
     m_rig.setHidden(true);
+    m_willUseShield = false;
+    m_shieldTriggerHealth = 0;
+    m_shieldActivated = false;
 
     switch (m_kind) {
         case EnemyKind::Tank:
@@ -145,6 +150,14 @@ void Enemy::configureForKind() {
             m_fireInterval = 1.6f;
             m_rig.ensureBuilt(m_loadout, MechPalette::EnemyRed);
             m_rig.setHidden(false);
+            m_ability.equip(AbilityCatalog::SHIELD_ENEMY);
+            m_ability.setSingleUse(true);
+            m_ability.setShieldColor(Colors::SHIELD_ENEMY);
+            if (Rng::nextFloat01() < ENEMY_SHIELD_USE_CHANCE) {
+                m_willUseShield = true;
+                // Activate once health falls to 12–24 (~2–4 mk1 hits from full).
+                m_shieldTriggerHealth = (2 + static_cast<int>(Rng::nextRange(3))) * 6;
+            }
             break;
         case EnemyKind::AirJet:
             m_health = AIR_MAX_HEALTH;
@@ -552,6 +565,8 @@ void Enemy::updateVisual(float deltaTime) {
         hideAirJet();
         m_rig.updatePose(m_renderX, m_renderZ, m_baseY, m_renderAngle,
                          m_loadout.visualPitch(), m_loadout);
+        m_ability.update(deltaTime, m_rig, m_renderX, m_renderZ, m_baseY,
+                         m_renderAngle, m_loadout.visualPitch());
         return;
     }
 
@@ -591,9 +606,24 @@ void Enemy::updateVisual(float deltaTime) {
     m_tankBarrel->setRotation(0, angle, 0);
 }
 
-void Enemy::takeDamage() {
-    if (!m_active || m_health <= 0) return;
-    m_health--;
+void Enemy::takeDamage(int damage) {
+    if (!m_active || m_health <= 0 || damage <= 0) return;
+
+    if (m_kind == EnemyKind::Mech) {
+        if (m_willUseShield && !m_shieldActivated && m_ability.isReady() &&
+            m_health - damage <= m_shieldTriggerHealth) {
+            if (m_ability.tryActivate()) {
+                m_shieldActivated = true;
+            }
+        }
+        damage = m_ability.absorbDamage(damage);
+    }
+
+    if (damage <= 0) {
+        return;
+    }
+
+    m_health -= damage;
     if (m_health <= 0) {
         deactivate();
     }

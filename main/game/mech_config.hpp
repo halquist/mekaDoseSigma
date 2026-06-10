@@ -88,6 +88,7 @@ struct WeaponDef {
     float muzzleLocalX = 22.0f;
     float muzzleLocalY = 22.0f;
     float muzzleLocalZ = 0.0f;
+    int damage = 1;
     MechStatMods stats;
     const WeaponDef* upgradeTo = nullptr;
 };

@@ -20,7 +20,8 @@ public:
                 float playerAimY);
 
     int aliveCount() const;
-    Enemy* findClosestAlive(float fromX, float fromZ, float maxRange);
+    Enemy* findClosestInArc(float fromX, float fromZ, float fromAngleDeg,
+                              float maxRange, float aimConeDeg);
 
     Enemy& enemy(int index) { return *m_enemies[static_cast<size_t>(index)]; }
     const Enemy& enemy(int index) const { return *m_enemies[static_cast<size_t>(index)]; }

@@ -28,6 +28,7 @@ public:
 private:
     void setupCamera();
     void setupLighting();
+    void applyEnvironment();
     void updateCamera();
     void handleAutoFire();
     void handleEnemyCombat();

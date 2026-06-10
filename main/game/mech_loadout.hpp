@@ -27,6 +27,7 @@ public:
     float turnRate() const;
     float hitWidth() const;
     int maxHp() const;
+    int weaponDamage() const;
     int8_t visualPitch() const;
 
 private:

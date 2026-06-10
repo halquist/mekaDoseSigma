@@ -113,6 +113,14 @@ int MechLoadout::maxHp() const {
     return hp;
 }
 
+int MechLoadout::weaponDamage() const {
+    const WeaponDef* w = weapon(m_activeWeaponSlot);
+    if (!w || w->damage < 1) {
+        return 1;
+    }
+    return w->damage;
+}
+
 int8_t MechLoadout::visualPitch() const {
     return m_frame ? m_frame->visualPitch : -8;
 }

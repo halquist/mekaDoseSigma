@@ -41,6 +41,9 @@ namespace Colors {
     constexpr uint16_t MISSILE_TRAIL   = rgb(255, 30, 220);
     constexpr uint16_t MECH_WHITE      = rgb(235, 235, 245);
     constexpr uint16_t MECH_BLUE       = rgb(40, 70, 180);
+    constexpr uint16_t SHIELD_BLUE     = rgb(50, 110, 220);
+    constexpr uint16_t SHIELD_HUD      = rgb(70, 130, 235);
+    constexpr uint16_t SHIELD_ENEMY    = rgb(130, 220, 150);
     constexpr uint16_t MECH_RED        = rgb(200, 45, 55);
     constexpr uint16_t MECH_JOINT      = rgb(55, 58, 65);
     constexpr uint16_t OBJECTIVE_BODY    = rgb(105, 110, 115);

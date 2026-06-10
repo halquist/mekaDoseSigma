@@ -1,4 +1,5 @@
 #include "game.hpp"
+#include "environment.hpp"
 #include "FramebufferIO.hpp"
 #include "terrain.hpp"
 #include "rng.hpp"
@@ -9,6 +10,27 @@
 #endif
 
 namespace Game {
+
+namespace {
+
+bool isInWeaponArc(float fromX, float fromZ, float fromAngleDeg,
+                   float targetX, float targetZ,
+                   float maxRange, float aimConeDeg) {
+    const float dx = targetX - fromX;
+    const float dz = targetZ - fromZ;
+    const float distSq = dx * dx + dz * dz;
+    if (distSq > maxRange * maxRange) {
+        return false;
+    }
+
+    float angleToTarget = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+    float angleDiff = angleToTarget - fromAngleDeg;
+    while (angleDiff > 180.0f) angleDiff -= 360.0f;
+    while (angleDiff < -180.0f) angleDiff += 360.0f;
+    return fabsf(angleDiff) <= aimConeDeg;
+}
+
+} // namespace
 
 MekaGame::MekaGame(uint16_t* framebuffer, int width, int height)
     : m_framebuffer(framebuffer)
@@ -35,6 +57,8 @@ MekaGame::~MekaGame() {
 void MekaGame::randomizeSession() {
     Rng::init();
     m_mapConfig.worldSeed = Rng::nextU32() | 1u;
+    m_mapConfig.lighting =
+        static_cast<EnvLightingMode>(Rng::nextRange(3));
     Terrain::setMapConfig(&m_mapConfig);
 }
 
@@ -45,7 +69,6 @@ bool MekaGame::init() {
     setupCamera();
 
     m_scene = new Renderer::Scene(m_framebuffer, nullptr, m_width, m_height);
-    m_scene->setBackcolor(Colors::SKY_BLUE);
     m_scene->setCamera(m_camera);
 
     setupLighting();
@@ -70,6 +93,7 @@ bool MekaGame::init() {
     m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
                     0.0f, 0.0f);
     updateCamera();
+    applyEnvironment();
 
     return true;
 }
@@ -89,6 +113,20 @@ void MekaGame::setupLighting() {
     m_ambient = new Renderer::AmbientLight(Color{100, 120, 90});
     m_scene->setDirectionalLight(m_sunLight);
     m_scene->setAmbientLight(m_ambient);
+}
+
+void MekaGame::applyEnvironment() {
+    const EnvPalette& palette = envPaletteFor(m_mapConfig.lighting);
+
+    m_scene->setBackcolor(palette.sky);
+    m_sunLight->color = palette.sunColor;
+    m_sunLight->intensity = palette.sunIntensity;
+    m_sunLight->updateDirection(
+        Vector3{palette.sunAzimuth, palette.sunElevation, 0});
+    m_ambient->color = palette.ambientColor;
+
+    m_world->applyEnvironment(palette);
+    m_obstacles->applyEnvironment(palette);
 }
 
 void MekaGame::updateCamera() {
@@ -122,41 +160,39 @@ void MekaGame::updateCamera() {
 void MekaGame::handleAutoFire() {
     const WeaponDef* weapon =
         m_mech->loadout().weapon(m_mech->loadout().activeWeaponSlot());
-    const float weaponRange = weapon ? weapon->range : 350.0f;
-    const float maxDistSq = weaponRange * weaponRange;
+    if (!weapon) {
+        return;
+    }
+
+    const float mechX = m_mech->getX();
+    const float mechZ = m_mech->getZ();
+    const float mechAngle = m_mech->getAngle();
 
     float targetX = 0.0f;
     float targetZ = 0.0f;
     float targetAimY = 0.0f;
     bool haveTarget = false;
-    float bestDistSq = maxDistSq;
 
-    Enemy* enemyTarget = m_enemies->findClosestAlive(
-        m_mech->getX(), m_mech->getZ(), weaponRange);
+    Enemy* enemyTarget = m_enemies->findClosestInArc(
+        mechX, mechZ, mechAngle, weapon->range, weapon->aimConeDeg);
     if (enemyTarget) {
-        const float dx = enemyTarget->getX() - m_mech->getX();
-        const float dz = enemyTarget->getZ() - m_mech->getZ();
-        bestDistSq = dx * dx + dz * dz;
         targetX = enemyTarget->getX();
         targetZ = enemyTarget->getZ();
         targetAimY = enemyTarget->getMissileAimY();
         haveTarget = true;
+    } else if (m_objective->isAlive() && m_objective->isVisible() &&
+               isInWeaponArc(mechX, mechZ, mechAngle,
+                             m_objective->getX(), m_objective->getZ(),
+                             weapon->range, weapon->aimConeDeg)) {
+        targetX = m_objective->getX();
+        targetZ = m_objective->getZ();
+        targetAimY = m_objective->getMissileAimY();
+        haveTarget = true;
     }
 
-    if (m_objective->isAlive() && m_objective->isVisible()) {
-        const float dx = m_objective->getX() - m_mech->getX();
-        const float dz = m_objective->getZ() - m_mech->getZ();
-        const float distSq = dx * dx + dz * dz;
-        if (distSq < bestDistSq) {
-            bestDistSq = distSq;
-            targetX = m_objective->getX();
-            targetZ = m_objective->getZ();
-            targetAimY = m_objective->getMissileAimY();
-            haveTarget = true;
-        }
+    if (!haveTarget) {
+        return;
     }
-
-    if (!haveTarget) return;
 
     m_mech->tryAutoFire(*m_projectiles, targetX, targetZ, targetAimY, true);
 }
@@ -198,7 +234,7 @@ void MekaGame::handleEnemyCombat() {
                                          enemyMinY,
                                          enemyMaxY,
                                          enemy.getWidth())) {
-            enemy.takeDamage();
+            enemy.takeDamage(m_mech->getWeaponDamage());
             m_particles->spawnHitEffect(
                 enemy.getX(), enemy.getAimY(), enemy.getZ());
             if (!enemy.isAlive()) {
@@ -225,6 +261,7 @@ void MekaGame::resetMatch() {
     m_projectiles->reset();
     m_particles->reset();
     updateCamera();
+    applyEnvironment();
 }
 
 void MekaGame::drawEdgeFlash(uint16_t color, int thickness) {
@@ -275,18 +312,21 @@ void MekaGame::update(float deltaTime) {
             m_particles->spawnHitEffect(impactX, impactY, impactZ);
         }
 
-        const int damage = m_projectiles->checkPlayerHit(m_mech->getX(),
+        const int rawDamage = m_projectiles->checkPlayerHit(m_mech->getX(),
                                                          m_mech->getZ(),
                                                          m_mech->getBaseY(),
                                                          m_mech->getWidth());
-        if (damage > 0) {
-            m_health -= damage;
-            if (m_health < 0) {
-                m_health = 0;
+        if (rawDamage > 0) {
+            const int damage = m_mech->absorbDamage(rawDamage);
+            if (damage > 0) {
+                m_health -= damage;
+                if (m_health < 0) {
+                    m_health = 0;
+                }
+                m_damageFlash = 0.35f;
+                m_particles->spawnHitEffect(
+                    m_mech->getX(), m_mech->getBaseY(), m_mech->getZ());
             }
-            m_damageFlash = 0.35f;
-            m_particles->spawnHitEffect(
-                m_mech->getX(), m_mech->getBaseY(), m_mech->getZ());
         }
 
         if (m_health <= 0) {
@@ -314,6 +354,19 @@ void MekaGame::render() {
     Digits::drawHealthArc(m_framebuffer, m_width, m_height,
                           displayHealth, m_maxHealth,
                           Colors::HEALTH_FILL, Colors::HUD_BG);
+
+    if (m_state == GameState::PLAYING && m_mech->isAlive()) {
+        const MechAbility& ability = m_mech->ability();
+        if (ability.showShieldBar()) {
+            Digits::drawShieldArc(m_framebuffer, m_width, m_height,
+                                  ability.shieldHp(), ability.maxShieldHp(),
+                                  Colors::SHIELD_HUD, Colors::HUD_BG);
+        }
+        if (ability.showReadyIcon()) {
+            Digits::drawAbilityReadyIcon(m_framebuffer, m_width, m_height,
+                                         Colors::SHIELD_HUD);
+        }
+    }
 
     if (m_state == GameState::PLAYING &&
         m_objective->hasTarget() && !m_objective->isDestroyed()) {

@@ -2,6 +2,10 @@
 #include "rng.hpp"
 #include <cmath>
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace Game {
 
 EnemyManager::EnemyManager(Renderer::Scene& scene, ProjectileSystem& projectiles,
@@ -94,8 +98,9 @@ void EnemyManager::update(float deltaTime, float playerX, float playerZ,
     trySpawn(deltaTime, playerX, playerZ, playerAngle);
 }
 
-Enemy* EnemyManager::findClosestAlive(float fromX, float fromZ, float maxRange) {
-    Enemy* closest = nullptr;
+Enemy* EnemyManager::findClosestInArc(float fromX, float fromZ, float fromAngleDeg,
+                                      float maxRange, float aimConeDeg) {
+    Enemy* best = nullptr;
     float bestDistSq = maxRange * maxRange;
 
     for (int i = 0; i < MAX_ENEMIES; ++i) {
@@ -105,12 +110,18 @@ Enemy* EnemyManager::findClosestAlive(float fromX, float fromZ, float maxRange) 
         const float dx = e.getX() - fromX;
         const float dz = e.getZ() - fromZ;
         const float distSq = dx * dx + dz * dz;
-        if (distSq < bestDistSq) {
-            bestDistSq = distSq;
-            closest = &e;
-        }
+        if (distSq >= bestDistSq) continue;
+
+        float angleToTarget = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+        float angleDiff = angleToTarget - fromAngleDeg;
+        while (angleDiff > 180.0f) angleDiff -= 360.0f;
+        while (angleDiff < -180.0f) angleDiff += 360.0f;
+        if (fabsf(angleDiff) > aimConeDeg) continue;
+
+        bestDistSq = distSq;
+        best = &e;
     }
-    return closest;
+    return best;
 }
 
 } // namespace Game

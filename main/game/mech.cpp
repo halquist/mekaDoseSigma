@@ -32,8 +32,10 @@ static float averagedHoverHeight(float worldX, float worldZ) {
 Mech::Mech(Renderer::Scene& scene, const MechLoadoutPreset& preset)
     : m_scene(scene)
     , m_rig(scene)
+    , m_ability(scene)
 {
     m_loadout.applyPreset(preset);
+    m_ability.equip(AbilityCatalog::SHIELD);
     rebuildVisual();
 }
 
@@ -100,7 +102,9 @@ void Mech::reset() {
     m_touchActive = false;
     m_dodgeTriggeredThisTouch = false;
     m_angleAtTouchStart = 0.0f;
+    m_touchClock = 0.0f;
     m_alive = true;
+    m_ability.reset();
     m_rig.setHidden(false);
     snapHoverHeight();
     syncRenderPivot();
@@ -111,6 +115,7 @@ void Mech::reset() {
 
 void Mech::explode() {
     m_alive = false;
+    m_ability.reset();
     m_rig.setHidden(true);
 }
 
@@ -184,6 +189,7 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth,
                   ObstacleField* obstacles) {
     if (!m_alive) return;
 
+    m_touchClock += deltaTime;
     m_turnActivity = 0.0f;
 
     if (m_fireCooldown > 0.0f) {
@@ -201,6 +207,10 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth,
             m_touchActive = true;
             m_angleAtTouchStart = m_angle;
             m_dodgeTriggeredThisTouch = false;
+
+            if (TouchZones::isForward(input.x, screenWidth)) {
+                m_ability.onCenterTap(m_touchClock);
+            }
         }
 
         const bool dodgeLeft = TouchZones::isDodgeLeft(input.x, screenWidth);
@@ -254,6 +264,8 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth,
     applyDodge(deltaTime, obstacles);
 
     updateVisual(deltaTime);
+    m_ability.update(deltaTime, m_rig, m_renderX, m_renderZ, m_baseY,
+                     m_renderAngle, m_loadout.visualPitch());
 }
 
 } // namespace Game

@@ -6,6 +6,7 @@
 #include "mech_loadout.hpp"
 #include "mech_rig.hpp"
 #include "mech_catalog.hpp"
+#include "ability.hpp"
 #include <cstdint>
 
 namespace Game {
@@ -41,6 +42,12 @@ public:
     int32_t getRenderPivotAngle() const { return m_renderAngle; }
     float getWidth() const { return m_loadout.hitWidth(); }
     int getMaxHp() const { return m_loadout.maxHp(); }
+    int getWeaponDamage() const { return m_loadout.weaponDamage(); }
+
+    MechAbility& ability() { return m_ability; }
+    const MechAbility& ability() const { return m_ability; }
+    void equipAbility(const AbilityDef& def) { m_ability.equip(def); }
+    int absorbDamage(int damage) { return m_ability.absorbDamage(damage); }
 
     bool isAlive() const { return m_alive; }
     void explode();
@@ -56,6 +63,7 @@ private:
     Renderer::Scene& m_scene;
     MechLoadout m_loadout;
     MechRig m_rig;
+    MechAbility m_ability;
 
     float m_x = 0;
     float m_z = 0;
@@ -74,6 +82,7 @@ private:
     bool m_touchActive = false;
     bool m_dodgeTriggeredThisTouch = false;
     float m_angleAtTouchStart = 0.0f;
+    float m_touchClock = 0.0f;
 
     static constexpr float DODGE_DURATION = 0.22f;
     static constexpr float DODGE_SPEED = 420.0f;

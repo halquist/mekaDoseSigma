@@ -113,4 +113,8 @@ void World::update(float centerX, float centerZ, float lookAheadDist,
     }
 }
 
+void World::applyEnvironment(const EnvPalette& palette) {
+    m_grassMat.color = palette.grass;
+}
+
 } // namespace Game

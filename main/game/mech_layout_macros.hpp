@@ -85,7 +85,7 @@ namespace MechLayout {
         pitch,                                                                   \
     };
 
-#define MECH_WEAPON(id, displayName, kind, cooldown, range, cone, mx, my, mz, ...) \
+#define MECH_WEAPON(id, displayName, kind, cooldown, range, cone, mx, my, mz, dmg, ...) \
     const WeaponDef WEAPON_##id = {                                              \
         "weapon_" #id,                                                           \
         displayName,                                                             \
@@ -96,11 +96,12 @@ namespace MechLayout {
         mx,                                                                      \
         my,                                                                      \
         mz,                                                                      \
+        dmg,                                                                     \
         __VA_ARGS__,                                                             \
         nullptr,                                                                 \
     };
 
-#define MECH_WEAPON_UPG(id, displayName, kind, cooldown, range, cone, mx, my, mz, upgId, ...) \
+#define MECH_WEAPON_UPG(id, displayName, kind, cooldown, range, cone, mx, my, mz, dmg, upgId, ...) \
     const WeaponDef WEAPON_##id = {                                              \
         "weapon_" #id,                                                           \
         displayName,                                                             \
@@ -111,6 +112,7 @@ namespace MechLayout {
         mx,                                                                      \
         my,                                                                      \
         mz,                                                                      \
+        dmg,                                                                     \
         __VA_ARGS__,                                                             \
         &WEAPON_##upgId,                                                         \
     };

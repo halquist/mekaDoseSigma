@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Jet.hpp"
+#include "environment.hpp"
 #include "types.hpp"
 #include "map_config.hpp"
 #include "worldgen.hpp"
@@ -16,6 +17,7 @@ public:
     void update(float playerX, float playerZ, float playerAngleDeg);
     void resolveMovement(float& x, float& z, float newX, float newZ, float radius) const;
     void reset();
+    void applyEnvironment(const EnvPalette& palette);
 
     static constexpr float PLAYER_RADIUS = 16.0f;
 

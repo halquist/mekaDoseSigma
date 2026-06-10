@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Jet.hpp"
+#include "environment.hpp"
 #include "types.hpp"
 #include <cstdint>
 
@@ -12,6 +13,7 @@ public:
 
     void update(float centerX, float centerZ, float lookAheadDist,
                 float deltaTime, float turnActivity);
+    void applyEnvironment(const EnvPalette& palette);
 
 private:
     void createTerrain();

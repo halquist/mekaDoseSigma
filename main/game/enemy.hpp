@@ -7,6 +7,7 @@
 #include "mech_loadout.hpp"
 #include "mech_rig.hpp"
 #include "mech_catalog.hpp"
+#include "ability.hpp"
 
 namespace Game {
 
@@ -28,7 +29,7 @@ public:
     float getMissileAimY() const;
     void getHitVerticalRange(float& minY, float& maxY) const;
 
-    void takeDamage();
+    void takeDamage(int damage = 1);
     bool isAlive() const { return m_active && m_health > 0; }
 
 private:
@@ -62,6 +63,7 @@ private:
     const MapConfig& m_mapConfig;
     MechLoadout m_loadout;
     MechRig m_rig;
+    MechAbility m_ability;
 
     Renderer::Object* m_tankBody = nullptr;
     Renderer::Object* m_tankTurret = nullptr;
@@ -105,6 +107,10 @@ private:
     uint32_t m_spawnIndex = 0;
     bool m_active = false;
 
+    bool m_willUseShield = false;
+    int m_shieldTriggerHealth = 0;
+    bool m_shieldActivated = false;
+
     static constexpr float ENGAGE_RANGE = 420.0f;
     static constexpr float PREFERRED_DIST_MIN = 180.0f;
     static constexpr float PREFERRED_DIST_MAX = 280.0f;
@@ -117,9 +123,10 @@ private:
     static constexpr float TANK_TURRET_Y = 12.0f;
     static constexpr float TANK_BARREL_OFFSET = 16.0f;
     static constexpr float TANK_MUZZLE_OFFSET = 28.0f;
-    static constexpr int TANK_MAX_HEALTH = 3;
-    static constexpr int MECH_MAX_HEALTH = 6;
-    static constexpr int AIR_MAX_HEALTH = 4;
+    static constexpr int TANK_MAX_HEALTH = 18;
+    static constexpr int MECH_MAX_HEALTH = 36;
+    static constexpr int AIR_MAX_HEALTH = 24;
+    static constexpr float ENEMY_SHIELD_USE_CHANCE = 0.45f;
     static constexpr int AIR_BOMBS_PER_RUN = 2;
     static constexpr float AIR_RUN_SPEED = 310.0f;
     static constexpr float AIR_TURN_SPEED = 230.0f;
