@@ -1,4 +1,5 @@
 #include "Renderer.hpp"
+#include "FramebufferIO.hpp"
 #include <algorithm>
 #include <cmath>
 #include "TrigLUT.hpp"
@@ -78,6 +79,7 @@ static inline void fillRGB565Span(uint16_t* framebuffer, int32_t bufferIndex, in
 {
     if (count <= 0) return;
 
+    color = fbPack(color);
     int32_t idx = bufferIndex;
     int32_t remaining = count;
     if (idx & 1) {
@@ -921,7 +923,7 @@ namespace Renderer
             // at most two stores per scanline.
             if (wireframeMode)
             {
-                const uint16_t wireColor = material->color;
+                const uint16_t wireColor = fbPack(material->color);
                 auto plotWire = [this, wireColor](int px, int py) {
 #if HALF_WIDTH_BUFFERS
     #if FIELD_BUFFERS
@@ -1123,7 +1125,7 @@ namespace Renderer
                 int x = xStart;
                 if (!drawFirst) { x += 2; bufferIndex++; }
                 for (; x <= xEnd; x += 4, bufferIndex += 2) {
-                    framebuffer[bufferIndex] = color;
+                    framebuffer[bufferIndex] = fbPack(color);
                 }
             }
 #else  // !SCREEN_DOOR_ALPHA
@@ -1145,30 +1147,32 @@ namespace Renderer
                 int32_t mirrorIdx = waterMirrorBufBase + xStart / 2;
                 const uint16_t skyCol = waterSkyFallback ? gradientColors[0] : 0;
                 for (int x = xStart; x <= xEnd; x += 2, bufferIndex++, mirrorIdx++) {
-                    const uint16_t reflPx = waterSkyFallback ? skyCol : srcBuf[mirrorIdx];
-                    framebuffer[bufferIndex] = blendRGB565(material->color,
+                    const uint16_t reflPx = waterSkyFallback ? skyCol : fbUnpack(srcBuf[mirrorIdx]);
+                    framebuffer[bufferIndex] = fbPack(blendRGB565(material->color,
                                                            reflPx,
-                                                           waterReflectAlpha);
+                                                           waterReflectAlpha));
                 }
             } else if (isAdditive) {
                 // Saturating-add: source scaled by alpha then added to destination.
                 // alpha==255 fast path skips the per-channel multiply.
                 if (alpha == 255) {
                     for (int x = xStart; x <= xEnd; x += 2, bufferIndex++) {
-                        const uint16_t d = framebuffer[bufferIndex];
+                        const uint16_t d = fbUnpack(framebuffer[bufferIndex]);
                         uint32_t r = ((d >> 11) & 0x1Fu) + ((color >> 11) & 0x1Fu); if (r > 0x1Fu) r = 0x1Fu;
                         uint32_t g = ((d >>  5) & 0x3Fu) + ((color >>  5) & 0x3Fu); if (g > 0x3Fu) g = 0x3Fu;
                         uint32_t b = ( d        & 0x1Fu) + ( color        & 0x1Fu); if (b > 0x1Fu) b = 0x1Fu;
-                        framebuffer[bufferIndex] = (uint16_t)((r << 11) | (g << 5) | b);
+                        framebuffer[bufferIndex] = fbPack(static_cast<uint16_t>((r << 11) | (g << 5) | b));
                     }
                 } else {
                     for (int x = xStart; x <= xEnd; x += 2, bufferIndex++) {
-                        framebuffer[bufferIndex] = addBlendRGB565(framebuffer[bufferIndex], color, alpha);
+                        framebuffer[bufferIndex] = fbPack(addBlendRGB565(
+                            fbUnpack(framebuffer[bufferIndex]), color, alpha));
                     }
                 }
             } else {
                 for (int x = xStart; x <= xEnd; x += 2, bufferIndex++) {
-                    framebuffer[bufferIndex] = blendRGB565(framebuffer[bufferIndex], color, alpha);
+                    framebuffer[bufferIndex] = fbPack(blendRGB565(
+                        fbUnpack(framebuffer[bufferIndex]), color, alpha));
                 }
             }
 #endif // SCREEN_DOOR_ALPHA
@@ -1403,7 +1407,7 @@ namespace Renderer
                 uint8_t b = (color & 0x1F) / 4;
                 
                 // Get existing color and blend
-                uint16_t existing = framebuffer[bufferIndex];
+                uint16_t existing = fbUnpack(framebuffer[bufferIndex]);
                 uint8_t existingR = (existing >> 11) & 0x1F;
                 uint8_t existingG = (existing >> 5) & 0x3F;
                 uint8_t existingB = existing & 0x1F;
@@ -1416,9 +1420,9 @@ namespace Renderer
                 color = (r << 11) | (g << 5) | b;
                 
                 #if HALF_WIDTH_BUFFERS
-                framebuffer[bufferIndex] = color;
+                framebuffer[bufferIndex] = fbPack(color);
                 #else
-                uint32_t combinedColor = (static_cast<uint32_t>(color) << 16) | color;
+                uint32_t combinedColor = (static_cast<uint32_t>(fbPack(color)) << 16) | fbPack(color);
                 reinterpret_cast<uint32_t *>(framebuffer)[bufferIndex / 2] = combinedColor;
                 #endif                
                 continue;
@@ -1594,7 +1598,7 @@ namespace Renderer
                     reflCol = srcBuf[waterMirrorBufBase + x];
 #endif
                 }
-                color = blendRGB565(material->color, reflCol, waterReflectAlpha);
+                color = blendRGB565(material->color, fbUnpack(reflCol), waterReflectAlpha);
                 // SSR already composited the final pixel; bypass the
                 // standard pixAlpha re-blend below or we get a double-blend
                 // (50% of 50% = 25% reflection strength on desktop).
@@ -1604,7 +1608,7 @@ namespace Renderer
             {
                 // Pre-compute the saturating add into `color` so the
                 // standard write path below emits it without a second blend.
-                color    = addBlendRGB565(framebuffer[bufferIndex], color, pixAlpha);
+                color    = addBlendRGB565(fbUnpack(framebuffer[bufferIndex]), color, pixAlpha);
                 pixAlpha = 255;
             }
 
@@ -1612,16 +1616,17 @@ namespace Renderer
 #if SCREEN_DOOR_ALPHA
             // Stippling already accepted/rejected this pixel via
             // shouldDrawPixel(); a straight write is correct here.
-            framebuffer[bufferIndex] = color;
+            framebuffer[bufferIndex] = fbPack(color);
 #else
             // Traditional alpha blend: lerp toward `color` by pixAlpha.
             // pixAlpha already folds in material*object alpha and any
             // per-pixel depth-fog fade. Skip the blend math when the
             // material is fully opaque — common case.
             if (pixAlpha == 255) {
-                framebuffer[bufferIndex] = color;
+                framebuffer[bufferIndex] = fbPack(color);
             } else {
-                framebuffer[bufferIndex] = blendRGB565(framebuffer[bufferIndex], color, pixAlpha);
+                framebuffer[bufferIndex] = fbPack(blendRGB565(
+                    fbUnpack(framebuffer[bufferIndex]), color, pixAlpha));
             }
 #endif
 #endif

@@ -7,6 +7,13 @@
 
 namespace Game {
 
+enum class ProjectileVisualKind : uint8_t {
+    None,
+    PlayerMissile,
+    Bolt,
+    Bomb,
+};
+
 class ProjectileSystem {
 public:
     explicit ProjectileSystem(Renderer::Scene& scene);
@@ -15,18 +22,27 @@ public:
                             float targetAimY);
     void firePlayerStraight(float x, float y, float z, float targetX, float targetZ,
                             float targetAimY);
+    void fireEnemyHomingAtTarget(float x, float y, float z, float targetX, float targetZ,
+                                 float targetAimY);
     void fireEnemyAtTarget(float x, float z, float targetX, float targetZ);
+    void fireEnemyBomb(float x, float y, float z, float targetX, float targetZ);
 
     void update(float deltaTime);
-    bool checkMissileTargetImpact(float* outX = nullptr, float* outZ = nullptr);
+    bool checkMissileTargetImpact(float* outX = nullptr, float* outZ = nullptr,
+                                  float* outY = nullptr);
     void reset();
 
-    bool checkPlayerHit(float playerX, float playerZ, float playerWidth);
-    bool checkEnemyHit(float enemyX, float enemyZ, float enemyAimY, float enemyWidth);
+    int checkPlayerHit(float playerX, float playerZ, float playerAimY, float playerWidth);
+    bool checkEnemyHit(float enemyX, float enemyZ, float enemyMinY, float enemyMaxY,
+                       float enemyWidth);
 
 private:
     struct Projectile {
         Renderer::Object* obj = nullptr;
+        Renderer::Object* missileObj = nullptr;
+        Renderer::Object* boltObj = nullptr;
+        Renderer::Object* bombObj = nullptr;
+        ProjectileVisualKind visualKind = ProjectileVisualKind::None;
         float x = 0;
         float z = 0;
         float prevX = 0;
@@ -50,6 +66,7 @@ private:
         bool active = false;
         bool isPlayerProjectile = false;
         bool isHomingMissile = false;
+        bool isFallingBomb = false;
     };
 
     struct TrailPuff {
@@ -61,9 +78,10 @@ private:
 
     void destroyProjectile(Projectile& p);
     void detonateMissile(Projectile& p);
-    void applyProjectileVisual(Projectile& p, bool isPlayer);
+    void applyProjectileVisual(Projectile& p, ProjectileVisualKind kind);
     void updateHomingMissile(Projectile& p, float deltaTime);
     void updateStraightProjectile(Projectile& p, float deltaTime);
+    void updateFallingBomb(Projectile& p, float deltaTime);
     void updateMissileVisual(Projectile& p);
     void spawnTrailPuff(float x, float y, float z);
     float missileWorldY(const Projectile& p) const;
@@ -75,6 +93,7 @@ private:
     Renderer::Scene& m_scene;
     Renderer::Material m_missileMat;
     Renderer::Material m_enemyProjMat;
+    Renderer::Material m_bombMat;
 
     std::array<Projectile, MAX_PROJECTILES> m_projectiles;
     std::array<TrailPuff, TRAIL_PUFFS> m_trailPuffs;
@@ -85,6 +104,10 @@ private:
     static constexpr float ENEMY_HIT_RADIUS = 36.0f;
     static constexpr float ENEMY_HIT_Y_TOLERANCE = 10.0f;
 
+    static constexpr int PLAYER_DAMAGE_TANK_BOLT = 9;
+    static constexpr int PLAYER_DAMAGE_ENEMY_MISSILE = 6;
+    static constexpr int PLAYER_DAMAGE_BOMB = 14;
+
     static constexpr float MISSILE_PEAK_ARC_Y = 24.0f;
 
     static constexpr float MISSILE_LAUNCH_SPEED = 240.0f;
@@ -93,9 +116,18 @@ private:
     static constexpr float MISSILE_CLIMB_VY = 140.0f;
     static constexpr float MISSILE_GRAVITY = 110.0f;
     static constexpr float MISSILE_TURN_RATE = 200.0f;
-    static constexpr float MISSILE_TRAIL_INTERVAL = 0.045f;
+    static constexpr float MISSILE_TRAIL_INTERVAL = 0.065f;
     static constexpr float MISSILE_TRAIL_LIFE = 0.44f;
     static constexpr uint8_t MISSILE_TRAIL_BASE_ALPHA = 150;
+
+    /// Player homing missile mesh
+    static constexpr int32_t MISSILE_VIS_W = 3;
+    static constexpr int32_t MISSILE_VIS_H = 3;
+    static constexpr int32_t MISSILE_VIS_LEN = 10;
+    static constexpr float BOMB_GRAVITY = 220.0f;
+    static constexpr float BOMB_SPLASH_RADIUS = 42.0f;
+    static constexpr int32_t BOMB_VIS_SIZE = 7;
+    static constexpr int32_t MISSILE_TRAIL_PUFF_SIZE = 2;
 };
 
 } // namespace Game

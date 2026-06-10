@@ -8,16 +8,24 @@ namespace Game {
 /**
  * Touch layout for 240px-wide round display (center = width / 2).
  *
- *  |  STEER L  | FORWARD |  STEER R  |
- *  0          78        162         239
+ *  |DODGE|  STEER L  | FWD |  STEER R  |DODGE|
+ *  0    36         92   148         204   239
  *
- * No dead zone: steer zones extend to the forward strip edges.
- * Left/right turn while held. Center strip moves forward. Release to stop.
+ * Outer strips dodge; inner regions turn / move forward.
  */
 struct TouchZones {
-    static constexpr int FORWARD_HALF_WIDTH = 42;
+    static constexpr int FORWARD_HALF_WIDTH = 28;
+    static constexpr int DODGE_EDGE_WIDTH = 36;
 
     static int centerX(int screenWidth) { return screenWidth / 2; }
+
+    static bool isDodgeLeft(int x, int /*screenWidth*/) {
+        return x < DODGE_EDGE_WIDTH;
+    }
+
+    static bool isDodgeRight(int x, int screenWidth) {
+        return x >= screenWidth - DODGE_EDGE_WIDTH;
+    }
 
     static bool isForward(int x, int screenWidth) {
         int c = centerX(screenWidth);
@@ -25,11 +33,13 @@ struct TouchZones {
     }
 
     static bool isSteerLeft(int x, int screenWidth) {
+        if (isDodgeLeft(x, screenWidth)) return false;
         int c = centerX(screenWidth);
         return x < c - FORWARD_HALF_WIDTH;
     }
 
     static bool isSteerRight(int x, int screenWidth) {
+        if (isDodgeRight(x, screenWidth)) return false;
         int c = centerX(screenWidth);
         return x > c + FORWARD_HALF_WIDTH;
     }

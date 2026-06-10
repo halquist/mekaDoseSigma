@@ -7,15 +7,21 @@
 
 namespace Game {
 
+enum class MechPalette : uint8_t {
+    Default,
+    EnemyRed,
+};
+
 /// Builds and poses all mech part meshes from a loadout.
 class MechRig {
 public:
     explicit MechRig(Renderer::Scene& scene);
 
-    void rebuild(const MechLoadout& loadout);
-    void updatePose(float x, float z, float baseY, float angle, int8_t pitch,
+    void rebuild(const MechLoadout& loadout, MechPalette palette = MechPalette::Default);
+    void updatePose(int32_t x, int32_t z, float baseY, int32_t angle, int8_t pitch,
                     const MechLoadout& loadout);
     void setHidden(bool hidden);
+    void ensureBuilt(const MechLoadout& loadout, MechPalette palette = MechPalette::Default);
 
     void transformLocalToWorld(float bodyX, float bodyZ, float baseY, float angle,
                                int8_t pitch, float localX, float localY, float localZ,
@@ -24,20 +30,21 @@ public:
     void weaponMuzzleLocal(const WeaponDef& weapon, float& lx, float& ly, float& lz) const;
 
 private:
-    struct PartInstance {
-        Renderer::Object* obj = nullptr;
+    struct PartMaterial {
         Renderer::Material mat;
-        MechPartSlot slot = MechPartSlot::Torso;
-        bool built = false;
+        bool active = false;
     };
 
     Renderer::Object* createPartMesh(const MechComponentDef& def, Renderer::Material* mat);
-    void placePart(PartInstance& inst, float bodyX, float bodyZ, float baseY,
-                   float angle, int8_t pitch,
-                   float localX, float localY, float localZ);
+    void appendPartToBody(Renderer::Object& body, const MechComponentDef& def,
+                          Renderer::Material* mat);
+    void hideBodyObject();
 
     Renderer::Scene& m_scene;
-    std::array<PartInstance, static_cast<size_t>(MechPartSlot::COUNT)> m_parts;
+    Renderer::Object* m_bodyObj = nullptr;
+    std::array<PartMaterial, static_cast<size_t>(MechPartSlot::COUNT)> m_partMats;
+    bool m_bodyBuilt = false;
+    bool m_hidden = false;
 };
 
 } // namespace Game

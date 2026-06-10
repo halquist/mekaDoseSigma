@@ -18,10 +18,17 @@ public:
     static float hoverHeight(float worldX, float worldZ);
     static float groundHeight(float worldX, float worldZ);
 
-    /// Must cover obstacle spawn radius (see ObstacleField::maxSpawnRadius()).
-    static constexpr int MESH_CELLS = 14;
-    static constexpr int MESH_CELL_SIZE = 70;
-    static constexpr int meshHalfExtent() { return MESH_CELLS * MESH_CELL_SIZE / 2; }
+    static constexpr int MESH_CELL_SIZE = 84;
+    static constexpr int MESH_WIDTH_CELLS = 14;
+    static constexpr int MESH_DEPTH_CELLS = 16;
+
+    static constexpr int meshHalfWidth() {
+        return MESH_WIDTH_CELLS * MESH_CELL_SIZE / 2;
+    }
+    static constexpr int meshHalfDepth() {
+        return MESH_DEPTH_CELLS * MESH_CELL_SIZE / 2;
+    }
+    static constexpr int meshHalfExtent() { return meshHalfWidth(); }
 
     static constexpr float HOVER_CLEARANCE = 22.0f;
     static constexpr float GROUND_CLEARANCE = 3.0f;

@@ -1,0 +1,56 @@
+[1/5] cd /home/jon/esp32_testing/mekaDoseSigma/build/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/jon/esp32_testing/mekaDoseSigma/build/partition_table/partition-table.bin /home/jon/esp32_testing/mekaDoseSigma/build/mekadose_sigma.bin
+mekadose_sigma.bin binary size 0x60ad0 bytes. Smallest app partition is 0x100000 bytes. 0x9f530 bytes (62%) free.
+[2/5] Performing build step for 'bootloader'
+[1/1] cd /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/bootloader.bin
+Bootloader binary size 0x5800 bytes. 0x2800 bytes (31%) free.
+[3/5] No install step for 'bootloader'
+[4/5] Completed 'bootloader'
+[4/5] cd /home/jon/esp/esp-idf/components/esptool_py && /home/jon/.local/lib/python3.10/site-packages/cmake/data/bin/cmake -D IDF_PATH=/home/jon/esp/esp-idf -D "SERIAL_TOOL=/home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python;;/home/jon/esp/esp-idf/components/esptool_py/esptool/esptool.py;--chip;esp32s3" -D "SERIAL_TOOL_ARGS=--before=default_reset;--after=hard_reset;write_flash;@flash_args" -D WORKING_DIRECTORY=/home/jon/esp32_testing/mekaDoseSigma/build -P /home/jon/esp/esp-idf/components/esptool_py/run_serial_tool.cmake
+esptool.py --chip esp32s3 -p /dev/ttyACM0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 8MB 0x0 bootloader/bootloader.bin 0x10000 mekadose_sigma.bin 0x8000 partition_table/partition-table.bin
+esptool.py v4.11.0
+Serial port /dev/ttyACM0
+Connecting....
+Chip is ESP32-S3 (QFN56) (revision v0.2)
+Features: WiFi, BLE, Embedded PSRAM 8MB (AP_3v3)
+Crystal is 40MHz
+USB mode: USB-Serial/JTAG
+MAC: d8:3b:da:73:f2:bc
+Uploading stub...
+Running stub...
+Stub running...
+Changing baud rate to 460800
+Changed.
+Configuring flash size...
+Flash will be erased from 0x00000000 to 0x00005fff...
+Flash will be erased from 0x00010000 to 0x00070fff...
+Flash will be erased from 0x00008000 to 0x00008fff...
+SHA digest in image updated
+Compressed 22528 bytes to 13931...
+Writing at 0x00000000... (100 %)
+Wrote 22528 bytes (13931 compressed) at 0x00000000 in 0.4 seconds (effective 483.3 kbit/s)...
+Hash of data verified.
+Compressed 395984 bytes to 229498...
+Writing at 0x00010000... (6 %)
+Writing at 0x0001cc9f... (13 %)
+Writing at 0x000292cd... (20 %)
+Writing at 0x0002e1b6... (26 %)
+Writing at 0x0003389c... (33 %)
+Writing at 0x0003924a... (40 %)
+Writing at 0x0003eaea... (46 %)
+Writing at 0x00044042... (53 %)
+Writing at 0x00049c40... (60 %)
+Writing at 0x0004f5d0... (66 %)
+Writing at 0x00055f90... (73 %)
+Writing at 0x0005d7d1... (80 %)
+Writing at 0x00064c3c... (86 %)
+Writing at 0x0006a80f... (93 %)
+Writing at 0x00070a29... (100 %)
+Wrote 395984 bytes (229498 compressed) at 0x00010000 in 3.1 seconds (effective 1013.5 kbit/s)...
+Hash of data verified.
+Compressed 3072 bytes to 103...
+Writing at 0x00008000... (100 %)
+Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 556.1 kbit/s)...
+Hash of data verified.
+
+Leaving...
+Hard resetting via RTS pin...

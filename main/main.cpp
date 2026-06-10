@@ -107,18 +107,8 @@ static void init_display(void)
     ESP_LOGI(TAG, "Display initialized");
 }
 
-static void swap_framebuffer_bytes(void)
-{
-    uint16_t* p = framebuffer;
-    for (int i = 0; i < LCD_WIDTH * LCD_HEIGHT; i++) {
-        uint16_t c = p[i];
-        p[i] = (c >> 8) | (c << 8);
-    }
-}
-
 static void push_framebuffer(void)
 {
-    swap_framebuffer_bytes();
     transfer_done = false;
     esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, LCD_WIDTH, LCD_HEIGHT, framebuffer);
     while (!transfer_done) {

@@ -8,13 +8,22 @@
 ///   +Y = up          +Z = forward (nose)
 ///   +X = right       -Z = back (missile bay)
 ///   Origin ≈ hover base between thrusters
+///   x/y/z = position of the part's mesh CENTER (meshes are auto-centered in the rig)
+///
+/// Rotation (rx/ry/rz): degrees in body-local space (applied before frame lean + body facing).
+///   rx = pitch   (e.g. 180 = flip upside down)
+///   ry = yaw     (spin relative to body forward)
+///   rz = roll    (splay outward; stays consistent when the mech turns)
 ///
 /// Shapes: Cube | Pyramid | Capsule | Sphere | Cylinder
-///   Cube/Capsule/Cylinder: w, h, d  (Pyramid: w = base, h = height; Capsule: w = radius)
+///   Cube: w, h, d = full width, height, depth
+///   Pyramid: w = base size, h = height (d unused)
+///   Sphere: w = radius, h = segment count (optional, default 6; use 6–10 for smooth)
+///   Capsule: w = radius, h = cylinder height (d unused)
+///   Cylinder: w = radius, h = height (d unused)
 ///
-/// Example row (columns line up for quick scanning):
-///   MECH_PART( thruster_l, FootL, Cube, 5, 3, 7, MECH_BLUE, -6, 8, -1 )
-///   MECH_PART( torso,      Torso, Pyramid, 11, 18, 0, MECH_WHITE, 0, 22, 0, MECH_STAT(0,0,2,0) )
+/// Example row:
+///   MECH_PART( torso, Torso, Pyramid, 11, 18, 0, MECH_WHITE, 0, 31, 0, MECH_ROT(180,0,0), MECH_STAT(0,0,2,0) )
 
 #include "mech_config.hpp"
 #include "types.hpp"
@@ -24,8 +33,10 @@ namespace MechLayout {
 
 #define MECH_STAT(speed, turn, hp, hitW) MechStatMods{ speed, turn, hp, hitW }
 #define MECH_STAT_NONE MechStatMods{}
+#define MECH_ROT(rx, ry, rz) static_cast<int16_t>(rx), static_cast<int16_t>(ry), static_cast<int16_t>(rz)
+#define MECH_ROT_NONE MECH_ROT(0, 0, 0)
 
-#define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, ...)                \
+#define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
     const MechComponentDef PART_##id = {                                         \
         #id,                                                                     \
         MechPartSlot::slot,                                                      \
@@ -37,12 +48,14 @@ namespace MechLayout {
         x,                                                                       \
         y,                                                                       \
         z,                                                                       \
-        0,                                                                       \
-        __VA_ARGS__,                                                             \
+        rx,                                                                      \
+        ry,                                                                      \
+        rz,                                                                      \
+        stats,                                                                   \
         nullptr,                                                                 \
     };
 
-#define MECH_PART_UPG(id, slot, shape, w, h, d, color, x, y, z, upgId, ...)    \
+#define MECH_PART_UPG(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, upgId, stats) \
     const MechComponentDef PART_##id = {                                         \
         #id,                                                                     \
         MechPartSlot::slot,                                                      \
@@ -54,8 +67,10 @@ namespace MechLayout {
         x,                                                                       \
         y,                                                                       \
         z,                                                                       \
-        0,                                                                       \
-        __VA_ARGS__,                                                             \
+        rx,                                                                      \
+        ry,                                                                      \
+        rz,                                                                      \
+        stats,                                                                   \
         &PART_##upgId,                                                           \
     };
 

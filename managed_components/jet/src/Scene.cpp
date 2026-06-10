@@ -2,6 +2,7 @@
 #include "TrigLUT.hpp"
 #include "Renderer.hpp"
 #include "JetConfig.hpp"
+#include "FramebufferIO.hpp"
 #include <cstring> // For memset
 #include <algorithm> // For std::min, std::max
 #include <cmath> // For std::sqrt (per-object distance fade)
@@ -284,10 +285,11 @@ void PERF_CRITICAL Scene::clearBuffers() {
                 const uint16_t lineColor = backgroundGradientColors
                                            ? backgroundGradientColors[y] : backcolor;
                 #endif
+                const uint16_t packedLine = fbPack(lineColor);
                 uint16_t* row = framebuffer + y * screenWidth;
                 for (int x = 0; x < screenWidth; ++x) {
                     if (((x ^ y) & 1) == cbParity) {
-                        row[x] = lineColor;
+                        row[x] = packedLine;
                     }
                 }
             }
@@ -301,7 +303,7 @@ void PERF_CRITICAL Scene::clearBuffers() {
                 uint32_t lineColor32 = 0;
                 #else
                 uint16_t lineColor = backgroundGradientColors ? backgroundGradientColors[y] : backcolor;
-                uint32_t lineColor32 = (lineColor << 16) | lineColor;
+                uint32_t lineColor32 = (static_cast<uint32_t>(fbPack(lineColor)) << 16) | fbPack(lineColor);
                 #endif
                 #if HALF_WIDTH_BUFFERS
                 const int divisor = 4;
@@ -371,7 +373,8 @@ void PERF_CRITICAL Scene::clearBuffers() {
                                            ? backgroundGradientColors[y * (screenHeight / rowCount)]
                                            : backcolor;
                 #endif
-                const uint32_t lineColor32 = ((uint32_t)lineColor << 16) | lineColor;
+                const uint32_t lineColor32 =
+                    (static_cast<uint32_t>(fbPack(lineColor)) << 16) | fbPack(lineColor);
                 uint32_t* lineStart = framebuffer32 + y * row32;
 #if defined(CONFIG_IDF_TARGET_ESP32S3)
                 jet_fill_u32x16(lineStart, lineColor32, row32);

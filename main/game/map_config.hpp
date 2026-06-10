@@ -23,6 +23,10 @@ struct MapConfig {
     float enemySpawnDistMin = 520.0f;
     float enemySpawnDistMax = 720.0f;
 
+    /// Objective building spawn (world units ahead of player).
+    float objectiveSpawnDistMin = 680.0f;
+    float objectiveSpawnDistMax = 920.0f;
+
     // Future hooks:
     // int difficulty = 1;
     // int victoryKillCount = 10;

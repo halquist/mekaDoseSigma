@@ -21,8 +21,11 @@ namespace Colors {
     constexpr uint16_t STEEL_BLUE    = rgb(90, 140, 180);
     constexpr uint16_t TRACER_YELLOW = rgb(255, 230, 120);
     constexpr uint16_t ENEMY_BODY    = rgb(180, 70, 60);
+    constexpr uint16_t AIR_JET       = rgb(120, 130, 150);
+    constexpr uint16_t BOMB_BODY     = rgb(45, 48, 42);
     constexpr uint16_t TANK_BODY     = rgb(60, 70, 45);
     constexpr uint16_t TANK_TURRET   = rgb(45, 52, 35);
+    constexpr uint16_t TANK_BARREL   = rgb(35, 40, 28);
     constexpr uint16_t ORANGE        = rgb(255, 120, 40);
     constexpr uint16_t HUD_BG        = rgb(40, 50, 35);
     constexpr uint16_t HUD_TEXT      = rgb(230, 235, 220);
@@ -40,7 +43,9 @@ namespace Colors {
     constexpr uint16_t MECH_BLUE       = rgb(40, 70, 180);
     constexpr uint16_t MECH_RED        = rgb(200, 45, 55);
     constexpr uint16_t MECH_JOINT      = rgb(55, 58, 65);
-    constexpr uint16_t MECH_VISOR      = rgb(80, 200, 220);
+    constexpr uint16_t OBJECTIVE_BODY    = rgb(105, 110, 115);
+    constexpr uint16_t OBJECTIVE_DOME    = rgb(255, 30, 220);
+    constexpr uint16_t OBJECTIVE_ARROW   = rgb(255, 210, 60);
 
     // Legacy aliases kept for gradual migration
     constexpr uint16_t CYAN          = STEEL_BLUE;
@@ -55,9 +60,9 @@ enum class GameState {
 };
 
 struct TouchInput {
-    bool touched;
-    int16_t x;
-    int16_t y;
+    bool touched = false;
+    int16_t x = 0;
+    int16_t y = 0;
 };
 
 } // namespace Game

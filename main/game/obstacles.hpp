@@ -13,7 +13,7 @@ class ObstacleField {
 public:
     ObstacleField(Renderer::Scene& scene, const MapConfig& mapConfig);
 
-    void update(float playerX, float playerZ);
+    void update(float playerX, float playerZ, float playerAngleDeg);
     void resolveMovement(float& x, float& z, float newX, float newZ, float radius) const;
     void reset();
 
@@ -27,6 +27,7 @@ private:
         float radius = 0;
         float scale = 1.0f;
         uint32_t styleHash = 0;
+        float surfaceY = 0.0f;
         Renderer::Object* tree = nullptr;
     };
 
@@ -42,6 +43,7 @@ private:
                         float scale);
     void placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec, uint32_t styleHash);
     void refreshSlotHeights(Slot& slot);
+    void updateTreeVisibility(float playerX, float playerZ, float forwardX, float forwardZ);
     int findPlacedCell(int cellX, int cellZ) const;
     int allocSlot();
     void freePlacedCell(int placedIndex);
@@ -54,8 +56,8 @@ private:
 
     std::vector<Renderer::Object::Vertex> m_treeProto;
 
-    static constexpr int MAX_SLOTS = 36;
-    static constexpr int MAX_PLACED = 36;
+    static constexpr int MAX_SLOTS = 48;
+    static constexpr int MAX_PLACED = 48;
     Slot m_slots[MAX_SLOTS];
     PlacedCell m_placed[MAX_PLACED];
     int m_placedCount = 0;
@@ -63,10 +65,13 @@ private:
     int m_lastTerrainOriginZ = INT32_MIN;
 
     static constexpr int CELL_SIZE = 110;
-    /// Keep maxSpawnRadius() below Terrain::meshHalfExtent() (14 cells → 490).
-    static constexpr int CELL_RADIUS = 3;
+    static constexpr int FORWARD_CELL_RADIUS = 4;
+    static constexpr int REAR_CELL_RADIUS = 3;
+    static constexpr int LATERAL_CELL_RADIUS = 3;
+    /// Hide draw for trees behind the player; keep loaded for fast turn pop-in.
+    static constexpr float BEHIND_RENDER_CULL = 90.0f;
     static constexpr int maxSpawnRadius() {
-        return CELL_RADIUS * CELL_SIZE + CELL_SIZE / 2;
+        return FORWARD_CELL_RADIUS * CELL_SIZE + CELL_SIZE / 2;
     }
     static constexpr int TREE_BASE = 24;
     static constexpr int TREE_HEIGHT = 38;

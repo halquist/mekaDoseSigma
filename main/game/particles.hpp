@@ -10,8 +10,8 @@ class ParticleSystem {
 public:
     explicit ParticleSystem(Renderer::Scene& scene);
 
-    void spawnHitEffect(float x, float z);
-    void spawnDeathEffect(float x, float z);
+    void spawnHitEffect(float x, float y, float z);
+    void spawnDeathEffect(float x, float y, float z);
 
     void update(float deltaTime);
     void reset();
@@ -25,7 +25,8 @@ private:
         bool active = false;
     };
 
-    void spawnParticle(float x, float z, float speed, float life, Renderer::Material* mat);
+    void spawnParticle(float x, float y, float z, float speed, float life,
+                       Renderer::Material* mat);
 
     Renderer::Scene& m_scene;
     Renderer::Material m_cyanMat;

@@ -65,18 +65,46 @@ ObstacleSpec sampleObstacle(int cellX, int cellZ, const MapConfig& cfg) {
     return spec;
 }
 
-void sampleEnemySpawn(float playerX, float playerZ, uint32_t spawnIndex,
+void sampleEnemySpawn(float playerX, float playerZ, float playerAngle,
+                      uint32_t spawnIndex, uint32_t spawnSalt,
                       const MapConfig& cfg, float& outX, float& outZ) {
     const int anchorX = static_cast<int>(playerX / 80.0f);
     const int anchorZ = static_cast<int>(playerZ / 80.0f);
-    const uint32_t h = hash(anchorX, anchorZ, cfg.worldSeed ^ (spawnIndex * 2654435761u));
+    const uint32_t h = hash(anchorX, anchorZ,
+                            cfg.worldSeed ^ (spawnIndex * 2654435761u) ^ spawnSalt);
 
-    const float angle = static_cast<float>(h & 0xFFFF) * (360.0f / 65536.0f);
+    // Forward arc only — full-ring spawns often landed behind the player and were
+    // instantly culled, wasting the spawn timer for 20+ seconds at a time.
+    constexpr float kForwardArcHalf = 72.0f;
+    const float angleOffset = static_cast<float>((h >> 8) & 0xFF) *
+        (2.0f * kForwardArcHalf / 255.0f) - kForwardArcHalf;
     const float distSpan = cfg.enemySpawnDistMax - cfg.enemySpawnDistMin;
     const float dist = cfg.enemySpawnDistMin +
         static_cast<float>((h >> 16) & 0xFF) * (distSpan / 255.0f);
 
-    const float radians = angle * static_cast<float>(M_PI) / 180.0f;
+    const float radians =
+        (playerAngle + angleOffset) * static_cast<float>(M_PI) / 180.0f;
+    outX = playerX + sinf(radians) * dist;
+    outZ = playerZ + cosf(radians) * dist;
+}
+
+void sampleObjectiveSpawn(float playerX, float playerZ, float playerAngle,
+                          uint32_t spawnIndex, uint32_t spawnSalt,
+                          const MapConfig& cfg, float& outX, float& outZ) {
+    const int anchorX = static_cast<int>(playerX / 80.0f);
+    const int anchorZ = static_cast<int>(playerZ / 80.0f);
+    const uint32_t h = hash(anchorX, anchorZ,
+                            cfg.worldSeed ^ (spawnIndex * 1597334677u) ^ spawnSalt);
+
+    constexpr float kForwardArcHalf = 55.0f;
+    const float angleOffset = static_cast<float>((h >> 8) & 0xFF) *
+        (2.0f * kForwardArcHalf / 255.0f) - kForwardArcHalf;
+    const float distSpan = cfg.objectiveSpawnDistMax - cfg.objectiveSpawnDistMin;
+    const float dist = cfg.objectiveSpawnDistMin +
+        static_cast<float>((h >> 16) & 0xFF) * (distSpan / 255.0f);
+
+    const float radians =
+        (playerAngle + angleOffset) * static_cast<float>(M_PI) / 180.0f;
     outX = playerX + sinf(radians) * dist;
     outZ = playerZ + cosf(radians) * dist;
 }

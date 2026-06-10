@@ -1,0 +1,212 @@
+[1/14] Performing build step for 'bootloader'
+[1/1] cd /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/bootloader.bin
+Bootloader binary size 0x5800 bytes. 0x2800 bytes (31%) free.
+[2/14] No install step for 'bootloader'
+[3/14] Completed 'bootloader'
+[4/14] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_catalog.cpp.obj
+FAILED: [code=1] esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_catalog.cpp.obj 
+/home/jon/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32s3-elf-g++ -DESP_PLATFORM -DIDF_VER=\"v5.2.2\" -DSOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE -DSOC_XTAL_FREQ_MHZ=CONFIG_XTAL_FREQ -D_GLIBCXX_HAVE_POSIX_SEMAPHORE -D_GLIBCXX_USE_POSIX_SEMAPHORE -D_GNU_SOURCE -D_POSIX_READER_WRITER_LOCKS -I/home/jon/esp32_testing/mekaDoseSigma/build/config -I/home/jon/esp32_testing/mekaDoseSigma/main -I/home/jon/esp/esp-idf/components/newlib/platform_include -I/home/jon/esp/esp-idf/components/freertos/config/include -I/home/jon/esp/esp-idf/components/freertos/config/include/freertos -I/home/jon/esp/esp-idf/components/freertos/config/xtensa/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos -I/home/jon/esp/esp-idf/components/freertos/esp_additions/include -I/home/jon/esp/esp-idf/components/esp_hw_support/include -I/home/jon/esp/esp-idf/components/esp_hw_support/include/soc -I/home/jon/esp/esp-idf/components/esp_hw_support/include/soc/esp32s3 -I/home/jon/esp/esp-idf/components/esp_hw_support/port/esp32s3/. -I/home/jon/esp/esp-idf/components/heap/include -I/home/jon/esp/esp-idf/components/log/include -I/home/jon/esp/esp-idf/components/soc/include -I/home/jon/esp/esp-idf/components/soc/esp32s3 -I/home/jon/esp/esp-idf/components/soc/esp32s3/include -I/home/jon/esp/esp-idf/components/hal/platform_port/include -I/home/jon/esp/esp-idf/components/hal/esp32s3/include -I/home/jon/esp/esp-idf/components/hal/include -I/home/jon/esp/esp-idf/components/esp_rom/include -I/home/jon/esp/esp-idf/components/esp_rom/include/esp32s3 -I/home/jon/esp/esp-idf/components/esp_rom/esp32s3 -I/home/jon/esp/esp-idf/components/esp_common/include -I/home/jon/esp/esp-idf/components/esp_system/include -I/home/jon/esp/esp-idf/components/esp_system/port/soc -I/home/jon/esp/esp-idf/components/esp_system/port/include/private -I/home/jon/esp/esp-idf/components/xtensa/esp32s3/include -I/home/jon/esp/esp-idf/components/xtensa/include -I/home/jon/esp/esp-idf/components/xtensa/deprecated_include -I/home/jon/esp/esp-idf/components/lwip/include -I/home/jon/esp/esp-idf/components/lwip/include/apps -I/home/jon/esp/esp-idf/components/lwip/include/apps/sntp -I/home/jon/esp/esp-idf/components/lwip/lwip/src/include -I/home/jon/esp/esp-idf/components/lwip/port/include -I/home/jon/esp/esp-idf/components/lwip/port/freertos/include -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include/arch -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include/sys -I/home/jon/esp/esp-idf/components/driver/include -I/home/jon/esp/esp-idf/components/driver/deprecated -I/home/jon/esp/esp-idf/components/driver/analog_comparator/include -I/home/jon/esp/esp-idf/components/driver/dac/include -I/home/jon/esp/esp-idf/components/driver/gpio/include -I/home/jon/esp/esp-idf/components/driver/gptimer/include -I/home/jon/esp/esp-idf/components/driver/i2c/include -I/home/jon/esp/esp-idf/components/driver/i2s/include -I/home/jon/esp/esp-idf/components/driver/ledc/include -I/home/jon/esp/esp-idf/components/driver/mcpwm/include -I/home/jon/esp/esp-idf/components/driver/parlio/include -I/home/jon/esp/esp-idf/components/driver/pcnt/include -I/home/jon/esp/esp-idf/components/driver/rmt/include -I/home/jon/esp/esp-idf/components/driver/sdio_slave/include -I/home/jon/esp/esp-idf/components/driver/sdmmc/include -I/home/jon/esp/esp-idf/components/driver/sigma_delta/include -I/home/jon/esp/esp-idf/components/driver/spi/include -I/home/jon/esp/esp-idf/components/driver/temperature_sensor/include -I/home/jon/esp/esp-idf/components/driver/touch_sensor/include -I/home/jon/esp/esp-idf/components/driver/twai/include -I/home/jon/esp/esp-idf/components/driver/uart/include -I/home/jon/esp/esp-idf/components/driver/usb_serial_jtag/include -I/home/jon/esp/esp-idf/components/driver/touch_sensor/esp32s3/include -I/home/jon/esp/esp-idf/components/esp_pm/include -I/home/jon/esp/esp-idf/components/esp_ringbuf/include -I/home/jon/esp/esp-idf/components/esp_lcd/include -I/home/jon/esp/esp-idf/components/esp_lcd/interface -I/home/jon/esp/esp-idf/components/esp_timer/include -I/home/jon/esp32_testing/mekaDoseSigma/managed_components/espressif__esp_lcd_gc9a01/include -I/home/jon/esp32_testing/mekaDoseSigma/managed_components/jet/src -mlongcalls  -fno-builtin-memcpy -fno-builtin-memset -fno-builtin-bzero -fno-builtin-stpcpy -fno-builtin-strncpy -fdiagnostics-color=always -fdiagnostics-color=always -ffunction-sections -fdata-sections -Wall -Werror=all -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-enum-conversion -gdwarf-4 -ggdb -O2 -fmacro-prefix-map=/home/jon/esp32_testing/mekaDoseSigma=. -fmacro-prefix-map=/home/jon/esp/esp-idf=/IDF -fstrict-volatile-bitfields -fno-jump-tables -fno-tree-switch-conversion -std=gnu++2b -fexceptions -fno-rtti -DESP_LCD_GC9A01_VER_MAJOR=2 -DESP_LCD_GC9A01_VER_MINOR=0 -DESP_LCD_GC9A01_VER_PATCH=4 -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_catalog.cpp.obj -MF esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_catalog.cpp.obj.d -o esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_catalog.cpp.obj -c /home/jon/esp32_testing/mekaDoseSigma/main/game/mech_catalog.cpp
+In file included from /home/jon/esp32_testing/mekaDoseSigma/main/game/mech_catalog.cpp:2:
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:13:114: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   13 | MECH_PART( thruster_l,     FootL,     Pyramid,  5, 10,  7, MECH_BLUE,  -6, 13, -1, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                  ^
+In file included from /home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:4:
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:14:114: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   14 | MECH_PART( thruster_r,     FootR,     Pyramid,  5, 10,  7, MECH_BLUE,   6, 13, -1, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                  ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:15:121: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   15 | MECH_PART( torso_hover,    Torso,     Pyramid, 11, 18,  0, MECH_WHITE,  0, 31,  0, MECH_ROT_NONE, MECH_STAT(0, 0, 2, 0) )
+      |                                                                                                                         ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:16:114: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   16 | MECH_PART( head_hover,     Head,      Pyramid,  7,  7,  7, MECH_WHITE,  0, 40,  1, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                  ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:17:116: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   17 | MECH_PART( shoulder_l_hover, ShoulderL, Pyramid,  4,  3,  5, MECH_RED,   -9, 34,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                    ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:18:116: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   18 | MECH_PART( shoulder_r_hover, ShoulderR, Pyramid,  4,  3,  5, MECH_RED,    9, 34,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                    ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:19:114: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   19 | MECH_PART( arm_l_hover,    ArmUpperL, Pyramid,  3,  9,  3, MECH_WHITE,-11, 31,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                  ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:20:114: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   20 | MECH_PART( arm_r_hover,    ArmUpperR, Pyramid,  3,  9,  3, MECH_WHITE, 11, 31,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                  ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+In file included from /home/jon/esp32_testing/mekaDoseSigma/main/game/mech_catalog.cpp:3:
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:12:117: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   12 | MECH_PART( foot_l_mk1,       FootL,     Cube,    10,  4, 14, MECH_JOINT,  -9,  3,  3, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:13:117: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   13 | MECH_PART( foot_r_mk1,       FootR,     Cube,    10,  4, 14, MECH_JOINT,   9,  3,  3, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:14:117: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   14 | MECH_PART( leg_lower_l_mk1,  LegLowerL, Capsule,  5, 14,  0, MECH_WHITE,  -9, 12,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:15:117: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   15 | MECH_PART( leg_lower_r_mk1,  LegLowerR, Capsule,  5, 14,  0, MECH_WHITE,   9, 12,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:16:124: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   16 | MECH_PART( leg_upper_l_mk2,  LegUpperL, Capsule,  6, 16,  0, MECH_BLUE,   -9, 24,  0, MECH_ROT_NONE, MECH_STAT(8, 0, 0, 0) )
+      |                                                                                                                            ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:17:124: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   17 | MECH_PART( leg_upper_r_mk2,  LegUpperR, Capsule,  6, 16,  0, MECH_BLUE,    9, 24,  0, MECH_ROT_NONE, MECH_STAT(8, 0, 0, 0) )
+      |                                                                                                                            ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:18:139: error: macro "MECH_PART_UPG" requires 15 arguments, but only 13 given
+   18 | MECH_PART_UPG( leg_upper_l_mk1, LegUpperL, Capsule, 6, 14, 0, MECH_BLUE, -9, 24, 0, MECH_ROT_NONE, leg_upper_l_mk2, MECH_STAT(4, 0, 0, 0) )
+      |                                                                                                                                           ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:54: note: macro "MECH_PART_UPG" defined here
+   54 | #define MECH_PART_UPG(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, upgId, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:19:139: error: macro "MECH_PART_UPG" requires 15 arguments, but only 13 given
+   19 | MECH_PART_UPG( leg_upper_r_mk1, LegUpperR, Capsule, 6, 14, 0, MECH_BLUE,  9, 24, 0, MECH_ROT_NONE, leg_upper_r_mk2, MECH_STAT(4, 0, 0, 0) )
+      |                                                                                                                                           ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:54: note: macro "MECH_PART_UPG" defined here
+   54 | #define MECH_PART_UPG(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, upgId, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:22:123: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   22 | MECH_PART( torso_mk1,       Torso,     Cube,    20, 22, 14, MECH_WHITE,   0, 32,  0, MECH_ROT_NONE, MECH_STAT(0, 0, 2, 0) )
+      |                                                                                                                           ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:23:116: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   23 | MECH_PART( head_mk1,         Head,      Cube,    12, 10, 10, MECH_WHITE,  0, 48,  2, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                    ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:24:116: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   24 | MECH_PART( shoulder_l_mk1,   ShoulderL, Cube,     8,  6, 10, MECH_RED,  -15, 40,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                    ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:25:116: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   25 | MECH_PART( shoulder_r_mk1,   ShoulderR, Cube,     8,  6, 10, MECH_RED,   15, 40,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                    ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:26:117: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   26 | MECH_PART( arm_upper_l_mk1,   ArmUpperL, Capsule,  4, 12,  0, MECH_WHITE,-18, 34,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:27:117: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   27 | MECH_PART( arm_upper_r_mk1,   ArmUpperR, Capsule,  4, 12,  0, MECH_WHITE, 18, 34,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:28:117: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   28 | MECH_PART( arm_lower_l_mk1,   ArmLowerL, Capsule,  4, 12,  0, MECH_BLUE, -20, 24,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:29:117: error: macro "MECH_PART" requires 14 arguments, but only 12 given
+   29 | MECH_PART( arm_lower_r_mk1,   ArmLowerR, Capsule,  4, 12,  0, MECH_BLUE,  20, 24,  0, MECH_ROT_NONE, MECH_STAT_NONE )
+      |                                                                                                                     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_macros.hpp:35: note: macro "MECH_PART" defined here
+   35 | #define MECH_PART(id, slot, shape, w, h, d, color, x, y, z, rx, ry, rz, stats) \
+      | 
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_hover.hpp:13:1: error: 'MECH_PART' does not name a type
+   13 | MECH_PART( thruster_l,     FootL,     Pyramid,  5, 10,  7, MECH_BLUE,  -6, 13, -1, MECH_ROT_NONE, MECH_STAT_NONE )
+      | ^~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:12:1: error: 'MECH_PART' does not name a type
+   12 | MECH_PART( foot_l_mk1,       FootL,     Cube,    10,  4, 14, MECH_JOINT,  -9,  3,  3, MECH_ROT_NONE, MECH_STAT_NONE )
+      | ^~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:51:5: error: 'STRIKER_MK1_PARTS' was not declared in this scope; did you mean 'STRIKER_HOVER_PARTS'?
+   51 |     STRIKER_MK1_PARTS,
+      |     ^~~~~~~~~~~~~~~~~
+      |     STRIKER_HOVER_PARTS
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:52:33: error: 'STRIKER_MK1_PARTS' was not declared in this scope; did you mean 'STRIKER_HOVER_PARTS'?
+   52 |     static_cast<uint8_t>(sizeof(STRIKER_MK1_PARTS) / sizeof(STRIKER_MK1_PARTS[0])),
+      |                                 ^~~~~~~~~~~~~~~~~
+      |                                 STRIKER_HOVER_PARTS
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_layout_striker_mk1.hpp:52:61: error: 'STRIKER_MK1_PARTS' was not declared in this scope; did you mean 'STRIKER_HOVER_PARTS'?
+   52 |     static_cast<uint8_t>(sizeof(STRIKER_MK1_PARTS) / sizeof(STRIKER_MK1_PARTS[0])),
+      |                                                             ^~~~~~~~~~~~~~~~~
+      |                                                             STRIKER_HOVER_PARTS
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_catalog.cpp: In function 'const Game::MechComponentDef* Game::MechCatalog::findComponentById(const char*)':
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_catalog.cpp:14:41: error: 'STRIKER_MK1_PARTS' was not declared in this scope; did you mean 'STRIKER_HOVER_PARTS'?
+   14 |     for (const MechComponentDef* part : STRIKER_MK1_PARTS) {
+      |                                         ^~~~~~~~~~~~~~~~~
+      |                                         STRIKER_HOVER_PARTS
+[5/14] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_loadout.cpp.obj
+[6/14] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_rig.cpp.obj
+FAILED: [code=1] esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_rig.cpp.obj 
+/home/jon/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32s3-elf-g++ -DESP_PLATFORM -DIDF_VER=\"v5.2.2\" -DSOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE -DSOC_XTAL_FREQ_MHZ=CONFIG_XTAL_FREQ -D_GLIBCXX_HAVE_POSIX_SEMAPHORE -D_GLIBCXX_USE_POSIX_SEMAPHORE -D_GNU_SOURCE -D_POSIX_READER_WRITER_LOCKS -I/home/jon/esp32_testing/mekaDoseSigma/build/config -I/home/jon/esp32_testing/mekaDoseSigma/main -I/home/jon/esp/esp-idf/components/newlib/platform_include -I/home/jon/esp/esp-idf/components/freertos/config/include -I/home/jon/esp/esp-idf/components/freertos/config/include/freertos -I/home/jon/esp/esp-idf/components/freertos/config/xtensa/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos -I/home/jon/esp/esp-idf/components/freertos/esp_additions/include -I/home/jon/esp/esp-idf/components/esp_hw_support/include -I/home/jon/esp/esp-idf/components/esp_hw_support/include/soc -I/home/jon/esp/esp-idf/components/esp_hw_support/include/soc/esp32s3 -I/home/jon/esp/esp-idf/components/esp_hw_support/port/esp32s3/. -I/home/jon/esp/esp-idf/components/heap/include -I/home/jon/esp/esp-idf/components/log/include -I/home/jon/esp/esp-idf/components/soc/include -I/home/jon/esp/esp-idf/components/soc/esp32s3 -I/home/jon/esp/esp-idf/components/soc/esp32s3/include -I/home/jon/esp/esp-idf/components/hal/platform_port/include -I/home/jon/esp/esp-idf/components/hal/esp32s3/include -I/home/jon/esp/esp-idf/components/hal/include -I/home/jon/esp/esp-idf/components/esp_rom/include -I/home/jon/esp/esp-idf/components/esp_rom/include/esp32s3 -I/home/jon/esp/esp-idf/components/esp_rom/esp32s3 -I/home/jon/esp/esp-idf/components/esp_common/include -I/home/jon/esp/esp-idf/components/esp_system/include -I/home/jon/esp/esp-idf/components/esp_system/port/soc -I/home/jon/esp/esp-idf/components/esp_system/port/include/private -I/home/jon/esp/esp-idf/components/xtensa/esp32s3/include -I/home/jon/esp/esp-idf/components/xtensa/include -I/home/jon/esp/esp-idf/components/xtensa/deprecated_include -I/home/jon/esp/esp-idf/components/lwip/include -I/home/jon/esp/esp-idf/components/lwip/include/apps -I/home/jon/esp/esp-idf/components/lwip/include/apps/sntp -I/home/jon/esp/esp-idf/components/lwip/lwip/src/include -I/home/jon/esp/esp-idf/components/lwip/port/include -I/home/jon/esp/esp-idf/components/lwip/port/freertos/include -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include/arch -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include/sys -I/home/jon/esp/esp-idf/components/driver/include -I/home/jon/esp/esp-idf/components/driver/deprecated -I/home/jon/esp/esp-idf/components/driver/analog_comparator/include -I/home/jon/esp/esp-idf/components/driver/dac/include -I/home/jon/esp/esp-idf/components/driver/gpio/include -I/home/jon/esp/esp-idf/components/driver/gptimer/include -I/home/jon/esp/esp-idf/components/driver/i2c/include -I/home/jon/esp/esp-idf/components/driver/i2s/include -I/home/jon/esp/esp-idf/components/driver/ledc/include -I/home/jon/esp/esp-idf/components/driver/mcpwm/include -I/home/jon/esp/esp-idf/components/driver/parlio/include -I/home/jon/esp/esp-idf/components/driver/pcnt/include -I/home/jon/esp/esp-idf/components/driver/rmt/include -I/home/jon/esp/esp-idf/components/driver/sdio_slave/include -I/home/jon/esp/esp-idf/components/driver/sdmmc/include -I/home/jon/esp/esp-idf/components/driver/sigma_delta/include -I/home/jon/esp/esp-idf/components/driver/spi/include -I/home/jon/esp/esp-idf/components/driver/temperature_sensor/include -I/home/jon/esp/esp-idf/components/driver/touch_sensor/include -I/home/jon/esp/esp-idf/components/driver/twai/include -I/home/jon/esp/esp-idf/components/driver/uart/include -I/home/jon/esp/esp-idf/components/driver/usb_serial_jtag/include -I/home/jon/esp/esp-idf/components/driver/touch_sensor/esp32s3/include -I/home/jon/esp/esp-idf/components/esp_pm/include -I/home/jon/esp/esp-idf/components/esp_ringbuf/include -I/home/jon/esp/esp-idf/components/esp_lcd/include -I/home/jon/esp/esp-idf/components/esp_lcd/interface -I/home/jon/esp/esp-idf/components/esp_timer/include -I/home/jon/esp32_testing/mekaDoseSigma/managed_components/espressif__esp_lcd_gc9a01/include -I/home/jon/esp32_testing/mekaDoseSigma/managed_components/jet/src -mlongcalls  -fno-builtin-memcpy -fno-builtin-memset -fno-builtin-bzero -fno-builtin-stpcpy -fno-builtin-strncpy -fdiagnostics-color=always -fdiagnostics-color=always -ffunction-sections -fdata-sections -Wall -Werror=all -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-enum-conversion -gdwarf-4 -ggdb -O2 -fmacro-prefix-map=/home/jon/esp32_testing/mekaDoseSigma=. -fmacro-prefix-map=/home/jon/esp/esp-idf=/IDF -fstrict-volatile-bitfields -fno-jump-tables -fno-tree-switch-conversion -std=gnu++2b -fexceptions -fno-rtti -DESP_LCD_GC9A01_VER_MAJOR=2 -DESP_LCD_GC9A01_VER_MINOR=0 -DESP_LCD_GC9A01_VER_PATCH=4 -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_rig.cpp.obj -MF esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_rig.cpp.obj.d -o esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_rig.cpp.obj -c /home/jon/esp32_testing/mekaDoseSigma/main/game/mech_rig.cpp
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_rig.cpp: In function 'void Game::{anonymous}::centerMeshAtOrigin(Renderer::Object*)':
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_rig.cpp:16:21: error: 'Vector3' in namespace 'Renderer' does not name a type
+   16 |     const Renderer::Vector3& c = obj->centreVolume;
+      |                     ^~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/mech_rig.cpp:18:25: error: 'c' was not declared in this scope
+   18 |         v.position.x -= c.x;
+      |                         ^
+[7/14] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech.cpp.obj
+[8/14] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/main.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp: In function 'void init_display()':
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data4_io_num' [-Wmissing-field-initializers]
+   70 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data5_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data6_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data7_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::isr_cpu_id' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::intr_flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:91:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_high_on_cmd' [-Wmissing-field-initializers]
+   91 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:91:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_low_on_param' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::data_endian' [-Wmissing-field-initializers]
+   98 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::vendor_config' [-Wmissing-field-initializers]
+[9/14] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/game.cpp.obj
+ninja: build stopped: subcommand failed.

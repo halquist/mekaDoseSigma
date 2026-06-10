@@ -8,6 +8,9 @@
 #define FAST_Z 1
 #define LAZY_Z 0
 
+// Store pixels in SPI wire byte order so the display blit needs no per-frame swap.
+#define FRAMEBUFFER_RGB565_BYTE_SWAP 1
+
 #define SCREEN_DOOR_ALPHA 0
 #define SKIP_ZERO_AREA_TRIANGLES 1
 #define NOISE_ALPHA 0

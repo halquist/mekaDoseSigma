@@ -1,5 +1,6 @@
 #include "particles.hpp"
-#include "terrain.hpp"
+#include "scene_util.hpp"
+#include "rng.hpp"
 #include <cmath>
 #include <cstdlib>
 
@@ -25,7 +26,7 @@ ParticleSystem::ParticleSystem(Renderer::Scene& scene)
     }
 }
 
-void ParticleSystem::spawnParticle(float x, float z, float speed, float life,
+void ParticleSystem::spawnParticle(float x, float y, float z, float speed, float life,
                                    Renderer::Material* mat) {
     Particle* slot = nullptr;
     for (auto& p : m_particles) {
@@ -45,11 +46,11 @@ void ParticleSystem::spawnParticle(float x, float z, float speed, float life,
         }
     }
 
-    float angle = (rand() % 360) * M_PI / 180.0f;
-    float elevation = ((rand() % 50) + 35) * M_PI / 180.0f;
+    float angle = Rng::nextRange(360) * M_PI / 180.0f;
+    float elevation = (Rng::nextRange(50) + 35) * M_PI / 180.0f;
 
     slot->x = x;
-    slot->y = Terrain::hoverHeight(x, z);
+    slot->y = y;
     slot->z = z;
     slot->vx = cosf(angle) * cosf(elevation) * speed;
     slot->vy = sinf(elevation) * speed;
@@ -57,21 +58,24 @@ void ParticleSystem::spawnParticle(float x, float z, float speed, float life,
     slot->life = life;
     slot->active = true;
 
-    slot->obj->setPosition((int16_t)slot->x, (int16_t)slot->y, (int16_t)slot->z);
+    showSceneObject(slot->obj,
+                    static_cast<int32_t>(slot->x),
+                    static_cast<int32_t>(slot->y),
+                    static_cast<int32_t>(slot->z));
 }
 
-void ParticleSystem::spawnHitEffect(float x, float z) {
+void ParticleSystem::spawnHitEffect(float x, float y, float z) {
     for (int i = 0; i < 4; i++) {
-        spawnParticle(x, z, 70 + (rand() % 30), 0.25f, &m_cyanMat);
+        spawnParticle(x, y, z, 70 + Rng::nextRange(30), 0.25f, &m_cyanMat);
     }
 }
 
-void ParticleSystem::spawnDeathEffect(float x, float z) {
+void ParticleSystem::spawnDeathEffect(float x, float y, float z) {
     for (int i = 0; i < 6; i++) {
-        spawnParticle(x, z, 90 + (rand() % 40), 0.5f, &m_orangeMat);
+        spawnParticle(x, y, z, 90 + Rng::nextRange(40), 0.5f, &m_orangeMat);
     }
     for (int i = 0; i < 6; i++) {
-        spawnParticle(x, z, 90 + (rand() % 40), 0.5f, &m_pinkMat);
+        spawnParticle(x, y, z, 90 + Rng::nextRange(40), 0.5f, &m_pinkMat);
     }
 }
 
@@ -87,11 +91,12 @@ void ParticleSystem::update(float deltaTime) {
 
         if (p.life <= 0 || p.y < -10) {
             p.active = false;
-            if (p.obj) {
-                p.obj->setPosition(0, -1000, 0);
-            }
+            stashSceneObject(p.obj);
         } else {
-            p.obj->setPosition((int16_t)p.x, (int16_t)p.y, (int16_t)p.z);
+            showSceneObject(p.obj,
+                            static_cast<int32_t>(p.x),
+                            static_cast<int32_t>(p.y),
+                            static_cast<int32_t>(p.z));
         }
     }
 }
@@ -99,9 +104,7 @@ void ParticleSystem::update(float deltaTime) {
 void ParticleSystem::reset() {
     for (auto& p : m_particles) {
         p.active = false;
-        if (p.obj) {
-            p.obj->setPosition(0, -1000, 0);
-        }
+        stashSceneObject(p.obj);
     }
 }
 

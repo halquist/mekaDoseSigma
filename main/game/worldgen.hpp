@@ -21,8 +21,13 @@ struct ObstacleSpec {
 
 ObstacleSpec sampleObstacle(int cellX, int cellZ, const MapConfig& cfg);
 
-void sampleEnemySpawn(float playerX, float playerZ, uint32_t spawnIndex,
+void sampleEnemySpawn(float playerX, float playerZ, float playerAngle,
+                      uint32_t spawnIndex, uint32_t spawnSalt,
                       const MapConfig& cfg, float& outX, float& outZ);
+
+void sampleObjectiveSpawn(float playerX, float playerZ, float playerAngle,
+                          uint32_t spawnIndex, uint32_t spawnSalt,
+                          const MapConfig& cfg, float& outX, float& outZ);
 
 } // namespace WorldGen
 } // namespace Game

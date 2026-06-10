@@ -12,6 +12,7 @@ enum class MechPartSlot : uint8_t {
     LegLowerR,
     LegUpperL,
     LegUpperR,
+    Pelvis,
     Torso,
     Head,
     ShoulderL,
@@ -51,7 +52,10 @@ struct MechComponentDef {
     float localX = 0.0f;
     float localY = 0.0f;
     float localZ = 0.0f;
-    int16_t localPitch = 0;
+    /// Euler rotation in degrees (X=pitch, Y=yaw, Z=roll), pivoted at mesh center.
+    int16_t localRotX = 0;
+    int16_t localRotY = 0;
+    int16_t localRotZ = 0;
     MechStatMods stats;
     /// Next tier when upgraded; nullptr if already max.
     const MechComponentDef* upgradeTo = nullptr;

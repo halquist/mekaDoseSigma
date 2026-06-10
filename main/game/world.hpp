@@ -10,11 +10,14 @@ class World {
 public:
     explicit World(Renderer::Scene& scene);
 
-    void update(float centerX, float centerZ);
+    void update(float centerX, float centerZ, float lookAheadDist,
+                float deltaTime, float turnActivity);
 
 private:
     void createTerrain();
     void rebuildTerrain(float originX, float originZ);
+    bool shouldRecentreTerrain(float centerX, float centerZ,
+                               float lookAheadDist) const;
 
     Renderer::Scene& m_scene;
 

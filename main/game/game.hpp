@@ -5,12 +5,14 @@
 #include "world.hpp"
 #include "input.hpp"
 #include "mech.hpp"
-#include "enemy.hpp"
+#include "enemy_manager.hpp"
 #include "projectile.hpp"
 #include "particles.hpp"
 #include "digits.hpp"
 #include "map_config.hpp"
 #include "obstacles.hpp"
+#include "objective.hpp"
+#include "objective_hud.hpp"
 
 namespace Game {
 
@@ -28,7 +30,10 @@ private:
     void setupLighting();
     void updateCamera();
     void handleAutoFire();
+    void handleEnemyCombat();
+    void handleObjectiveCombat();
     void resetMatch();
+    void randomizeSession();
     void drawEdgeFlash(uint16_t color, int thickness);
 
     uint16_t* m_framebuffer;
@@ -44,16 +49,16 @@ private:
     World* m_world = nullptr;
     ObstacleField* m_obstacles = nullptr;
     Mech* m_mech = nullptr;
-    Enemy* m_enemy = nullptr;
+    EnemyManager* m_enemies = nullptr;
+    ObjectiveBuilding* m_objective = nullptr;
     ProjectileSystem* m_projectiles = nullptr;
     ParticleSystem* m_particles = nullptr;
 
     MapConfig m_mapConfig;
-    uint32_t m_enemySpawnIndex = 0;
 
     GameState m_state = GameState::PLAYING;
-    int m_health = 15;
-    int m_maxHealth = 15;
+    int m_health = 100;
+    int m_maxHealth = 100;
 
     float m_damageFlash = 0;
 

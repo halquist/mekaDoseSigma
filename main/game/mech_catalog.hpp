@@ -19,6 +19,12 @@ extern const MechComponentDef PART_shoulder_l_hover;
 extern const MechComponentDef PART_shoulder_r_hover;
 extern const MechComponentDef PART_arm_l_hover;
 extern const MechComponentDef PART_arm_r_hover;
+extern const MechComponentDef PART_fin_l_up;
+extern const MechComponentDef PART_fin_l_mid;
+extern const MechComponentDef PART_fin_l_low;
+extern const MechComponentDef PART_fin_r_up;
+extern const MechComponentDef PART_fin_r_mid;
+extern const MechComponentDef PART_fin_r_low;
 
 #define PART_THRUSTER_L PART_thruster_l
 #define PART_THRUSTER_R PART_thruster_r

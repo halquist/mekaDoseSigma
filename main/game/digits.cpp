@@ -1,90 +1,129 @@
 #include "digits.hpp"
+#include "FramebufferIO.hpp"
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 namespace Game {
 
-const uint8_t Digits::fontData[10][7] = {
-    { 0b01110, 0b10001, 0b10011, 0b10101, 0b11001, 0b10001, 0b01110 },
-    { 0b00100, 0b01100, 0b00100, 0b00100, 0b00100, 0b00100, 0b01110 },
-    { 0b01110, 0b10001, 0b00001, 0b00110, 0b01000, 0b10000, 0b11111 },
-    { 0b01110, 0b10001, 0b00001, 0b00110, 0b00001, 0b10001, 0b01110 },
-    { 0b00010, 0b00110, 0b01010, 0b10010, 0b11111, 0b00010, 0b00010 },
-    { 0b11111, 0b10000, 0b11110, 0b00001, 0b00001, 0b10001, 0b01110 },
-    { 0b00110, 0b01000, 0b10000, 0b11110, 0b10001, 0b10001, 0b01110 },
-    { 0b11111, 0b00001, 0b00010, 0b00100, 0b01000, 0b01000, 0b01000 },
-    { 0b01110, 0b10001, 0b10001, 0b01110, 0b10001, 0b10001, 0b01110 },
-    { 0b01110, 0b10001, 0b10001, 0b01111, 0b00001, 0b00010, 0b01100 },
+namespace {
+
+constexpr float kDisplayRadius = 120.0f;
+constexpr float kArcRadius = 110.0f;
+constexpr float kArcThickness = 8.0f;
+/// Upper semicircle: 9 o'clock → 12 → 3 o'clock (clockwise from 12 o'clock).
+constexpr float kArcStartDeg = 270.0f;
+constexpr float kArcSpanDeg = 180.0f;
+
+float screenCenterX(int screenWidth) {
+    return static_cast<float>(screenWidth) * 0.5f;
+}
+
+float screenCenterY(int screenHeight) {
+    return static_cast<float>(screenHeight) * 0.5f;
+}
+
+bool insideRoundDisplay(float x, float y, float cx, float cy) {
+    const float dx = x - cx;
+    const float dy = y - cy;
+    return dx * dx + dy * dy <= kDisplayRadius * kDisplayRadius;
+}
+
+struct ArcBoundary {
+    float startX;
+    float startY;
+    float endX;
+    float endY;
 };
 
-void Digits::drawDigit(uint16_t* framebuffer, int screenWidth, int screenHeight,
-                       int digit, int x, int y, uint16_t color) {
-    if (digit < 0 || digit > 9) return;
+ArcBoundary makeArcBoundary(float startDeg, float spanDeg) {
+    const float startRad = startDeg * static_cast<float>(M_PI) / 180.0f;
+    const float endRad = (startDeg + spanDeg) * static_cast<float>(M_PI) / 180.0f;
+    return {
+        sinf(startRad), -cosf(startRad),
+        sinf(endRad), -cosf(endRad),
+    };
+}
 
-    for (int row = 0; row < DIGIT_HEIGHT; row++) {
-        uint8_t rowData = fontData[digit][row];
-        for (int col = 0; col < DIGIT_WIDTH; col++) {
-            if (rowData & (0b00001 << col)) {
-                int px = x + col;
-                int py = y + row;
-                if (px >= 0 && px < screenWidth && py >= 0 && py < screenHeight) {
-                    framebuffer[py * screenWidth + px] = color;
-                }
-            }
+bool inArcSweep(float dx, float dy, const ArcBoundary& boundary) {
+    const float crossStart = boundary.startX * dy - boundary.startY * dx;
+    if (crossStart < 0.0f) {
+        return false;
+    }
+    const float crossEnd = dx * boundary.endY - dy * boundary.endX;
+    return crossEnd >= 0.0f;
+}
+
+void drawHealthArcSinglePass(uint16_t* framebuffer, int screenWidth, int screenHeight,
+                             float cx, float cy,
+                             const ArcBoundary& fullBoundary,
+                             const ArcBoundary* fillBoundary,
+                             uint16_t fillColor, uint16_t bgColor) {
+    const float innerR = kArcRadius - kArcThickness;
+    const float outerR = kArcRadius;
+    const float innerR2 = innerR * innerR;
+    const float outerR2 = outerR * outerR;
+    const uint16_t packedFill = fbPack(fillColor);
+    const uint16_t packedBg = fbPack(bgColor);
+
+    const int xMin = static_cast<int>(floorf(cx - outerR));
+    const int xMax = static_cast<int>(ceilf(cx + outerR));
+    const int yMin = static_cast<int>(floorf(cy - outerR));
+    const int yMax = static_cast<int>(ceilf(cy));
+
+    for (int py = yMin; py <= yMax; ++py) {
+        if (py < 0 || py >= screenHeight) continue;
+        for (int px = xMin; px <= xMax; ++px) {
+            if (px < 0 || px >= screenWidth) continue;
+
+            const float sx = static_cast<float>(px) + 0.5f;
+            const float sy = static_cast<float>(py) + 0.5f;
+            if (!insideRoundDisplay(sx, sy, cx, cy)) continue;
+
+            const float dx = sx - cx;
+            const float dy = sy - cy;
+            const float dist2 = dx * dx + dy * dy;
+            if (dist2 < innerR2 || dist2 > outerR2) continue;
+            if (!inArcSweep(dx, dy, fullBoundary)) continue;
+
+            const bool inFill =
+                fillBoundary != nullptr && inArcSweep(dx, dy, *fillBoundary);
+            framebuffer[py * screenWidth + px] = inFill ? packedFill : packedBg;
         }
     }
 }
 
-void Digits::drawNumber(uint16_t* framebuffer, int screenWidth, int screenHeight,
-                        int number, int centerX, int y, uint16_t color) {
-    char buffer[12];
-    int len = 0;
+} // namespace
 
-    if (number == 0) {
-        buffer[len++] = '0';
-    } else {
-        int temp = number;
-        while (temp > 0 && len < 11) {
-            buffer[len++] = '0' + (temp % 10);
-            temp /= 10;
-        }
-    }
-    buffer[len] = '\0';
-
-    int totalWidth = len * DIGIT_WIDTH + (len - 1) * DIGIT_SPACING;
-    int startX = centerX - totalWidth / 2;
-
-    for (int i = 0; i < len; i++) {
-        int digit = buffer[i] - '0';
-        drawDigit(framebuffer, screenWidth, screenHeight,
-                  digit, startX + i * (DIGIT_WIDTH + DIGIT_SPACING), y, color);
-    }
-}
-
-void Digits::drawHealthBar(uint16_t* framebuffer, int screenWidth, int screenHeight,
-                           int health, int maxHealth, int centerX, int y,
+void Digits::drawHealthArc(uint16_t* framebuffer, int screenWidth, int screenHeight,
+                           int health, int maxHealth,
                            uint16_t fillColor, uint16_t bgColor) {
-    const int BAR_WIDTH = 50;
-    const int BAR_HEIGHT = 6;
+    if (maxHealth < 1) {
+        maxHealth = 1;
+    }
+    if (health < 0) {
+        health = 0;
+    } else if (health > maxHealth) {
+        health = maxHealth;
+    }
 
-    int startX = centerX - BAR_WIDTH / 2;
-    int fillWidth = (health * BAR_WIDTH) / maxHealth;
+    const float cx = screenCenterX(screenWidth);
+    const float cy = screenCenterY(screenHeight);
+    const float fillSpan =
+        kArcSpanDeg * (static_cast<float>(health) / static_cast<float>(maxHealth));
 
-    for (int row = 0; row < BAR_HEIGHT; row++) {
-        for (int col = 0; col < BAR_WIDTH; col++) {
-            int px = startX + col;
-            int py = y + row;
-            if (px >= 0 && px < screenWidth && py >= 0 && py < screenHeight) {
-                bool isBorder = (row == 0 || row == BAR_HEIGHT - 1 || col == 0 || col == BAR_WIDTH - 1);
-                bool isFilled = (col < fillWidth);
-
-                if (isBorder) {
-                    framebuffer[py * screenWidth + px] = fillColor;
-                } else if (isFilled) {
-                    framebuffer[py * screenWidth + px] = fillColor;
-                } else {
-                    framebuffer[py * screenWidth + px] = bgColor;
-                }
-            }
-        }
+    const ArcBoundary fullBoundary = makeArcBoundary(kArcStartDeg, kArcSpanDeg);
+    if (fillSpan > 0.0f) {
+        const ArcBoundary fillBoundary = makeArcBoundary(kArcStartDeg, fillSpan);
+        drawHealthArcSinglePass(framebuffer, screenWidth, screenHeight,
+                                cx, cy, fullBoundary, &fillBoundary,
+                                fillColor, bgColor);
+    } else {
+        drawHealthArcSinglePass(framebuffer, screenWidth, screenHeight,
+                                cx, cy, fullBoundary, nullptr,
+                                fillColor, bgColor);
     }
 }
 

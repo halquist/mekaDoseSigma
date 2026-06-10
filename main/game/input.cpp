@@ -68,7 +68,7 @@ bool TouchInput_t::readBytes(uint8_t* data, size_t len) {
 }
 
 TouchInput TouchInput_t::read() {
-    TouchInput result = { false, 0, 0 };
+    TouchInput result;
 
     if (!isPressed()) {
         return result;
@@ -81,7 +81,6 @@ TouchInput TouchInput_t::read() {
 
     if (data[0] == 0x01) {
         result.touched = true;
-        // Rotate touch coordinates 90° CW to match display rotation
         result.x = data[4];
         result.y = 239 - data[2];
     }

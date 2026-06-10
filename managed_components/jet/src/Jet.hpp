@@ -4,6 +4,7 @@
 /// @file Jet.hpp
 /// @brief Umbrella header that pulls in the public Jet engine API.
 
+#include "FramebufferIO.hpp"
 #include "Math.hpp"
 #include "Camera.hpp"
 #include "Light.hpp"

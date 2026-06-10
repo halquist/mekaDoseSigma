@@ -1,4 +1,5 @@
 #include "obstacles.hpp"
+#include "scene_util.hpp"
 #include "terrain.hpp"
 #include "worldgen.hpp"
 #include <cmath>
@@ -10,7 +11,7 @@ ObstacleField::ObstacleField(Renderer::Scene& scene, const MapConfig& mapConfig)
     , m_mapConfig(mapConfig)
     , m_treeMat(Colors::TREE_FOLIAGE)
 {
-    m_treeMat.shadingMode = Renderer::ShadingMode::GOURAUD;
+    m_treeMat.shadingMode = Renderer::ShadingMode::FLAT;
 
     auto* treeProtoObj = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMat);
     m_treeProto = treeProtoObj->vertices;
@@ -18,9 +19,12 @@ ObstacleField::ObstacleField(Renderer::Scene& scene, const MapConfig& mapConfig)
 
     for (auto& slot : m_slots) {
         slot.tree = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMat);
+        // Screen-space backface cull drops outer pyramid faces from the chase
+        // camera angle and leaves opposite lit FLAT faces visible — use NO_CULLING.
         slot.tree->cullingMode = Renderer::CullingMode::NO_CULLING;
+        // slot.tree->zBias = 8;
         m_scene.addObject(slot.tree);
-        hideSlot(slot);
+        stashSceneObject(slot.tree);
     }
 }
 
@@ -41,7 +45,7 @@ void ObstacleField::applyMeshScale(Renderer::Object* obj,
 void ObstacleField::hideSlot(Slot& slot) {
     slot.inUse = false;
     slot.styleHash = 0;
-    if (slot.tree) slot.tree->setPosition(0, -1000, 0);
+    stashSceneObject(slot.tree);
 }
 
 void ObstacleField::placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec,
@@ -55,17 +59,15 @@ void ObstacleField::placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec,
     slot.styleHash = styleHash;
     slot.radius = 12.0f * spec.scale;
 
-    if (!Terrain::isInsideMesh(spec.x, spec.z)) {
-        if (slot.tree) slot.tree->setPosition(0, -1000, 0);
-        return;
-    }
-
-    const float surfaceY = Terrain::meshHeightAt(spec.x, spec.z);
+    slot.surfaceY = Terrain::heightAt(spec.x, spec.z);
 
     if (meshDirty) {
         applyMeshScale(slot.tree, m_treeProto, spec.scale);
     }
-    slot.tree->setPosition((int16_t)spec.x, (int16_t)surfaceY, (int16_t)spec.z);
+    showSceneObject(slot.tree,
+                    static_cast<int32_t>(lroundf(spec.x)),
+                    static_cast<int32_t>(lroundf(slot.surfaceY)),
+                    static_cast<int32_t>(lroundf(spec.z)));
     slot.tree->setRotation(0, 0, 0);
 }
 
@@ -133,23 +135,43 @@ void ObstacleField::ensureCell(int cellX, int cellZ) {
     m_placedCount++;
 }
 
+void ObstacleField::updateTreeVisibility(float playerX, float playerZ,
+                                         float forwardX, float forwardZ) {
+    for (auto& slot : m_slots) {
+        if (!slot.inUse) continue;
+
+        const float dx = slot.x - playerX;
+        const float dz = slot.z - playerZ;
+        const float along = dx * forwardX + dz * forwardZ;
+
+        if (along < -BEHIND_RENDER_CULL) {
+            stashSceneObject(slot.tree);
+        } else {
+            showSceneObject(slot.tree,
+                            static_cast<int32_t>(lroundf(slot.x)),
+                            static_cast<int32_t>(lroundf(slot.surfaceY)),
+                            static_cast<int32_t>(lroundf(slot.z)));
+        }
+    }
+}
+
 void ObstacleField::unloadDistantCells(int playerCellX, int playerCellZ) {
     for (int i = m_placedCount - 1; i >= 0; i--) {
         const int dx = m_placed[i].cellX - playerCellX;
         const int dz = m_placed[i].cellZ - playerCellZ;
-        if (dx > CELL_RADIUS + 1 || dx < -(CELL_RADIUS + 1) ||
-            dz > CELL_RADIUS + 1 || dz < -(CELL_RADIUS + 1)) {
+        if (dx > LATERAL_CELL_RADIUS + 1 || dx < -(LATERAL_CELL_RADIUS + 1) ||
+            dz > FORWARD_CELL_RADIUS + 1 || dz < -(REAR_CELL_RADIUS + 1)) {
             freePlacedCell(i);
         }
     }
 }
 
-void ObstacleField::update(float playerX, float playerZ) {
+void ObstacleField::update(float playerX, float playerZ, float playerAngleDeg) {
     const int playerCellX = static_cast<int>(floorf(playerX / CELL_SIZE));
     const int playerCellZ = static_cast<int>(floorf(playerZ / CELL_SIZE));
 
-    for (int dz = -CELL_RADIUS; dz <= CELL_RADIUS; dz++) {
-        for (int dx = -CELL_RADIUS; dx <= CELL_RADIUS; dx++) {
+    for (int dz = -REAR_CELL_RADIUS; dz <= FORWARD_CELL_RADIUS; dz++) {
+        for (int dx = -LATERAL_CELL_RADIUS; dx <= LATERAL_CELL_RADIUS; dx++) {
             ensureCell(playerCellX + dx, playerCellZ + dz);
         }
     }
@@ -171,6 +193,9 @@ void ObstacleField::update(float playerX, float playerZ) {
             }
         }
     }
+
+    const float rad = playerAngleDeg * static_cast<float>(M_PI) / 180.0f;
+    updateTreeVisibility(playerX, playerZ, sinf(rad), cosf(rad));
 }
 
 void ObstacleField::resolveMovement(float& x, float& z,
