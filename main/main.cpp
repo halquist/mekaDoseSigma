@@ -33,7 +33,7 @@ static const char* TAG = "mekadose";
 #define LCD_SPI_HOST SPI2_HOST
 #define LCD_PIXEL_CLOCK_HZ (80 * 1000 * 1000)
 
-static uint16_t* framebuffer = nullptr;
+static uint16_t* framebuffer[2] = {nullptr, nullptr};
 static esp_lcd_panel_handle_t panel_handle = nullptr;
 static esp_lcd_panel_io_handle_t io_handle = nullptr;
 static volatile bool transfer_done = true;
@@ -44,6 +44,18 @@ static bool IRAM_ATTR lcd_trans_done_cb(esp_lcd_panel_io_handle_t panel_io,
 {
     transfer_done = true;
     return false;
+}
+
+static uint16_t* alloc_framebuffer(size_t size)
+{
+    uint16_t* fb = (uint16_t*)heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
+    if (!fb) {
+        fb = (uint16_t*)heap_caps_malloc(size, MALLOC_CAP_DMA | MALLOC_CAP_SPIRAM);
+    }
+    if (!fb) {
+        fb = (uint16_t*)heap_caps_malloc(size, MALLOC_CAP_SPIRAM);
+    }
+    return fb;
 }
 
 static void init_display(void)
@@ -107,40 +119,45 @@ static void init_display(void)
     ESP_LOGI(TAG, "Display initialized");
 }
 
-static void push_framebuffer(void)
+static void wait_for_lcd_transfer(void)
 {
-    transfer_done = false;
-    esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, LCD_WIDTH, LCD_HEIGHT, framebuffer);
     while (!transfer_done) {
         taskYIELD();
     }
+}
+
+static void begin_lcd_transfer(const uint16_t* fb)
+{
+    transfer_done = false;
+    esp_lcd_panel_draw_bitmap(panel_handle, 0, 0, LCD_WIDTH, LCD_HEIGHT, fb);
 }
 
 extern "C" void app_main(void)
 {
     ESP_LOGI(TAG, "=== mekaDoseSigma M0 ===");
 
-    size_t fb_size = LCD_WIDTH * LCD_HEIGHT * sizeof(uint16_t);
-    framebuffer = (uint16_t*)heap_caps_malloc(fb_size, MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL);
-    if (!framebuffer) {
-        framebuffer = (uint16_t*)heap_caps_malloc(fb_size, MALLOC_CAP_SPIRAM);
+    const size_t fb_size = LCD_WIDTH * LCD_HEIGHT * sizeof(uint16_t);
+    for (int i = 0; i < 2; ++i) {
+        framebuffer[i] = alloc_framebuffer(fb_size);
+        if (!framebuffer[i]) {
+            ESP_LOGE(TAG, "Failed to allocate framebuffer %d!", i);
+            return;
+        }
+        memset(framebuffer[i], 0, fb_size);
     }
-    if (!framebuffer) {
-        ESP_LOGE(TAG, "Failed to allocate framebuffer!");
-        return;
-    }
-    memset(framebuffer, 0, fb_size);
 
     init_display();
 
-    Game::MekaGame game(framebuffer, LCD_WIDTH, LCD_HEIGHT);
+    Game::MekaGame game(framebuffer[0], LCD_WIDTH, LCD_HEIGHT);
     if (!game.init()) {
         ESP_LOGE(TAG, "Failed to initialize game!");
         return;
     }
 
     ESP_LOGI(TAG, "M2 combat loop — menu tap to start, destroy objectives to upgrade");
+    ESP_LOGI(TAG, "Ping-pong framebuffers enabled (render overlaps SPI blit)");
 
+    int write_idx = 0;
     int64_t lastTime = esp_timer_get_time();
     int frameCount = 0;
     int64_t fpsTimer = lastTime;
@@ -154,9 +171,13 @@ extern "C" void app_main(void)
             deltaTime = 0.1f;
         }
 
+        game.setRenderTarget(framebuffer[write_idx]);
         game.update(deltaTime);
         game.render();
-        push_framebuffer();
+
+        wait_for_lcd_transfer();
+        begin_lcd_transfer(framebuffer[write_idx]);
+        write_idx ^= 1;
 
         frameCount++;
 

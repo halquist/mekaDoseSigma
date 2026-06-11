@@ -20,6 +20,8 @@ idf_component_register(
           "game/projectile.cpp"
           "game/particles.cpp"
           "game/digits.cpp"
+          "game/font.cpp"
+          "game/menu_showcase.cpp"
           "game/score.cpp"
           "game/high_scores.cpp"
           "game/run_upgrades.cpp"

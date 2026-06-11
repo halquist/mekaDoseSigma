@@ -31,11 +31,10 @@ public:
 
     int takeDamage(int damage = 1, bool* outHitShield = nullptr);
     bool isAlive() const { return m_active && m_health > 0; }
-    int pollMeleeDamage(float playerX, float playerZ);
 
 private:
     enum class AIState { PATROL, CHASE, ATTACK };
-    enum class EnemyKind { Tank, Mech, AirJet, Melee };
+    enum class EnemyKind { Tank, Mech, AirJet };
     enum class AirPhase { Reposition, Approach, Strike, Exit };
 
     void spawnInRing(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex,
@@ -45,7 +44,6 @@ private:
     void hideAirJet();
     bool isBehindPlayer(float playerX, float playerZ, float playerAngle) const;
     void updateAI(float deltaTime, float playerX, float playerZ, float playerAimY);
-    void updateMeleeAI(float deltaTime, float playerX, float playerZ);
     void updateAirAI(float deltaTime, float playerX, float playerZ, float playerAngle,
                      float playerAimY);
     void setupAirRun(float playerX, float playerZ, float playerAngle);
@@ -106,7 +104,6 @@ private:
     int m_health = 3;
     float m_fireTimer = 0;
     float m_fireInterval = 1.4f;
-    float m_meleeCooldown = 0.0f;
     uint32_t m_spawnIndex = 0;
     bool m_active = false;
 
@@ -122,14 +119,12 @@ private:
     static constexpr float HOVER_OFFSET = 10.0f;
     static constexpr float FLIGHT_ALTITUDE = 92.0f;
     static constexpr float TANK_WIDTH = 28.0f;
-    static constexpr float MELEE_WIDTH = 24.0f;
     static constexpr float AIR_JET_WIDTH = 26.0f;
     static constexpr float TANK_TURRET_Y = 12.0f;
     static constexpr float TANK_BARREL_OFFSET = 16.0f;
     static constexpr float TANK_MUZZLE_OFFSET = 28.0f;
     static constexpr int TANK_MAX_HEALTH = 18;
     static constexpr int MECH_MAX_HEALTH = 36;
-    static constexpr int MELEE_MAX_HEALTH = 14;
     static constexpr int AIR_MAX_HEALTH = 24;
     static constexpr float ENEMY_SHIELD_USE_CHANCE = 0.45f;
     static constexpr int AIR_BOMBS_PER_RUN = 2;
@@ -143,9 +138,6 @@ private:
     static constexpr float MECH_AIM_Y_MAX = 42.0f;
     static constexpr float MECH_HIT_Y_MIN = 8.0f;
     static constexpr float MECH_HIT_Y_MAX = 46.0f;
-    static constexpr float MELEE_RANGE = 34.0f;
-    static constexpr float MELEE_HIT_INTERVAL = 0.75f;
-    static constexpr int MELEE_DAMAGE = 2;
 };
 
 } // namespace Game

@@ -15,6 +15,8 @@
 #include "objective_hud.hpp"
 #include "score.hpp"
 #include "run_upgrades.hpp"
+#include "high_scores.hpp"
+#include "menu_showcase.hpp"
 
 namespace Game {
 
@@ -24,6 +26,7 @@ public:
     ~MekaGame();
 
     bool init();
+    void setRenderTarget(uint16_t* framebuffer);
     void update(float deltaTime);
     void render();
 
@@ -35,7 +38,6 @@ private:
     void handleAutoFire();
     void handleEnemyCombat();
     void handleObjectiveCombat();
-    void handleMeleeCombat();
     void beginUpgradePick();
     void finishUpgradePick(int choiceIndex);
     void startNewRun();
@@ -43,6 +45,7 @@ private:
     void onPlayerDefeat();
     void randomizeSession();
     void drawEdgeFlash(uint16_t color, int thickness);
+    void renderMenuScene();
 
     uint16_t* m_framebuffer;
     int m_width;
@@ -61,11 +64,12 @@ private:
     ObjectiveBuilding* m_objective = nullptr;
     ProjectileSystem* m_projectiles = nullptr;
     ParticleSystem* m_particles = nullptr;
+    MenuShowcase* m_menuShowcase = nullptr;
 
     MapConfig m_mapConfig;
     RunScore m_score;
     UpgradePicker m_upgradePicker;
-    int m_bestScore = 0;
+    int m_highScores[HighScores::kTopCount] = {};
     bool m_newHighScore = false;
     float m_uiPulseSec = 0.0f;
 

@@ -5,6 +5,8 @@
 #include "rng.hpp"
 #include "high_scores.hpp"
 #include "game_ui.hpp"
+#include "font.hpp"
+#include "menu_showcase.hpp"
 #include <cmath>
 
 #ifndef M_PI
@@ -41,7 +43,15 @@ MekaGame::MekaGame(uint16_t* framebuffer, int width, int height)
 {
 }
 
+void MekaGame::setRenderTarget(uint16_t* framebuffer) {
+    m_framebuffer = framebuffer;
+    if (m_scene) {
+        m_scene->setFramebuffer(framebuffer);
+    }
+}
+
 MekaGame::~MekaGame() {
+    delete m_menuShowcase;
     delete m_particles;
     delete m_projectiles;
     delete m_enemies;
@@ -69,7 +79,7 @@ bool MekaGame::init() {
     if (!HighScores::init()) {
         return false;
     }
-    m_bestScore = HighScores::best();
+    HighScores::load(m_highScores);
 
     randomizeSession();
 
@@ -100,6 +110,7 @@ bool MekaGame::init() {
     m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
     m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
                     0.0f, 0.0f);
+    m_menuShowcase = new MenuShowcase(*m_scene);
     updateCamera();
     applyEnvironment();
 
@@ -263,39 +274,6 @@ void MekaGame::handleEnemyCombat() {
     }
 }
 
-void MekaGame::handleMeleeCombat() {
-    const float playerX = m_mech->getX();
-    const float playerZ = m_mech->getZ();
-
-    for (int i = 0; i < EnemyManager::MAX_ENEMIES; ++i) {
-        Enemy& enemy = m_enemies->enemy(i);
-        const int rawDamage = enemy.pollMeleeDamage(playerX, playerZ);
-        if (rawDamage <= 0) {
-            continue;
-        }
-
-        const ShieldDamageResult absorbed = m_mech->absorbDamage(rawDamage);
-        if (absorbed.healthDamage > 0) {
-            m_health -= absorbed.healthDamage;
-            if (m_health < 0) {
-                m_health = 0;
-            }
-            m_damageFlash = 0.35f;
-            m_particles->spawnHitEffect(
-                m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
-                Colors::SPARK_ORANGE);
-        } else if (absorbed.hitShield) {
-            float fx = m_mech->getX();
-            float fy = m_mech->getBaseY();
-            float fz = m_mech->getZ();
-            MechAbility::shieldHitPosition(
-                m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
-                fx, fy, fz, fx, fy, fz);
-            m_particles->spawnHitEffect(fx, fy, fz, Colors::SHIELD_BLUE);
-        }
-    }
-}
-
 void MekaGame::beginUpgradePick() {
     m_upgradePicker.roll(m_mech->loadout());
     m_state = GameState::UPGRADE_PICK;
@@ -334,6 +312,7 @@ void MekaGame::startNewRun() {
                     0.0f, 0.0f);
     m_projectiles->reset();
     m_particles->reset();
+    m_menuShowcase->suspend();
     updateCamera();
     applyEnvironment();
 }
@@ -347,12 +326,13 @@ void MekaGame::returnToMenu() {
     m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
     m_projectiles->reset();
     m_particles->reset();
+    m_menuShowcase->resume();
     updateCamera();
 }
 
 void MekaGame::onPlayerDefeat() {
     m_newHighScore = HighScores::tryAddScore(m_score.total());
-    m_bestScore = HighScores::best();
+    HighScores::load(m_highScores);
     m_state = GameState::DEFEAT;
 }
 
@@ -381,6 +361,9 @@ void MekaGame::update(float deltaTime) {
     m_particles->update(deltaTime);
 
     if (m_state == GameState::MENU) {
+        if (m_menuShowcase->isActive()) {
+            m_menuShowcase->update(deltaTime);
+        }
         if (touch.touched) {
             startNewRun();
         }
@@ -425,7 +408,6 @@ void MekaGame::update(float deltaTime) {
 
         handleEnemyCombat();
         handleObjectiveCombat();
-        handleMeleeCombat();
 
         float impactX = 0.0f;
         float impactZ = 0.0f;
@@ -473,63 +455,112 @@ void MekaGame::update(float deltaTime) {
     }
 }
 
-void MekaGame::render() {
+void MekaGame::renderMenuScene() {
+    if (!m_menuShowcase || !m_menuShowcase->isActive()) {
+        GameUi::fillScreen(m_framebuffer, m_width, m_height, Colors::BLACK);
+        return;
+    }
+
+    struct SavedState {
+        Renderer::Object* obj = nullptr;
+        bool enabled = false;
+    };
+
+    Renderer::Object* activeList[8];
+    const int activeCount = m_menuShowcase->activeObjects(activeList, 8);
+    auto& objects = m_scene->getObjects();
+
+    SavedState saved[160];
+    int savedCount = 0;
+    for (Renderer::Object* obj : objects) {
+        if (savedCount >= 160) {
+            break;
+        }
+
+        bool keep = false;
+        for (int i = 0; i < activeCount; ++i) {
+            if (obj == activeList[i]) {
+                keep = true;
+                break;
+            }
+        }
+
+        saved[savedCount].obj = obj;
+        saved[savedCount].enabled = obj->enabled;
+        obj->enabled = keep;
+        ++savedCount;
+    }
+
+    m_scene->setBackcolor(Colors::BLACK);
+    m_menuShowcase->applyCamera(*m_camera);
     m_scene->render();
 
-    int displayHealth = m_health;
-    if (m_state == GameState::DEFEAT) {
-        displayHealth = 0;
+    for (int i = 0; i < savedCount; ++i) {
+        saved[i].obj->enabled = saved[i].enabled;
     }
+}
 
-    const MechAbility* ability = nullptr;
-    if (m_state == GameState::PLAYING && m_mech->isAlive()) {
-        ability = &m_mech->ability();
-    }
+void MekaGame::render() {
+    const bool fullScreenUi =
+        m_state == GameState::MENU ||
+        m_state == GameState::UPGRADE_PICK ||
+        m_state == GameState::DEFEAT;
 
-    Digits::drawHealthAndShieldArcs(
-        m_framebuffer, m_width, m_height,
-        displayHealth, m_maxHealth,
-        Colors::HEALTH_FILL, Colors::HUD_BG,
-        ability != nullptr && ability->showShieldBar(),
-        ability != nullptr ? ability->shieldHp() : 0,
-        ability != nullptr ? ability->maxShieldHp() : 1,
-        Colors::SHIELD_HUD);
+    if (!fullScreenUi) {
+        m_scene->render();
 
-    if (ability != nullptr && ability->showReadyIcon()) {
-        Digits::drawAbilityReadyIcon(m_framebuffer, m_width, m_height,
-                                     Colors::SHIELD_HUD);
-    }
+        int displayHealth = m_health;
 
-    if (m_state == GameState::PLAYING &&
-        m_objective->hasTarget() && !m_objective->isDestroyed()) {
-        ObjectiveHud::drawArrow(m_framebuffer, m_width, m_height, *m_camera,
-                                m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
-                                m_objective->getX(), m_objective->getAimY(),
-                                m_objective->getZ(), Colors::OBJECTIVE_ARROW);
-    }
+        const MechAbility* ability = nullptr;
+        if (m_state == GameState::PLAYING && m_mech->isAlive()) {
+            ability = &m_mech->ability();
+        }
 
-    if (m_state == GameState::PLAYING) {
-        Digits::drawNumber(m_framebuffer, m_width, m_height, m_score.total(),
-                           m_width - 12, 34, 2, Colors::HUD_TEXT);
+        Digits::drawHealthAndShieldArcs(
+            m_framebuffer, m_width, m_height,
+            displayHealth, m_maxHealth,
+            Colors::HEALTH_FILL, Colors::HUD_BG,
+            ability != nullptr && ability->showShieldBar(),
+            ability != nullptr ? ability->shieldHp() : 0,
+            ability != nullptr ? ability->maxShieldHp() : 1,
+            Colors::SHIELD_HUD);
+
+        if (ability != nullptr && ability->showReadyIcon()) {
+            Digits::drawAbilityReadyIcon(m_framebuffer, m_width, m_height,
+                                         Colors::SHIELD_HUD);
+        }
+
+        if (m_state == GameState::PLAYING &&
+            m_objective->hasTarget() && !m_objective->isDestroyed()) {
+            ObjectiveHud::drawArrow(m_framebuffer, m_width, m_height, *m_camera,
+                                    m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
+                                    m_objective->getX(), m_objective->getAimY(),
+                                    m_objective->getZ(), Colors::OBJECTIVE_ARROW);
+        }
+
+        if (m_state == GameState::PLAYING) {
+            Font::drawNumberRight(m_framebuffer, m_width, m_height, m_score.total(),
+                                  m_width - 12, 30, 2, Colors::HUD_TEXT);
+        }
+
+        if (m_damageFlash > 0) {
+            drawEdgeFlash(Colors::DAMAGE_RED, 4);
+        } else if (m_state == GameState::VICTORY) {
+            drawEdgeFlash(Colors::VICTORY_GREEN, 5);
+        }
+        return;
     }
 
     if (m_state == GameState::MENU) {
-        GameUi::drawMenu(m_framebuffer, m_width, m_height, m_bestScore, m_uiPulseSec);
+        renderMenuScene();
+        GameUi::drawMenu(m_framebuffer, m_width, m_height, m_highScores, m_uiPulseSec);
     } else if (m_state == GameState::DEFEAT) {
         GameUi::drawDefeat(m_framebuffer, m_width, m_height,
-                           m_score, m_bestScore, m_newHighScore);
+                           m_score, m_highScores, m_newHighScore);
     } else if (m_state == GameState::UPGRADE_PICK) {
         GameUi::drawUpgradePick(m_framebuffer, m_width, m_height,
                                 m_upgradePicker.option(0),
                                 m_upgradePicker.option(1));
-    }
-
-    if (m_damageFlash > 0) {
-        drawEdgeFlash(Colors::DAMAGE_RED, 4);
-    } else if (m_state == GameState::VICTORY) {
-        drawEdgeFlash(Colors::VICTORY_GREEN, 5);
-    } else if (m_state == GameState::DEFEAT) {
-        drawEdgeFlash(Colors::DAMAGE_RED, 6);
     }
 }
 

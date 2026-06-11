@@ -1,5 +1,6 @@
 #pragma once
 
+#include "high_scores.hpp"
 #include "run_upgrades.hpp"
 #include "score.hpp"
 #include "types.hpp"
@@ -9,9 +10,14 @@ namespace Game {
 
 namespace GameUi {
 
-void drawMenu(uint16_t* framebuffer, int width, int height, int bestScore, float pulseSec);
+void fillScreen(uint16_t* framebuffer, int width, int height, uint16_t color);
+
+void drawMenu(uint16_t* framebuffer, int width, int height,
+              const int highScores[HighScores::kTopCount], float pulseSec);
 void drawDefeat(uint16_t* framebuffer, int width, int height,
-                const RunScore& score, int bestScore, bool newHighScore);
+                const RunScore& score,
+                const int highScores[HighScores::kTopCount],
+                bool newHighScore);
 void drawUpgradePick(uint16_t* framebuffer, int width, int height,
                      const UpgradeOption& left, const UpgradeOption& right);
 

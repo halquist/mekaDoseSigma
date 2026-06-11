@@ -1,0 +1,159 @@
+[1/11] Performing build step for 'bootloader'
+[1/1] cd /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/bootloader.bin
+Bootloader binary size 0x5800 bytes. 0x2800 bytes (31%) free.
+[2/11] No install step for 'bootloader'
+[3/11] Completed 'bootloader'
+[4/11] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/menu_showcase.cpp.obj
+FAILED: [code=1] esp-idf/main/CMakeFiles/__idf_main.dir/game/menu_showcase.cpp.obj 
+/home/jon/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20230928/xtensa-esp-elf/bin/xtensa-esp32s3-elf-g++ -DESP_PLATFORM -DIDF_VER=\"v5.2.2\" -DSOC_MMU_PAGE_SIZE=CONFIG_MMU_PAGE_SIZE -DSOC_XTAL_FREQ_MHZ=CONFIG_XTAL_FREQ -D_GLIBCXX_HAVE_POSIX_SEMAPHORE -D_GLIBCXX_USE_POSIX_SEMAPHORE -D_GNU_SOURCE -D_POSIX_READER_WRITER_LOCKS -I/home/jon/esp32_testing/mekaDoseSigma/build/config -I/home/jon/esp32_testing/mekaDoseSigma/main -I/home/jon/esp/esp-idf/components/newlib/platform_include -I/home/jon/esp/esp-idf/components/freertos/config/include -I/home/jon/esp/esp-idf/components/freertos/config/include/freertos -I/home/jon/esp/esp-idf/components/freertos/config/xtensa/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include -I/home/jon/esp/esp-idf/components/freertos/FreeRTOS-Kernel/portable/xtensa/include/freertos -I/home/jon/esp/esp-idf/components/freertos/esp_additions/include -I/home/jon/esp/esp-idf/components/esp_hw_support/include -I/home/jon/esp/esp-idf/components/esp_hw_support/include/soc -I/home/jon/esp/esp-idf/components/esp_hw_support/include/soc/esp32s3 -I/home/jon/esp/esp-idf/components/esp_hw_support/port/esp32s3/. -I/home/jon/esp/esp-idf/components/heap/include -I/home/jon/esp/esp-idf/components/log/include -I/home/jon/esp/esp-idf/components/soc/include -I/home/jon/esp/esp-idf/components/soc/esp32s3 -I/home/jon/esp/esp-idf/components/soc/esp32s3/include -I/home/jon/esp/esp-idf/components/hal/platform_port/include -I/home/jon/esp/esp-idf/components/hal/esp32s3/include -I/home/jon/esp/esp-idf/components/hal/include -I/home/jon/esp/esp-idf/components/esp_rom/include -I/home/jon/esp/esp-idf/components/esp_rom/include/esp32s3 -I/home/jon/esp/esp-idf/components/esp_rom/esp32s3 -I/home/jon/esp/esp-idf/components/esp_common/include -I/home/jon/esp/esp-idf/components/esp_system/include -I/home/jon/esp/esp-idf/components/esp_system/port/soc -I/home/jon/esp/esp-idf/components/esp_system/port/include/private -I/home/jon/esp/esp-idf/components/xtensa/esp32s3/include -I/home/jon/esp/esp-idf/components/xtensa/include -I/home/jon/esp/esp-idf/components/xtensa/deprecated_include -I/home/jon/esp/esp-idf/components/lwip/include -I/home/jon/esp/esp-idf/components/lwip/include/apps -I/home/jon/esp/esp-idf/components/lwip/include/apps/sntp -I/home/jon/esp/esp-idf/components/lwip/lwip/src/include -I/home/jon/esp/esp-idf/components/lwip/port/include -I/home/jon/esp/esp-idf/components/lwip/port/freertos/include -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include/arch -I/home/jon/esp/esp-idf/components/lwip/port/esp32xx/include/sys -I/home/jon/esp/esp-idf/components/driver/include -I/home/jon/esp/esp-idf/components/driver/deprecated -I/home/jon/esp/esp-idf/components/driver/analog_comparator/include -I/home/jon/esp/esp-idf/components/driver/dac/include -I/home/jon/esp/esp-idf/components/driver/gpio/include -I/home/jon/esp/esp-idf/components/driver/gptimer/include -I/home/jon/esp/esp-idf/components/driver/i2c/include -I/home/jon/esp/esp-idf/components/driver/i2s/include -I/home/jon/esp/esp-idf/components/driver/ledc/include -I/home/jon/esp/esp-idf/components/driver/mcpwm/include -I/home/jon/esp/esp-idf/components/driver/parlio/include -I/home/jon/esp/esp-idf/components/driver/pcnt/include -I/home/jon/esp/esp-idf/components/driver/rmt/include -I/home/jon/esp/esp-idf/components/driver/sdio_slave/include -I/home/jon/esp/esp-idf/components/driver/sdmmc/include -I/home/jon/esp/esp-idf/components/driver/sigma_delta/include -I/home/jon/esp/esp-idf/components/driver/spi/include -I/home/jon/esp/esp-idf/components/driver/temperature_sensor/include -I/home/jon/esp/esp-idf/components/driver/touch_sensor/include -I/home/jon/esp/esp-idf/components/driver/twai/include -I/home/jon/esp/esp-idf/components/driver/uart/include -I/home/jon/esp/esp-idf/components/driver/usb_serial_jtag/include -I/home/jon/esp/esp-idf/components/driver/touch_sensor/esp32s3/include -I/home/jon/esp/esp-idf/components/esp_pm/include -I/home/jon/esp/esp-idf/components/esp_ringbuf/include -I/home/jon/esp/esp-idf/components/esp_lcd/include -I/home/jon/esp/esp-idf/components/esp_lcd/interface -I/home/jon/esp/esp-idf/components/esp_timer/include -I/home/jon/esp/esp-idf/components/nvs_flash/include -I/home/jon/esp/esp-idf/components/spi_flash/include -I/home/jon/esp/esp-idf/components/esp_partition/include -I/home/jon/esp32_testing/mekaDoseSigma/managed_components/espressif__esp_lcd_gc9a01/include -I/home/jon/esp32_testing/mekaDoseSigma/managed_components/jet/src -mlongcalls  -fno-builtin-memcpy -fno-builtin-memset -fno-builtin-bzero -fno-builtin-stpcpy -fno-builtin-strncpy -fdiagnostics-color=always -fdiagnostics-color=always -ffunction-sections -fdata-sections -Wall -Werror=all -Wno-error=unused-function -Wno-error=unused-variable -Wno-error=unused-but-set-variable -Wno-error=deprecated-declarations -Wextra -Wno-unused-parameter -Wno-sign-compare -Wno-enum-conversion -gdwarf-4 -ggdb -O2 -fmacro-prefix-map=/home/jon/esp32_testing/mekaDoseSigma=. -fmacro-prefix-map=/home/jon/esp/esp-idf=/IDF -fstrict-volatile-bitfields -fno-jump-tables -fno-tree-switch-conversion -std=gnu++2b -fexceptions -fno-rtti -DESP_LCD_GC9A01_VER_MAJOR=2 -DESP_LCD_GC9A01_VER_MINOR=0 -DESP_LCD_GC9A01_VER_PATCH=4 -MD -MT esp-idf/main/CMakeFiles/__idf_main.dir/game/menu_showcase.cpp.obj -MF esp-idf/main/CMakeFiles/__idf_main.dir/game/menu_showcase.cpp.obj.d -o esp-idf/main/CMakeFiles/__idf_main.dir/game/menu_showcase.cpp.obj -c /home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp: In member function 'void Game::MenuShowcase::syncPose()':
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:240:5: error: case label 'Game::MenuShowcase::Kind::PlayerMech' not within a switch statement
+  240 |     case Kind::PlayerMech:
+      |     ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:245:9: error: break statement not within loop or switch
+  245 |         break;
+      |         ^~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:246:5: error: case label 'Game::MenuShowcase::Kind::EnemyMech' not within a switch statement
+  246 |     case Kind::EnemyMech:
+      |     ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:251:9: error: break statement not within loop or switch
+  251 |         break;
+      |         ^~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:252:5: error: case label 'Game::MenuShowcase::Kind::Tank' not within a switch statement
+  252 |     case Kind::Tank: {
+      |     ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:259:9: error: break statement not within loop or switch
+  259 |         break;
+      |         ^~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:261:5: error: case label 'Game::MenuShowcase::Kind::Melee' not within a switch statement
+  261 |     case Kind::Melee:
+      |     ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:264:9: error: break statement not within loop or switch
+  264 |         break;
+      |         ^~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:265:5: error: case label 'Game::MenuShowcase::Kind::AirJet' not within a switch statement
+  265 |     case Kind::AirJet:
+      |     ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:268:9: error: break statement not within loop or switch
+  268 |         break;
+      |         ^~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:269:5: error: case label not within a switch statement
+  269 |     default:
+      |     ^~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:270:9: error: break statement not within loop or switch
+  270 |         break;
+      |         ^~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp: At global scope:
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:274:5: error: 'MenuShowcase' has not been declared
+  274 | int MenuShowcase::activeObjects(Renderer::Object** out, int maxCount) const {
+      |     ^~~~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:274:71: error: non-member function 'int activeObjects(Renderer::Object**, int)' cannot have cv-qualifier
+  274 | int MenuShowcase::activeObjects(Renderer::Object** out, int maxCount) const {
+      |                                                                       ^~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp: In function 'int activeObjects(Renderer::Object**, int)':
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:275:10: error: 'm_active' was not declared in this scope
+  275 |     if (!m_active || !out || maxCount <= 0) {
+      |          ^~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:286:13: error: 'm_kind' was not declared in this scope
+  286 |     switch (m_kind) {
+      |             ^~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:287:10: error: 'Kind' has not been declared
+  287 |     case Kind::PlayerMech:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:288:13: error: 'm_playerRig' was not declared in this scope
+  288 |         add(m_playerRig.bodyObject());
+      |             ^~~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:290:10: error: 'Kind' has not been declared
+  290 |     case Kind::EnemyMech:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:291:13: error: 'm_enemyRig' was not declared in this scope
+  291 |         add(m_enemyRig.bodyObject());
+      |             ^~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:293:10: error: 'Kind' has not been declared
+  293 |     case Kind::Tank:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:294:13: error: 'm_tankBody' was not declared in this scope
+  294 |         add(m_tankBody);
+      |             ^~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:295:13: error: 'm_tankTurret' was not declared in this scope
+  295 |         add(m_tankTurret);
+      |             ^~~~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:296:13: error: 'm_tankBarrel' was not declared in this scope
+  296 |         add(m_tankBarrel);
+      |             ^~~~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:298:10: error: 'Kind' has not been declared
+  298 |     case Kind::Melee:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:299:13: error: 'm_meleeBody' was not declared in this scope
+  299 |         add(m_meleeBody);
+      |             ^~~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:301:10: error: 'Kind' has not been declared
+  301 |     case Kind::AirJet:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:302:13: error: 'm_airJet' was not declared in this scope
+  302 |         add(m_airJet);
+      |             ^~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp: At global scope:
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:310:6: error: 'MenuShowcase' has not been declared
+  310 | void MenuShowcase::applyCamera(Renderer::Camera& camera) const {
+      |      ^~~~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:310:58: error: non-member function 'void applyCamera(Renderer::Camera&)' cannot have cv-qualifier
+  310 | void MenuShowcase::applyCamera(Renderer::Camera& camera) const {
+      |                                                          ^~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp: In function 'void applyCamera(Renderer::Camera&)':
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:311:10: error: 'm_active' was not declared in this scope
+  311 |     if (!m_active) {
+      |          ^~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:319:13: error: 'm_kind' was not declared in this scope
+  319 |     switch (m_kind) {
+      |             ^~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:320:10: error: 'Kind' has not been declared
+  320 |     case Kind::PlayerMech:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:321:10: error: 'Kind' has not been declared
+  321 |     case Kind::EnemyMech:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:323:33: error: 'm_time' was not declared in this scope
+  323 |         baseDist = 98.0f + sinf(m_time * 0.55f) * 16.0f;
+      |                                 ^~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:326:10: error: 'Kind' has not been declared
+  326 |     case Kind::Tank:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:327:10: error: 'Kind' has not been declared
+  327 |     case Kind::Melee:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:332:10: error: 'Kind' has not been declared
+  332 |     case Kind::AirJet:
+      |          ^~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:342:9: error: 'm_time' was not declared in this scope
+  342 |         m_time * 0.38f + sinf(m_time * 0.23f) * 0.35f + m_spinAngle * 0.004f;
+      |         ^~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:342:57: error: 'm_spinAngle' was not declared in this scope
+  342 |         m_time * 0.38f + sinf(m_time * 0.23f) * 0.35f + m_spinAngle * 0.004f;
+      |                                                         ^~~~~~~~~~~
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp: At global scope:
+/home/jon/esp32_testing/mekaDoseSigma/main/game/menu_showcase.cpp:353:1: error: expected declaration before '}' token
+  353 | } // namespace Game
+      | ^
+[5/11] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/main.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp: In function 'void init_display()':
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data4_io_num' [-Wmissing-field-initializers]
+   70 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data5_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data6_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::data7_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::isr_cpu_id' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:70:5: warning: missing initializer for member 'spi_bus_config_t::intr_flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:91:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_high_on_cmd' [-Wmissing-field-initializers]
+   91 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:91:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_low_on_param' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::data_endian' [-Wmissing-field-initializers]
+   98 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:98:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::vendor_config' [-Wmissing-field-initializers]
+[6/11] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/game.cpp.obj
+ninja: build stopped: subcommand failed.

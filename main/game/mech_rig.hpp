@@ -29,6 +29,8 @@ public:
 
     void weaponMuzzleLocal(const WeaponDef& weapon, float& lx, float& ly, float& lz) const;
 
+    Renderer::Object* bodyObject() const { return m_bodyObj; }
+
 private:
     struct PartMaterial {
         Renderer::Material mat;

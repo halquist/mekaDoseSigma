@@ -74,11 +74,10 @@ static float wrapAngleDeg(float angle) {
 } // namespace
 
 Enemy::EnemyKind Enemy::pickKind() {
-    // ~15% mech, ~15% air, ~15% melee, ~55% tank
+    // ~17% mech, ~17% air jet, ~66% tank
     const uint32_t roll = Rng::nextRange(100);
-    if (roll < 15) return EnemyKind::Mech;
-    if (roll < 30) return EnemyKind::AirJet;
-    if (roll < 45) return EnemyKind::Melee;
+    if (roll < 17) return EnemyKind::Mech;
+    if (roll < 34) return EnemyKind::AirJet;
     return EnemyKind::Tank;
 }
 
@@ -166,13 +165,6 @@ void Enemy::configureForKind() {
             m_speed = AIR_RUN_SPEED;
             m_fireInterval = 1.8f;
             break;
-        case EnemyKind::Melee:
-            m_health = MELEE_MAX_HEALTH;
-            m_speed = 195.0f;
-            m_fireInterval = 99.0f;
-            m_meleeCooldown = 0.0f;
-            m_tankBodyMat.color = Colors::ORANGE;
-            break;
     }
 }
 
@@ -208,7 +200,6 @@ float Enemy::groundBaseY() const {
 float Enemy::getWidth() const {
     switch (m_kind) {
         case EnemyKind::Tank: return TANK_WIDTH;
-        case EnemyKind::Melee: return MELEE_WIDTH;
         case EnemyKind::AirJet: return AIR_JET_WIDTH;
         default: return m_loadout.hitWidth();
     }
@@ -367,8 +358,6 @@ void Enemy::update(float deltaTime, float playerX, float playerZ, float playerAn
 
     if (m_kind == EnemyKind::AirJet) {
         updateAirAI(deltaTime, playerX, playerZ, playerAngle, playerAimY);
-    } else if (m_kind == EnemyKind::Melee) {
-        updateMeleeAI(deltaTime, playerX, playerZ);
     } else {
         updateAI(deltaTime, playerX, playerZ, playerAimY);
     }
@@ -473,27 +462,6 @@ void Enemy::updateAirAI(float deltaTime, float playerX, float playerZ, float pla
     const float radians = m_angle * static_cast<float>(M_PI) / 180.0f;
     m_x += sinf(radians) * moveSpeed * deltaTime;
     m_z += cosf(radians) * moveSpeed * deltaTime;
-}
-
-void Enemy::updateMeleeAI(float deltaTime, float playerX, float playerZ) {
-    if (m_meleeCooldown > 0.0f) {
-        m_meleeCooldown -= deltaTime;
-    }
-
-    const float dx = playerX - m_x;
-    const float dz = playerZ - m_z;
-    const float distToPlayer = sqrtf(dx * dx + dz * dz);
-    const float angleToPlayer =
-        atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
-
-    m_state = AIState::CHASE;
-    m_angle = angleToPlayer;
-
-    if (distToPlayer > MELEE_RANGE * 0.85f && !m_isIdle) {
-        const float radians = m_angle * static_cast<float>(M_PI) / 180.0f;
-        m_x += sinf(radians) * m_speed * deltaTime;
-        m_z += cosf(radians) * m_speed * deltaTime;
-    }
 }
 
 void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float playerAimY) {
@@ -624,14 +592,6 @@ void Enemy::updateVisual(float deltaTime) {
     const int16_t iy = static_cast<int16_t>(baseY);
     const int16_t angle = static_cast<int16_t>(m_angle);
 
-    if (m_kind == EnemyKind::Melee) {
-        stashSceneObject(m_tankTurret);
-        stashSceneObject(m_tankBarrel);
-        showSceneObject(m_tankBody, ix, iy, iz);
-        m_tankBody->setRotation(0, angle, 0);
-        return;
-    }
-
     const int16_t turretY = static_cast<int16_t>(baseY + TANK_TURRET_Y);
     const float radians = m_angle * M_PI / 180.0f;
     const float barrelX = m_x + sinf(radians) * TANK_BARREL_OFFSET;
@@ -645,25 +605,6 @@ void Enemy::updateVisual(float deltaTime) {
                     static_cast<int32_t>(lroundf(barrelX)), turretY,
                     static_cast<int32_t>(lroundf(barrelZ)));
     m_tankBarrel->setRotation(0, angle, 0);
-}
-
-int Enemy::pollMeleeDamage(float playerX, float playerZ) {
-    if (!m_active || m_health <= 0 || m_kind != EnemyKind::Melee) {
-        return 0;
-    }
-    if (m_meleeCooldown > 0.0f) {
-        return 0;
-    }
-
-    const float dx = playerX - m_x;
-    const float dz = playerZ - m_z;
-    const float distSq = dx * dx + dz * dz;
-    if (distSq > MELEE_RANGE * MELEE_RANGE) {
-        return 0;
-    }
-
-    m_meleeCooldown = MELEE_HIT_INTERVAL;
-    return MELEE_DAMAGE;
 }
 
 int Enemy::takeDamage(int damage, bool* outHitShield) {
