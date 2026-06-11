@@ -16,6 +16,10 @@ void Terrain::setMapConfig(const MapConfig* config) {
     s_mapConfig = config;
 }
 
+const MapConfig& Terrain::mapConfig() {
+    return s_mapConfig ? *s_mapConfig : kDefaultMapConfig;
+}
+
 void Terrain::setChunkOrigin(float originX, float originZ) {
     s_chunkOriginX = originX;
     s_chunkOriginZ = originZ;

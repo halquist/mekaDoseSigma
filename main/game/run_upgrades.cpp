@@ -13,10 +13,13 @@ int maxHpForArmorTier(uint8_t tier) {
 }
 
 int shieldCapacityForTier(uint8_t tier) {
+    if (tier == 0) {
+        return 0;
+    }
     if (tier > kMaxUpgradeTier) {
         tier = kMaxUpgradeTier;
     }
-    return kBaseShieldCapacity + static_cast<int>(tier) * 12;
+    return static_cast<int>(tier) * kShieldHpPerTier;
 }
 
 float moveBonusForSpeedTier(uint8_t tier) {
@@ -106,10 +109,15 @@ void UpgradePicker::apply(const UpgradeOption& choice, Mech& mech, int& health, 
         }
         break;
     }
-    case UpgradeId::Shield:
+    case UpgradeId::Shield: {
+        const uint8_t oldTier = bonuses.shieldTier;
         bonuses.shieldTier = choice.tier;
         mech.refreshShieldCapacity();
+        if (oldTier == 0 && choice.tier >= 1) {
+            mech.queueShieldDeploy();
+        }
         break;
+    }
     case UpgradeId::Speed:
         bonuses.speedTier = choice.tier;
         break;

@@ -8,6 +8,7 @@ namespace Game {
 /// Tunables for one play session / map module. Extend for bosses and victory rules.
 struct MapConfig {
     uint32_t worldSeed = 0x53495341u; // "SISA"
+/// Deprecated: biomes are derived per-world-coordinate via WorldGen::biomeAt().
     MapTheme theme = MapTheme::RURAL;
     EnvLightingMode lighting = EnvLightingMode::Day;
 

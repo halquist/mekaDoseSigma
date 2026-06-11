@@ -13,7 +13,8 @@ public:
 
     void update(float centerX, float centerZ, float lookAheadDist,
                 float deltaTime, float turnActivity);
-    void applyEnvironment(const EnvPalette& palette);
+    void applyEnvironment(const EnvPalette& ruralPalette,
+                          const EnvPalette& desertPalette);
 
 private:
     void createTerrain();
@@ -23,7 +24,7 @@ private:
 
     Renderer::Scene& m_scene;
 
-    Renderer::Material m_grassMat;
+    Renderer::Material m_grassMats[2];
 
     Renderer::Object* m_terrain = nullptr;
 

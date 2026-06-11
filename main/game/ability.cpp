@@ -1,4 +1,5 @@
 #include "ability.hpp"
+#include "run_upgrades.hpp"
 #include "scene_util.hpp"
 #include <cmath>
 
@@ -18,8 +19,8 @@ namespace AbilityCatalog {
 
 const AbilityDef SHIELD = {
     AbilityKind::Shield,
-    50,
-    8.0f,
+    25,
+    kShieldRedeployCooldownSec,
 };
 
 const AbilityDef SHIELD_ENEMY = {
@@ -38,6 +39,7 @@ MechAbility::MechAbility(Renderer::Scene& scene)
 }
 
 void MechAbility::equip(const AbilityDef& def) {
+    m_autoDeploy = false;
     m_def = def;
     m_maxShieldHp = def.shieldCapacity;
     m_singleUse = false;
@@ -57,6 +59,7 @@ void MechAbility::reset() {
     m_cooldownRemaining = 0.0f;
     m_lastCenterTapTime = -100.0f;
     m_animTimer = 0.0f;
+    m_pendingAutoDeploy = false;
     showShieldMesh(false);
 }
 
@@ -83,6 +86,57 @@ void MechAbility::adjustShieldCapacity(int newMax) {
             m_shieldHp = newMax;
         }
     }
+}
+
+void MechAbility::configurePlayerShield(int capacity) {
+    m_autoDeploy = true;
+    m_pendingAutoDeploy = false;
+    m_def = AbilityCatalog::SHIELD;
+    m_def.shieldCapacity = capacity;
+    m_def.cooldownSec = kShieldRedeployCooldownSec;
+    m_singleUse = false;
+
+    if (capacity <= 0) {
+        m_def.kind = AbilityKind::None;
+        m_maxShieldHp = 0;
+        reset();
+        return;
+    }
+
+    m_def.kind = AbilityKind::Shield;
+    adjustShieldCapacity(capacity);
+}
+
+void MechAbility::queueAutoDeploy() {
+    m_pendingAutoDeploy = true;
+}
+
+void MechAbility::deployPendingAutoShield() {
+    if (!m_pendingAutoDeploy) {
+        return;
+    }
+    m_pendingAutoDeploy = false;
+    deployShield();
+}
+
+void MechAbility::deployShield() {
+    if (m_def.kind != AbilityKind::Shield || m_maxShieldHp <= 0) {
+        return;
+    }
+    if (m_state == State::Cooldown && m_cooldownRemaining > 0.0f) {
+        return;
+    }
+    if (m_state == State::Active && m_shieldHp > 0) {
+        return;
+    }
+    if (m_visualPhase != VisualPhase::Off) {
+        return;
+    }
+
+    m_state = State::Active;
+    m_shieldHp = m_maxShieldHp;
+    m_cooldownRemaining = 0.0f;
+    startDeployVisual();
 }
 
 void MechAbility::ensureShieldMesh() {
@@ -231,7 +285,11 @@ void MechAbility::update(float deltaTime, const MechRig& rig,
         m_cooldownRemaining -= deltaTime;
         if (m_cooldownRemaining <= 0.0f) {
             m_cooldownRemaining = 0.0f;
-            m_state = State::Ready;
+            if (m_autoDeploy && m_def.kind == AbilityKind::Shield && m_maxShieldHp > 0) {
+                deployShield();
+            } else {
+                m_state = State::Ready;
+            }
         }
     }
 
@@ -241,6 +299,11 @@ void MechAbility::update(float deltaTime, const MechRig& rig,
 }
 
 bool MechAbility::onCenterTap(float nowSec) {
+    if (m_autoDeploy) {
+        (void)nowSec;
+        return false;
+    }
+
     if (m_lastCenterTapTime >= 0.0f &&
         (nowSec - m_lastCenterTapTime) <= DOUBLE_TAP_SEC) {
         m_lastCenterTapTime = -100.0f;
@@ -252,6 +315,9 @@ bool MechAbility::onCenterTap(float nowSec) {
 }
 
 bool MechAbility::tryActivate() {
+    if (m_autoDeploy) {
+        return false;
+    }
     if (m_def.kind != AbilityKind::Shield || m_state != State::Ready) {
         return false;
     }

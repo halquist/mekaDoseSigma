@@ -37,6 +37,9 @@ struct EnvPalette {
 
 const EnvPalette& envPaletteFor(MapTheme theme, EnvLightingMode mode);
 
+/// Blend two cycle palettes; @p t in 0..1.
+void lerpEnvPalette(const EnvPalette& a, const EnvPalette& b, float t, EnvPalette& out);
+
 /// @p phase01 wraps 0..1: day -> twilight -> night -> dawn -> day (smooth blend).
 void envPaletteAtCyclePhase(MapTheme theme, float phase01, EnvPalette& out);
 

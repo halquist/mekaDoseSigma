@@ -17,7 +17,8 @@ public:
     void update(float playerX, float playerZ, float playerAngleDeg);
     void resolveMovement(float& x, float& z, float newX, float newZ, float radius) const;
     void reset();
-    void applyEnvironment(const EnvPalette& palette);
+    void applyEnvironment(const EnvPalette& ruralPalette,
+                          const EnvPalette& desertPalette);
 
     static constexpr float PLAYER_RADIUS = 16.0f;
 
@@ -30,6 +31,7 @@ private:
         float scale = 1.0f;
         uint32_t styleHash = 0;
         float surfaceY = 0.0f;
+        MapTheme theme = MapTheme::RURAL;
         Renderer::Object* tree = nullptr;
     };
 
@@ -54,7 +56,7 @@ private:
 
     Renderer::Scene& m_scene;
     const MapConfig& m_mapConfig;
-    Renderer::Material m_treeMat;
+    Renderer::Material m_treeMats[2];
 
     std::vector<Renderer::Object::Vertex> m_treeProto;
 

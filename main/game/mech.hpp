@@ -44,6 +44,8 @@ public:
     int getMaxHp() const { return m_loadout.maxHp(); }
     int getWeaponDamage() const { return m_loadout.weaponDamage(); }
     void refreshShieldCapacity();
+    void queueShieldDeploy();
+    void deployPendingShield();
 
     MechAbility& ability() { return m_ability; }
     const MechAbility& ability() const { return m_ability; }

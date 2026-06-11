@@ -7,6 +7,7 @@ namespace Game {
 class Terrain {
 public:
     static void setMapConfig(const MapConfig* config);
+    static const MapConfig& mapConfig();
     static void setChunkOrigin(float originX, float originZ);
 
     static float chunkOriginX() { return s_chunkOriginX; }

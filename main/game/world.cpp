@@ -1,5 +1,6 @@
 #include "world.hpp"
 #include "terrain.hpp"
+#include "worldgen.hpp"
 #include <climits>
 #include <cmath>
 
@@ -7,13 +8,19 @@ namespace Game {
 
 namespace {
 constexpr float TERRAIN_EDGE_MARGIN = 90.0f;
+
+Renderer::Material* grassMaterialForTheme(MapTheme theme,
+                                          Renderer::Material* grassMats) {
+    return theme == MapTheme::DESERT ? &grassMats[1] : &grassMats[0];
+}
 } // namespace
 
 World::World(Renderer::Scene& scene)
     : m_scene(scene)
-    , m_grassMat(Colors::GRASS)
+    , m_grassMats{Renderer::Material(Colors::GRASS), Renderer::Material(Colors::GRASS)}
 {
-    m_grassMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_grassMats[0].shadingMode = Renderer::ShadingMode::FLAT;
+    m_grassMats[1].shadingMode = Renderer::ShadingMode::FLAT;
     createTerrain();
     rebuildTerrain(0.0f, 0.0f);
 }
@@ -45,7 +52,7 @@ void World::createTerrain() {
             const int i10 = i00 + 1;
             const int i01 = i00 + (nx + 1);
             const int i11 = i01 + 1;
-            m_terrain->addFace(i00, i10, i11, i01, &m_grassMat);
+            m_terrain->addFace(i00, i10, i11, i01, &m_grassMats[0]);
         }
     }
 
@@ -53,13 +60,20 @@ void World::createTerrain() {
 }
 
 void World::rebuildTerrain(float originX, float originZ) {
+    const MapConfig& cfg = Terrain::mapConfig();
     const int nx = Terrain::MESH_WIDTH_CELLS;
     const int nz = Terrain::MESH_DEPTH_CELLS;
     const int step = Terrain::MESH_CELL_SIZE;
     const int halfW = Terrain::meshHalfWidth();
     const int halfD = Terrain::meshHalfDepth();
-    const int snappedOriginX = static_cast<int>(lroundf(originX));
-    const int snappedOriginZ = static_cast<int>(lroundf(originZ));
+    const int snappedOriginX =
+        static_cast<int>(lroundf(originX / static_cast<float>(step))) * step;
+    const int snappedOriginZ =
+        static_cast<int>(lroundf(originZ / static_cast<float>(step))) * step;
+
+    if (snappedOriginX == m_chunkOriginX && snappedOriginZ == m_chunkOriginZ) {
+        return;
+    }
 
     int vi = 0;
     for (int iz = 0; iz <= nz; iz++) {
@@ -71,6 +85,23 @@ void World::rebuildTerrain(float originX, float originZ) {
             m_terrain->vertices[vi].position.y =
                 static_cast<int32_t>(Terrain::heightAt(wx, wz));
             vi++;
+        }
+    }
+
+    int faceIndex = 0;
+    for (int iz = 0; iz < nz; iz++) {
+        for (int ix = 0; ix < nx; ix++) {
+            const float centerLx =
+                static_cast<float>(ix * step + step / 2 - halfW);
+            const float centerLz =
+                static_cast<float>(iz * step + step / 2 - halfD);
+            const float wx = static_cast<float>(snappedOriginX) + centerLx;
+            const float wz = static_cast<float>(snappedOriginZ) + centerLz;
+            Renderer::Material* mat = grassMaterialForTheme(
+                WorldGen::biomeAt(wx, wz, cfg), m_grassMats);
+            m_terrain->triangles[faceIndex * 2].material = mat;
+            m_terrain->triangles[faceIndex * 2 + 1].material = mat;
+            faceIndex++;
         }
     }
 
@@ -113,8 +144,10 @@ void World::update(float centerX, float centerZ, float lookAheadDist,
     }
 }
 
-void World::applyEnvironment(const EnvPalette& palette) {
-    m_grassMat.color = palette.grass;
+void World::applyEnvironment(const EnvPalette& ruralPalette,
+                             const EnvPalette& desertPalette) {
+    m_grassMats[0].color = ruralPalette.grass;
+    m_grassMats[1].color = desertPalette.grass;
 }
 
 } // namespace Game

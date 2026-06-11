@@ -159,7 +159,7 @@ uint16_t lerpU16(uint16_t a, uint16_t b, float t) {
     return static_cast<uint16_t>(lroundf(a + (b - a) * clamp01(t)));
 }
 
-void lerpEnvPalette(const EnvPalette& a, const EnvPalette& b, float t, EnvPalette& out) {
+void lerpEnvPaletteImpl(const EnvPalette& a, const EnvPalette& b, float t, EnvPalette& out) {
     out.sky = lerpRgb565(a.sky, b.sky, t);
     out.grass = lerpRgb565(a.grass, b.grass, t);
     out.treeFoliage = lerpRgb565(a.treeFoliage, b.treeFoliage, t);
@@ -171,6 +171,14 @@ void lerpEnvPalette(const EnvPalette& a, const EnvPalette& b, float t, EnvPalett
     out.sunElevation = lerpI32(a.sunElevation, b.sunElevation, t);
     out.ambientColor = lerpColor(a.ambientColor, b.ambientColor, t);
 }
+
+} // namespace
+
+void lerpEnvPalette(const EnvPalette& a, const EnvPalette& b, float t, EnvPalette& out) {
+    lerpEnvPaletteImpl(a, b, t, out);
+}
+
+namespace {
 
 const EnvPalette& paletteForThemeLighting(MapTheme theme, EnvLightingMode mode) {
     if (theme == MapTheme::DESERT) {
@@ -216,7 +224,7 @@ void envPaletteAtCyclePhase(MapTheme theme, float phase01, EnvPalette& out) {
     const EnvPalette* const* cycle = cycleForTheme(theme);
     const EnvPalette& from = *cycle[segment];
     const EnvPalette& to = *cycle[(segment + 1) % kCycleKeyframeCount];
-    lerpEnvPalette(from, to, localT, out);
+    lerpEnvPaletteImpl(from, to, localT, out);
 }
 
 } // namespace Game

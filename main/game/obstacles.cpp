@@ -9,16 +9,18 @@ namespace Game {
 ObstacleField::ObstacleField(Renderer::Scene& scene, const MapConfig& mapConfig)
     : m_scene(scene)
     , m_mapConfig(mapConfig)
-    , m_treeMat(Colors::TREE_FOLIAGE)
+    , m_treeMats{Renderer::Material(Colors::TREE_FOLIAGE),
+                 Renderer::Material(Colors::TREE_FOLIAGE)}
 {
-    m_treeMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_treeMats[0].shadingMode = Renderer::ShadingMode::FLAT;
+    m_treeMats[1].shadingMode = Renderer::ShadingMode::FLAT;
 
-    auto* treeProtoObj = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMat);
+    auto* treeProtoObj = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMats[0]);
     m_treeProto = treeProtoObj->vertices;
     delete treeProtoObj;
 
     for (auto& slot : m_slots) {
-        slot.tree = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMat);
+        slot.tree = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMats[0]);
         // Screen-space backface cull drops outer pyramid faces from the chase
         // camera angle and leaves opposite lit FLAT faces visible — use NO_CULLING.
         slot.tree->cullingMode = Renderer::CullingMode::NO_CULLING;
@@ -51,18 +53,28 @@ void ObstacleField::hideSlot(Slot& slot) {
 void ObstacleField::placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec,
                               uint32_t styleHash) {
     const bool meshDirty = !slot.inUse || slot.styleHash != styleHash;
+    const MapTheme theme = WorldGen::biomeAt(spec.x, spec.z, m_mapConfig);
+    const bool themeChanged = !slot.inUse || slot.theme != theme;
 
     slot.inUse = true;
     slot.x = spec.x;
     slot.z = spec.z;
     slot.scale = spec.scale;
     slot.styleHash = styleHash;
+    slot.theme = theme;
     slot.radius = 12.0f * spec.scale;
 
     slot.surfaceY = Terrain::heightAt(spec.x, spec.z);
 
     if (meshDirty) {
         applyMeshScale(slot.tree, m_treeProto, spec.scale);
+    }
+    if (meshDirty || themeChanged) {
+        Renderer::Material* mat =
+            theme == MapTheme::DESERT ? &m_treeMats[1] : &m_treeMats[0];
+        for (auto& tri : slot.tree->triangles) {
+            tri.material = mat;
+        }
     }
     showSceneObject(slot.tree,
                     static_cast<int32_t>(lroundf(spec.x)),
@@ -237,8 +249,10 @@ void ObstacleField::reset() {
     m_placedCount = 0;
 }
 
-void ObstacleField::applyEnvironment(const EnvPalette& palette) {
-    m_treeMat.color = palette.treeFoliage;
+void ObstacleField::applyEnvironment(const EnvPalette& ruralPalette,
+                                     const EnvPalette& desertPalette) {
+    m_treeMats[0].color = ruralPalette.treeFoliage;
+    m_treeMats[1].color = desertPalette.treeFoliage;
 }
 
 } // namespace Game

@@ -36,13 +36,21 @@ Mech::Mech(Renderer::Scene& scene, const MechLoadoutPreset& preset)
     , m_ability(scene)
 {
     m_loadout.applyPreset(preset);
-    m_ability.equip(AbilityCatalog::SHIELD);
+    m_ability.configurePlayerShield(0);
     rebuildVisual();
 }
 
 void Mech::refreshShieldCapacity() {
     const int capacity = shieldCapacityForTier(m_loadout.bonuses().shieldTier);
-    m_ability.adjustShieldCapacity(capacity);
+    m_ability.configurePlayerShield(capacity);
+}
+
+void Mech::queueShieldDeploy() {
+    m_ability.queueAutoDeploy();
+}
+
+void Mech::deployPendingShield() {
+    m_ability.deployPendingAutoShield();
 }
 
 void Mech::rebuildVisual() {

@@ -22,12 +22,30 @@ uint32_t hashPosition(float x, float z, uint32_t seed) {
     return hash(static_cast<int>(x), static_cast<int>(z), seed ^ 0x9E3779B9u);
 }
 
+namespace {
+
+constexpr uint32_t kBiomeLayoutSalt = 0xB10BEB1Eu;
+
+MapTheme baseBiomeForCell(int biomeCellX, int biomeCellZ, uint32_t seed) {
+    const uint32_t h = hash(biomeCellX, biomeCellZ, seed ^ kBiomeLayoutSalt);
+    return (h & 1u) ? MapTheme::DESERT : MapTheme::RURAL;
+}
+
+} // namespace
+
+MapTheme biomeAt(float worldX, float worldZ, const MapConfig& cfg) {
+    const float cellSize = static_cast<float>(BIOME_CELL_SIZE);
+    const int biomeCellX = static_cast<int>(floorf(worldX / cellSize));
+    const int biomeCellZ = static_cast<int>(floorf(worldZ / cellSize));
+    return baseBiomeForCell(biomeCellX, biomeCellZ, cfg.worldSeed);
+}
+
 float terrainHeight(float worldX, float worldZ, const MapConfig& cfg) {
     const uint32_t s = cfg.worldSeed;
     const float sx = worldX + static_cast<float>((s & 0xFF) * 0.01f);
     const float sz = worldZ + static_cast<float>(((s >> 8) & 0xFF) * 0.01f);
 
-    switch (cfg.theme) {
+    switch (biomeAt(worldX, worldZ, cfg)) {
         case MapTheme::RURAL:
         default:
             return 4.0f * sinf(sx * 0.006f) * cosf(sz * 0.005f)

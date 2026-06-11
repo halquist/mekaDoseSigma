@@ -11,8 +11,9 @@ class Mech;
 constexpr uint8_t kMaxUpgradeTier = 6;
 constexpr int kBaseMaxHp = 100;
 constexpr int kHpCapMk6 = 250;
-constexpr int kBaseShieldCapacity = 50;
-constexpr int kShieldCapMk6 = 120;
+constexpr int kShieldHpPerTier = 25;
+constexpr int kShieldCapMk6 = 150;
+constexpr float kShieldRedeployCooldownSec = 15.0f;
 constexpr float kSpeedMoveBonusMk6 = 60.0f;
 constexpr float kSpeedTurnBonusMk6 = 72.0f;
 

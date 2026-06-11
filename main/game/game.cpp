@@ -72,7 +72,6 @@ MekaGame::~MekaGame() {
 void MekaGame::randomizeSession() {
     Rng::init();
     m_mapConfig.worldSeed = Rng::nextU32() | 1u;
-    m_mapConfig.theme = Rng::coinFlip() ? MapTheme::RURAL : MapTheme::DESERT;
     m_dayNightPhase = Rng::nextFloat01();
     Terrain::setMapConfig(&m_mapConfig);
 }
@@ -150,18 +149,20 @@ void MekaGame::setupLighting() {
 }
 
 void MekaGame::applyEnvironment() {
-    EnvPalette palette;
-    envPaletteAtCyclePhase(m_mapConfig.theme, m_dayNightPhase, palette);
+    EnvPalette ruralPalette;
+    EnvPalette desertPalette;
+    envPaletteAtCyclePhase(MapTheme::RURAL, m_dayNightPhase, ruralPalette);
+    envPaletteAtCyclePhase(MapTheme::DESERT, m_dayNightPhase, desertPalette);
 
-    m_scene->setBackcolor(palette.sky);
-    m_sunLight->color = palette.sunColor;
-    m_sunLight->intensity = palette.sunIntensity;
+    m_scene->setBackcolor(ruralPalette.sky);
+    m_sunLight->color = ruralPalette.sunColor;
+    m_sunLight->intensity = ruralPalette.sunIntensity;
     m_sunLight->updateDirection(
-        Vector3{palette.sunAzimuth, palette.sunElevation, 0});
-    m_ambient->color = palette.ambientColor;
+        Vector3{ruralPalette.sunAzimuth, ruralPalette.sunElevation, 0});
+    m_ambient->color = ruralPalette.ambientColor;
 
-    m_world->applyEnvironment(palette);
-    m_obstacles->applyEnvironment(palette);
+    m_world->applyEnvironment(ruralPalette, desertPalette);
+    m_obstacles->applyEnvironment(ruralPalette, desertPalette);
 }
 
 void MekaGame::updateDayNightCycle(float deltaTime) {
@@ -301,6 +302,7 @@ void MekaGame::beginUpgradePick() {
 
 void MekaGame::resumeAfterUpgradePick() {
     m_objective->respawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_mech->deployPendingShield();
     m_state = GameState::PLAYING;
 }
 

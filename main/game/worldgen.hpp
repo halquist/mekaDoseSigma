@@ -7,8 +7,12 @@ namespace Game {
 
 namespace WorldGen {
 
+constexpr int BIOME_CELL_SIZE = 440;
+
 uint32_t hash(int cx, int cz, uint32_t seed);
 uint32_t hashPosition(float x, float z, uint32_t seed);
+
+MapTheme biomeAt(float worldX, float worldZ, const MapConfig& cfg);
 
 float terrainHeight(float worldX, float worldZ, const MapConfig& cfg);
 

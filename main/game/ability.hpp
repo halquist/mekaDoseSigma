@@ -36,6 +36,10 @@ public:
 
     void equip(const AbilityDef& def);
     void reset();
+    /// Player shield: auto-deploy when unlocked; @p capacity 0 disables shield.
+    void configurePlayerShield(int capacity);
+    void queueAutoDeploy();
+    void deployPendingAutoShield();
     /// Updates max shield without resetting active state; adds delta to current HP when active.
     void adjustShieldCapacity(int newMax);
 
@@ -55,8 +59,13 @@ public:
 
     bool isReady() const { return m_state == State::Ready; }
     bool isActive() const { return m_state == State::Active; }
-    bool showReadyIcon() const { return isReady() && m_def.kind != AbilityKind::None; }
+    bool showReadyIcon() const {
+        return !m_autoDeploy && isReady() && m_def.kind != AbilityKind::None;
+    }
     bool showShieldBar() const { return isActive() && m_shieldHp > 0; }
+    bool hasShieldUnlocked() const {
+        return m_def.kind == AbilityKind::Shield && m_maxShieldHp > 0;
+    }
 
     int shieldHp() const { return m_shieldHp; }
     int maxShieldHp() const { return m_maxShieldHp; }
@@ -97,11 +106,14 @@ private:
     void finishBreakVisual();
     void breakShield();
     void beginCooldown();
+    void deployShield();
 
     Renderer::Scene& m_scene;
     AbilityDef m_def{};
     State m_state = State::Ready;
     VisualPhase m_visualPhase = VisualPhase::Off;
+    bool m_autoDeploy = false;
+    bool m_pendingAutoDeploy = false;
 
     Renderer::Object* m_shieldObj = nullptr;
     Renderer::Material m_shieldMat;
