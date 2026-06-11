@@ -12,12 +12,17 @@ namespace Game {
  *  0    36         92   148         204   239
  *
  * Outer strips dodge; inner regions turn / move forward.
+ * Top third of the screen (visual top; touch Y is flipped in input.cpp) moves backward.
  */
 struct TouchZones {
     static constexpr int FORWARD_HALF_WIDTH = 28;
     static constexpr int DODGE_EDGE_WIDTH = 36;
 
     static int centerX(int screenWidth) { return screenWidth / 2; }
+
+    static bool isReverse(int y, int screenHeight) {
+        return y >= (screenHeight * 2) / 3;
+    }
 
     static bool isDodgeLeft(int x, int /*screenWidth*/) {
         return x < DODGE_EDGE_WIDTH;

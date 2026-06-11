@@ -35,18 +35,23 @@ private:
     void setupCamera();
     void setupLighting();
     void applyEnvironment();
+    void updateDayNightCycle(float deltaTime);
     void updateCamera();
     void handleAutoFire();
     void handleEnemyCombat();
     void handleObjectiveCombat();
     void beginUpgradePick();
-    void finishUpgradePick(int choiceIndex);
+    void applyUpgradePick(int choiceIndex);
+    void skipUpgradePick();
+    void resumeAfterUpgradePick();
     void startNewRun();
     void returnToMenu();
     void onPlayerDefeat();
     void randomizeSession();
     void drawEdgeFlash(uint16_t color, int thickness);
+    void drawHudArcs();
     void renderMenuScene();
+    void resetUiTouchLock();
 
     uint16_t* m_framebuffer;
     int m_width;
@@ -74,12 +79,16 @@ private:
     int m_highScores[HighScores::kTopCount] = {};
     bool m_newHighScore = false;
     float m_uiPulseSec = 0.0f;
+    float m_uiTouchLockSec = 0.0f;
+    float m_upgradePickConfirmSec = 0.0f;
+    int m_upgradePickChoice = -1;
 
     GameState m_state = GameState::MENU;
     int m_health = 100;
     int m_maxHealth = 100;
 
     float m_damageFlash = 0;
+    float m_dayNightPhase = 0.0f;
 
     float m_cameraDistance = 118.0f;
     float m_cameraHeightAboveMech = 34.0f;

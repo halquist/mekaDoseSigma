@@ -19,6 +19,9 @@ enum class MapTheme : uint8_t {
     CITY,
 };
 
+/// Full day/night loop duration in seconds (demo: 60s; production target: 300s).
+constexpr float kDayNightCycleSec = 300.0f;
+
 struct EnvPalette {
     uint16_t sky = Colors::SKY_BLUE;
     uint16_t grass = Colors::GRASS;
@@ -33,5 +36,8 @@ struct EnvPalette {
 };
 
 const EnvPalette& envPaletteFor(MapTheme theme, EnvLightingMode mode);
+
+/// @p phase01 wraps 0..1: day -> twilight -> night -> dawn -> day (smooth blend).
+void envPaletteAtCyclePhase(MapTheme theme, float phase01, EnvPalette& out);
 
 } // namespace Game

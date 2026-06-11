@@ -36,6 +36,8 @@ public:
 
     void equip(const AbilityDef& def);
     void reset();
+    /// Updates max shield without resetting active state; adds delta to current HP when active.
+    void adjustShieldCapacity(int newMax);
 
     void update(float deltaTime, const MechRig& rig,
                 int32_t x, int32_t z, float baseY, int32_t angle, int8_t pitch);

@@ -60,6 +60,31 @@ void MechAbility::reset() {
     showShieldMesh(false);
 }
 
+void MechAbility::adjustShieldCapacity(int newMax) {
+    if (newMax < 1) {
+        newMax = 1;
+    }
+
+    const int oldMax = m_maxShieldHp > 0 ? m_maxShieldHp : newMax;
+    const int delta = newMax - oldMax;
+    m_maxShieldHp = newMax;
+    m_def.shieldCapacity = newMax;
+
+    if (delta <= 0) {
+        if (m_shieldHp > newMax) {
+            m_shieldHp = newMax;
+        }
+        return;
+    }
+
+    if (m_state == State::Active && m_shieldHp > 0) {
+        m_shieldHp += delta;
+        if (m_shieldHp > newMax) {
+            m_shieldHp = newMax;
+        }
+    }
+}
+
 void MechAbility::ensureShieldMesh() {
     if (m_shieldObj) {
         return;

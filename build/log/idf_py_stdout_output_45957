@@ -1,0 +1,101 @@
+[1/21] Performing build step for 'bootloader'
+[1/1] cd /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/bootloader.bin
+Bootloader binary size 0x5800 bytes. 0x2800 bytes (31%) free.
+[2/21] No install step for 'bootloader'
+[3/21] Completed 'bootloader'
+[4/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/terrain.cpp.obj
+[5/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/environment.cpp.obj
+[6/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/worldgen.cpp.obj
+[7/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/world.cpp.obj
+[8/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/objective.cpp.obj
+[9/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/enemy_manager.cpp.obj
+[10/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/main.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp: In function 'void init_display()':
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::data4_io_num' [-Wmissing-field-initializers]
+   82 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::data5_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::data6_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::data7_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::isr_cpu_id' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::intr_flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:103:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_high_on_cmd' [-Wmissing-field-initializers]
+  103 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:103:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_low_on_param' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:110:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::data_endian' [-Wmissing-field-initializers]
+  110 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:110:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:110:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::vendor_config' [-Wmissing-field-initializers]
+[11/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech.cpp.obj
+[12/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/obstacles.cpp.obj
+[13/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/projectile.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/main/game/projectile.cpp: In member function 'void Game::ProjectileSystem::updateHomingMissile(Projectile&, float)':
+/home/jon/esp32_testing/mekaDoseSigma/main/game/projectile.cpp:420:17: warning: unused variable 'horizDist' [-Wunused-variable]
+  420 |     const float horizDist = sqrtf(dx * dx + dz * dz);
+      |                 ^~~~~~~~~
+[14/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/enemy.cpp.obj
+[15/21] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/game.cpp.obj
+[16/21] Linking C static library esp-idf/main/libmain.a
+[17/21] Generating ld/sections.ld
+[18/21] Linking CXX executable mekadose_sigma.elf
+[19/21] Generating binary image from built executable
+esptool.py v4.11.0
+Creating esp32s3 image...
+Merged 2 ELF sections
+Successfully created esp32s3 image.
+Generated /home/jon/esp32_testing/mekaDoseSigma/build/mekadose_sigma.bin
+[20/21] cd /home/jon/esp32_testing/mekaDoseSigma/build/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/jon/esp32_testing/mekaDoseSigma/build/partition_table/partition-table.bin /home/jon/esp32_testing/mekaDoseSigma/build/mekadose_sigma.bin
+mekadose_sigma.bin binary size 0x6b3a0 bytes. Smallest app partition is 0x100000 bytes. 0x94c60 bytes (58%) free.
+[20/21] cd /home/jon/esp/esp-idf/components/esptool_py && /home/jon/.local/lib/python3.10/site-packages/cmake/data/bin/cmake -D IDF_PATH=/home/jon/esp/esp-idf -D "SERIAL_TOOL=/home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python;;/home/jon/esp/esp-idf/components/esptool_py/esptool/esptool.py;--chip;esp32s3" -D "SERIAL_TOOL_ARGS=--before=default_reset;--after=hard_reset;write_flash;@flash_args" -D WORKING_DIRECTORY=/home/jon/esp32_testing/mekaDoseSigma/build -P /home/jon/esp/esp-idf/components/esptool_py/run_serial_tool.cmake
+esptool.py --chip esp32s3 -p /dev/ttyACM0 -b 460800 --before=default_reset --after=hard_reset write_flash --flash_mode dio --flash_freq 80m --flash_size 8MB 0x0 bootloader/bootloader.bin 0x10000 mekadose_sigma.bin 0x8000 partition_table/partition-table.bin
+esptool.py v4.11.0
+Serial port /dev/ttyACM0
+Connecting...
+Chip is ESP32-S3 (QFN56) (revision v0.2)
+Features: WiFi, BLE, Embedded PSRAM 8MB (AP_3v3)
+Crystal is 40MHz
+USB mode: USB-Serial/JTAG
+MAC: d8:3b:da:73:f2:bc
+Uploading stub...
+Running stub...
+Stub running...
+Changing baud rate to 460800
+Changed.
+Configuring flash size...
+Flash will be erased from 0x00000000 to 0x00005fff...
+Flash will be erased from 0x00010000 to 0x0007bfff...
+Flash will be erased from 0x00008000 to 0x00008fff...
+SHA digest in image updated
+Compressed 22528 bytes to 13931...
+Writing at 0x00000000... (100 %)
+Wrote 22528 bytes (13931 compressed) at 0x00000000 in 0.4 seconds (effective 458.9 kbit/s)...
+Hash of data verified.
+Compressed 439200 bytes to 252803...
+Writing at 0x00010000... (6 %)
+Writing at 0x0001ca80... (12 %)
+Writing at 0x000298c9... (18 %)
+Writing at 0x0002e8d9... (25 %)
+Writing at 0x00034124... (31 %)
+Writing at 0x00039ac4... (37 %)
+Writing at 0x0003efae... (43 %)
+Writing at 0x00044859... (50 %)
+Writing at 0x00049e1e... (56 %)
+Writing at 0x0004fb8c... (62 %)
+Writing at 0x000552a5... (68 %)
+Writing at 0x0005bc2e... (75 %)
+Writing at 0x000650cd... (81 %)
+Writing at 0x0006ced9... (87 %)
+Writing at 0x000729c2... (93 %)
+Writing at 0x0007897c... (100 %)
+Wrote 439200 bytes (252803 compressed) at 0x00010000 in 3.7 seconds (effective 952.8 kbit/s)...
+Hash of data verified.
+Compressed 3072 bytes to 103...
+Writing at 0x00008000... (100 %)
+Wrote 3072 bytes (103 compressed) at 0x00008000 in 0.0 seconds (effective 493.3 kbit/s)...
+Hash of data verified.
+
+Leaving...
+Hard resetting via RTS pin...

@@ -1,5 +1,6 @@
 #include "font.hpp"
 #include "FramebufferIO.hpp"
+#include <cstdio>
 
 namespace Game {
 
@@ -116,17 +117,7 @@ int Font::measureTextWidth(const char* text, int scale) {
 
 int Font::measureNumberWidth(int value, int scale) {
     char buffer[12];
-    int len = 0;
-    if (value <= 0) {
-        buffer[len++] = '0';
-    } else {
-        int tmp = value;
-        while (tmp > 0 && len < 11) {
-            buffer[len++] = static_cast<char>('0' + (tmp % 10));
-            tmp /= 10;
-        }
-    }
-    buffer[len] = '\0';
+    snprintf(buffer, sizeof(buffer), "%d", value < 0 ? 0 : value);
     return measureTextWidth(buffer, scale);
 }
 
@@ -172,17 +163,7 @@ void Font::drawNumber(uint16_t* framebuffer, int screenWidth, int screenHeight,
     }
 
     char buffer[12];
-    int len = 0;
-    if (value == 0) {
-        buffer[len++] = '0';
-    } else {
-        int tmp = value;
-        while (tmp > 0 && len < 11) {
-            buffer[len++] = static_cast<char>('0' + (tmp % 10));
-            tmp /= 10;
-        }
-    }
-    buffer[len] = '\0';
+    snprintf(buffer, sizeof(buffer), "%d", value);
 
     drawTextCentered(framebuffer, screenWidth, screenHeight,
                      buffer, centerX, y, scale, color);
@@ -198,17 +179,7 @@ void Font::drawNumberRight(uint16_t* framebuffer, int screenWidth, int screenHei
     }
 
     char buffer[12];
-    int len = 0;
-    if (value == 0) {
-        buffer[len++] = '0';
-    } else {
-        int tmp = value;
-        while (tmp > 0 && len < 11) {
-            buffer[len++] = static_cast<char>('0' + (tmp % 10));
-            tmp /= 10;
-        }
-    }
-    buffer[len] = '\0';
+    snprintf(buffer, sizeof(buffer), "%d", value);
 
     const int width = measureTextWidth(buffer, scale);
     drawText(framebuffer, screenWidth, screenHeight,

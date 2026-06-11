@@ -19,7 +19,7 @@ public:
     Mech(Renderer::Scene& scene,
          const MechLoadoutPreset& preset = MechCatalog::LOADOUT_STRIKER_HOVER);
 
-    void update(const TouchInput& input, float deltaTime, int screenWidth,
+    void update(const TouchInput& input, float deltaTime, int screenWidth, int screenHeight,
                 ObstacleField* obstacles = nullptr);
     void reset();
 

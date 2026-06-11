@@ -19,9 +19,10 @@ void drawDefeat(uint16_t* framebuffer, int width, int height,
                 const int highScores[HighScores::kTopCount],
                 bool newHighScore);
 void drawUpgradePick(uint16_t* framebuffer, int width, int height,
-                     const UpgradeOption& left, const UpgradeOption& right);
+                     const UpgradeOption& left, const UpgradeOption& right,
+                     int selectedChoice, int score);
 
-/// Returns 0 = left choice, 1 = right choice, -1 if no valid pick.
+/// Returns 0 = left, 1 = right, 2 = skip, -1 = no action.
 int upgradePickFromTouch(int touchX, int touchY, int width, int height);
 
 } // namespace GameUi

@@ -1,4 +1,5 @@
 #include "environment.hpp"
+#include <cmath>
 
 namespace Game {
 
@@ -43,6 +44,19 @@ const EnvPalette kRuralNight = {
     {62, 66, 82},
 };
 
+const EnvPalette kRuralDawn = {
+    Colors::rgb(148, 108, 128),
+    Colors::rgb(58, 92, 48),
+    Colors::rgb(42, 82, 38),
+    Colors::rgb(62, 42, 26),
+    Colors::rgb(72, 68, 62),
+    {255, 200, 140},
+    100,
+    18,
+    -22,
+    {92, 84, 78},
+};
+
 const EnvPalette kDesertDay = {
     Colors::rgb(168, 196, 228),
     Colors::rgb(196, 168, 108),
@@ -82,6 +96,82 @@ const EnvPalette kDesertNight = {
     {58, 50, 44},
 };
 
+const EnvPalette kDesertDawn = {
+    Colors::rgb(168, 112, 92),
+    Colors::rgb(132, 100, 64),
+    Colors::rgb(96, 72, 48),
+    Colors::rgb(88, 58, 38),
+    Colors::rgb(104, 82, 68),
+    {255, 190, 120},
+    115,
+    20,
+    -20,
+    {102, 88, 72},
+};
+
+const EnvPalette* kRuralCycle[] = {
+    &kRuralDay, &kRuralTwilight, &kRuralNight, &kRuralDawn,
+};
+const EnvPalette* kDesertCycle[] = {
+    &kDesertDay, &kDesertTwilight, &kDesertNight, &kDesertDawn,
+};
+
+constexpr int kCycleKeyframeCount = 4;
+
+float clamp01(float t) {
+    if (t <= 0.0f) {
+        return 0.0f;
+    }
+    if (t >= 1.0f) {
+        return 1.0f;
+    }
+    return t;
+}
+
+uint16_t lerpRgb565(uint16_t a, uint16_t b, float t) {
+    t = clamp01(t);
+    const int ar = ((a >> 11) & 0x1F) << 3;
+    const int ag = ((a >> 5) & 0x3F) << 2;
+    const int ab = (a & 0x1F) << 3;
+    const int br = ((b >> 11) & 0x1F) << 3;
+    const int bg = ((b >> 5) & 0x3F) << 2;
+    const int bb = (b & 0x1F) << 3;
+    return Colors::rgb(
+        static_cast<uint8_t>(ar + static_cast<int>((br - ar) * t)),
+        static_cast<uint8_t>(ag + static_cast<int>((bg - ag) * t)),
+        static_cast<uint8_t>(ab + static_cast<int>((bb - ab) * t)));
+}
+
+Renderer::Color lerpColor(Renderer::Color a, Renderer::Color b, float t) {
+    t = clamp01(t);
+    return {
+        static_cast<uint8_t>(a.r + static_cast<int>((b.r - a.r) * t)),
+        static_cast<uint8_t>(a.g + static_cast<int>((b.g - a.g) * t)),
+        static_cast<uint8_t>(a.b + static_cast<int>((b.b - a.b) * t)),
+    };
+}
+
+int32_t lerpI32(int32_t a, int32_t b, float t) {
+    return static_cast<int32_t>(lroundf(a + (b - a) * clamp01(t)));
+}
+
+uint16_t lerpU16(uint16_t a, uint16_t b, float t) {
+    return static_cast<uint16_t>(lroundf(a + (b - a) * clamp01(t)));
+}
+
+void lerpEnvPalette(const EnvPalette& a, const EnvPalette& b, float t, EnvPalette& out) {
+    out.sky = lerpRgb565(a.sky, b.sky, t);
+    out.grass = lerpRgb565(a.grass, b.grass, t);
+    out.treeFoliage = lerpRgb565(a.treeFoliage, b.treeFoliage, t);
+    out.treeTrunk = lerpRgb565(a.treeTrunk, b.treeTrunk, t);
+    out.rock = lerpRgb565(a.rock, b.rock, t);
+    out.sunColor = lerpColor(a.sunColor, b.sunColor, t);
+    out.sunIntensity = lerpU16(a.sunIntensity, b.sunIntensity, t);
+    out.sunAzimuth = lerpI32(a.sunAzimuth, b.sunAzimuth, t);
+    out.sunElevation = lerpI32(a.sunElevation, b.sunElevation, t);
+    out.ambientColor = lerpColor(a.ambientColor, b.ambientColor, t);
+}
+
 const EnvPalette& paletteForThemeLighting(MapTheme theme, EnvLightingMode mode) {
     if (theme == MapTheme::DESERT) {
         switch (mode) {
@@ -100,10 +190,33 @@ const EnvPalette& paletteForThemeLighting(MapTheme theme, EnvLightingMode mode) 
     }
 }
 
+const EnvPalette* const* cycleForTheme(MapTheme theme) {
+    return theme == MapTheme::DESERT ? kDesertCycle : kRuralCycle;
+}
+
 } // namespace
 
 const EnvPalette& envPaletteFor(MapTheme theme, EnvLightingMode mode) {
     return paletteForThemeLighting(theme, mode);
+}
+
+void envPaletteAtCyclePhase(MapTheme theme, float phase01, EnvPalette& out) {
+    phase01 -= floorf(phase01);
+    if (phase01 < 0.0f) {
+        phase01 += 1.0f;
+    }
+
+    const float scaled = phase01 * static_cast<float>(kCycleKeyframeCount);
+    int segment = static_cast<int>(scaled);
+    if (segment >= kCycleKeyframeCount) {
+        segment = 0;
+    }
+
+    const float localT = scaled - static_cast<float>(segment);
+    const EnvPalette* const* cycle = cycleForTheme(theme);
+    const EnvPalette& from = *cycle[segment];
+    const EnvPalette& to = *cycle[(segment + 1) % kCycleKeyframeCount];
+    lerpEnvPalette(from, to, localT, out);
 }
 
 } // namespace Game

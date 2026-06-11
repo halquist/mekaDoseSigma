@@ -7,12 +7,59 @@
 namespace Game {
 namespace GameUi {
 
-void fillScreen(uint16_t* framebuffer, int width, int height, uint16_t color) {
-    const uint16_t packed = fbPack(color);
-    const int pixelCount = width * height;
-    for (int i = 0; i < pixelCount; ++i) {
-        framebuffer[i] = packed;
+namespace {
+
+constexpr int kSkipBandHeightDivisor = 5;
+
+void fillRect(uint16_t* framebuffer, int width, int height,
+              int x0, int y0, int x1, int y1, uint16_t color) {
+    if (x0 < 0) {
+        x0 = 0;
     }
+    if (y0 < 0) {
+        y0 = 0;
+    }
+    if (x1 > width) {
+        x1 = width;
+    }
+    if (y1 > height) {
+        y1 = height;
+    }
+    if (x0 >= x1 || y0 >= y1) {
+        return;
+    }
+
+    const uint16_t packed = fbPack(color);
+    for (int y = y0; y < y1; ++y) {
+        uint16_t* row = framebuffer + y * width;
+        for (int x = x0; x < x1; ++x) {
+            row[x] = packed;
+        }
+    }
+}
+
+void drawUpgradeHalf(uint16_t* framebuffer, int width, int height,
+                     int x0, int x1, int y0, int y1,
+                     const UpgradeOption& option, bool selected) {
+    const uint16_t bgColor = selected ? Colors::BLACK : option.color;
+    const uint16_t textColor = selected ? option.color : Colors::BLACK;
+
+    fillRect(framebuffer, width, height, x0, y0, x1, y1, bgColor);
+
+    const int cx = (x0 + x1) / 2;
+    const int cy = (y0 + y1) / 2;
+    Font::drawTextCentered(framebuffer, width, height, option.title,
+                           cx, cy - 34, 2, textColor);
+    if (option.tierLabel[0] != '\0') {
+        Font::drawTextCentered(framebuffer, width, height, option.tierLabel,
+                               cx, cy - 10, 2, textColor);
+    }
+}
+
+} // namespace
+
+void fillScreen(uint16_t* framebuffer, int width, int height, uint16_t color) {
+    fillRect(framebuffer, width, height, 0, 0, width, height, color);
 }
 
 void drawMenu(uint16_t* framebuffer, int width, int height,
@@ -72,35 +119,38 @@ void drawDefeat(uint16_t* framebuffer, int width, int height,
 }
 
 void drawUpgradePick(uint16_t* framebuffer, int width, int height,
-                     const UpgradeOption& left, const UpgradeOption& right) {
-    fillScreen(framebuffer, width, height, Colors::BLACK);
+                     const UpgradeOption& left, const UpgradeOption& right,
+                     int selectedChoice, int score) {
+    const int skipBottom = height / kSkipBandHeightDivisor;
+    fillRect(framebuffer, width, height, 0, 0, width, skipBottom,
+             Colors::OBJECTIVE_ARROW);
+    Font::drawTextCentered(framebuffer, width, height, "SKIP",
+                           width / 2, skipBottom / 2 - 1, 2, Colors::BLACK);
 
-    const int cx = width / 2;
-    Font::drawTextCentered(framebuffer, width, height, "CHOOSE UPGRADE",
-                           cx, 36, 1, Colors::OBJECTIVE_ARROW);
+    const int choiceTop = skipBottom;
+    drawUpgradeHalf(framebuffer, width, height,
+                    0, width / 2, choiceTop, height,
+                    left, selectedChoice == 0);
+    drawUpgradeHalf(framebuffer, width, height,
+                    width / 2, width, choiceTop, height,
+                    right, selectedChoice == 1);
 
-    const int choiceY = height / 2 + 18;
-    const int leftCx = width / 4;
-    const int rightCx = (width * 3) / 4;
-
-    Font::drawTextCentered(framebuffer, width, height, left.tag,
-                           leftCx, choiceY - 10, 2, left.color);
-    Font::drawTextCentered(framebuffer, width, height, "LEFT",
-                           leftCx, choiceY + 24, 1, Colors::HUD_TEXT);
-    Font::drawTextCentered(framebuffer, width, height, right.tag,
-                           rightCx, choiceY - 10, 2, right.color);
-    Font::drawTextCentered(framebuffer, width, height, "RIGHT",
-                           rightCx, choiceY + 24, 1, Colors::HUD_TEXT);
+    Font::drawTextCentered(framebuffer, width, height, "SCORE",
+                           width / 2, height - 44, 1, Colors::BLACK);
+    Font::drawNumber(framebuffer, width, height, score,
+                     width / 2, height - 32, 2, Colors::BLACK);
 }
 
 int upgradePickFromTouch(int touchX, int touchY, int width, int height) {
-    if (touchY < height / 2) {
-        return -1;
+    (void)touchX;
+
+    const int skipTouchMinY = (height * (kSkipBandHeightDivisor - 1))
+                              / kSkipBandHeightDivisor;
+    if (touchY >= skipTouchMinY) {
+        return 2;
     }
-    if (touchX < width / 2) {
-        return 0;
-    }
-    return 1;
+
+    return touchX < width / 2 ? 0 : 1;
 }
 
 } // namespace GameUi

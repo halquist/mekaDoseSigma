@@ -6,11 +6,15 @@ namespace Game {
 
 class Digits {
 public:
-    /// Health arc with optional inner shield arc in the same pixel pass.
+    /// Health arc with optional inner shield capacity arc in the same pixel pass.
+    /// Arc fill lengths scale against @p healthCapVisual / @p shieldCapVisual (MK6 caps).
     static void drawHealthAndShieldArcs(uint16_t* framebuffer, int screenWidth, int screenHeight,
                                         int health, int maxHealth,
+                                        int healthCapVisual,
                                         uint16_t healthFillColor, uint16_t bgColor,
-                                        bool showShield, int shieldHp, int maxShieldHp,
+                                        bool showShieldCapacityRing, int maxShieldHp,
+                                        int shieldCapVisual,
+                                        bool showShieldActiveFill, int shieldHp,
                                         uint16_t shieldFillColor);
 
     /// Upper semicircular health arc hugging the round screen bezel.

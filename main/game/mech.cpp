@@ -1,4 +1,5 @@
 #include "mech.hpp"
+#include "run_upgrades.hpp"
 #include "terrain.hpp"
 #include "obstacles.hpp"
 #include "projectile.hpp"
@@ -40,10 +41,8 @@ Mech::Mech(Renderer::Scene& scene, const MechLoadoutPreset& preset)
 }
 
 void Mech::refreshShieldCapacity() {
-    AbilityDef def = AbilityCatalog::SHIELD;
-    def.shieldCapacity =
-        AbilityCatalog::SHIELD.shieldCapacity + m_loadout.bonuses().shieldCapacity;
-    m_ability.equip(def);
+    const int capacity = shieldCapacityForTier(m_loadout.bonuses().shieldTier);
+    m_ability.adjustShieldCapacity(capacity);
 }
 
 void Mech::rebuildVisual() {
@@ -194,7 +193,7 @@ void Mech::applyDodge(float deltaTime, ObstacleField* obstacles) {
     }
 }
 
-void Mech::update(const TouchInput& input, float deltaTime, int screenWidth,
+void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int screenHeight,
                   ObstacleField* obstacles) {
     if (!m_alive) return;
 
@@ -210,6 +209,7 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth,
 
     float turnInput = 0.0f;
     bool moveForward = false;
+    bool moveReverse = false;
 
     if (input.touched) {
         if (!m_touchActive) {
@@ -217,7 +217,8 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth,
             m_angleAtTouchStart = m_angle;
             m_dodgeTriggeredThisTouch = false;
 
-            if (TouchZones::isForward(input.x, screenWidth)) {
+            if (TouchZones::isForward(input.x, screenWidth)
+                && !TouchZones::isReverse(input.y, screenHeight)) {
                 m_ability.onCenterTap(m_touchClock);
             }
         }
@@ -234,7 +235,9 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth,
                 }
             }
         } else if (m_dodgeRemaining <= 0.0f) {
-            if (TouchZones::isSteerLeft(input.x, screenWidth)) {
+            if (TouchZones::isReverse(input.y, screenHeight)) {
+                moveReverse = true;
+            } else if (TouchZones::isSteerLeft(input.x, screenWidth)) {
                 turnInput = -1.0f;
             } else if (TouchZones::isSteerRight(input.x, screenWidth)) {
                 turnInput = 1.0f;
@@ -255,11 +258,23 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth,
     m_angle += turnInput * turnRate * deltaTime;
     m_turnActivity = fabsf(turnInput);
 
+    const float speed = m_loadout.moveSpeed();
+    const float radians = m_angle * M_PI / 180.0f;
+
     if (moveForward) {
-        const float speed = m_loadout.moveSpeed();
-        const float radians = m_angle * M_PI / 180.0f;
         const float newX = m_x + sinf(radians) * speed * deltaTime;
         const float newZ = m_z + cosf(radians) * speed * deltaTime;
+
+        if (obstacles) {
+            obstacles->resolveMovement(
+                m_x, m_z, newX, newZ, ObstacleField::PLAYER_RADIUS);
+        } else {
+            m_x = newX;
+            m_z = newZ;
+        }
+    } else if (moveReverse) {
+        const float newX = m_x - sinf(radians) * speed * deltaTime;
+        const float newZ = m_z - cosf(radians) * speed * deltaTime;
 
         if (obstacles) {
             obstacles->resolveMovement(

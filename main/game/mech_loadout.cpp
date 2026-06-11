@@ -1,4 +1,5 @@
 #include "mech_loadout.hpp"
+#include "run_upgrades.hpp"
 
 namespace Game {
 
@@ -83,7 +84,7 @@ float MechLoadout::moveSpeed() const {
     for (const WeaponDef* w : m_weapons) {
         if (w) speed += w->stats.speed;
     }
-    speed += m_bonuses.speed;
+    speed += moveBonusForSpeedTier(m_bonuses.speedTier);
     if (speed < 40.0f) speed = 40.0f;
     return speed;
 }
@@ -96,7 +97,7 @@ float MechLoadout::turnRate() const {
     for (const WeaponDef* w : m_weapons) {
         if (w) turn += w->stats.turnRate;
     }
-    turn += m_bonuses.turnRate;
+    turn += turnBonusForSpeedTier(m_bonuses.speedTier);
     return turn;
 }
 
@@ -109,14 +110,13 @@ float MechLoadout::hitWidth() const {
 }
 
 int MechLoadout::maxHp() const {
-    int hp = m_frame ? m_frame->baseMaxHp : 15;
+    int hp = maxHpForArmorTier(m_bonuses.armorTier);
     for (const MechComponentDef* partDef : m_parts) {
         if (partDef) hp += partDef->stats.hp;
     }
     for (const WeaponDef* w : m_weapons) {
         if (w) hp += w->stats.hp;
     }
-    hp += m_bonuses.hp;
     if (hp < 1) hp = 1;
     return hp;
 }
@@ -124,7 +124,6 @@ int MechLoadout::maxHp() const {
 int MechLoadout::weaponDamage() const {
     const WeaponDef* w = weapon(m_activeWeaponSlot);
     int damage = (w && w->damage >= 1) ? w->damage : 1;
-    damage += m_bonuses.weaponDamage;
     if (damage < 1) {
         damage = 1;
     }

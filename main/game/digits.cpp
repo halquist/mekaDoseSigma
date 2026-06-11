@@ -93,6 +93,22 @@ bool inAnnulus(float dist2, const Annulus2& ring) {
     return dist2 >= ring.innerR2 && dist2 <= ring.outerR2;
 }
 
+const ArcBoundary* makeCenteredSpanBoundary(float spanDeg, float edgeInsetDeg,
+                                            ArcBoundary& storage) {
+    if (spanDeg <= 0.0f) {
+        return nullptr;
+    }
+
+    const float drawableSpan = spanDeg - 2.0f * edgeInsetDeg;
+    if (drawableSpan <= 0.25f) {
+        return nullptr;
+    }
+
+    const float startDeg = 360.0f - spanDeg * 0.5f + edgeInsetDeg;
+    storage = makeArcBoundary(startDeg, drawableSpan);
+    return &storage;
+}
+
 const ArcBoundary* makeFillBoundary(float fillSpanDeg, float fillOutlinePx, float midR,
                                     ArcBoundary& storage) {
     if (fillSpanDeg <= 0.0f) {
@@ -101,22 +117,16 @@ const ArcBoundary* makeFillBoundary(float fillSpanDeg, float fillOutlinePx, floa
 
     const float capDeg =
         fillOutlinePx * (180.0f / static_cast<float>(M_PI)) / midR;
-    const float fillStart = kArcStartDeg + capDeg;
-    const float fillEnd = kArcStartDeg + fillSpanDeg - capDeg;
-    const float shrunkSpan = fillEnd - fillStart;
-    if (shrunkSpan <= 0.25f) {
-        return nullptr;
-    }
-
-    storage = makeArcBoundary(fillStart, shrunkSpan);
-    return &storage;
+    return makeCenteredSpanBoundary(fillSpanDeg, capDeg, storage);
 }
 
 void drawHealthAndShieldArcsImpl(uint16_t* framebuffer, int screenWidth, int screenHeight,
                                  float cx, float cy, float displayR,
+                                 float healthCapacitySpanDeg,
                                  float healthFillSpanDeg,
+                                 float shieldCapacitySpanDeg,
                                  float shieldFillSpanDeg,
-                                 bool drawHealthLayer, bool showShield,
+                                 bool drawHealthLayer, bool drawShieldLayer,
                                  uint16_t healthFillColor, uint16_t shieldFillColor,
                                  uint16_t bgColor) {
     const Annulus2 healthBg = makeAnnulus(displayR, kArcThickness);
@@ -126,24 +136,39 @@ void drawHealthAndShieldArcsImpl(uint16_t* framebuffer, int screenWidth, int scr
     Annulus2 shieldBg{};
     Annulus2 shieldFillRing{};
     float shieldMidR = 0.0f;
-    if (showShield) {
+    if (drawShieldLayer) {
         const float shieldOuterR = displayR - kArcThickness - kShieldArcGap;
         shieldBg = makeAnnulus(shieldOuterR, kShieldArcThickness);
         shieldFillRing = makeFillAnnulus(shieldBg, kShieldFillOutlinePx);
         shieldMidR = (shieldBg.innerR + shieldBg.outerR) * 0.5f;
     }
 
-    const ArcBoundary fullBoundary = makeArcBoundary(kArcStartDeg, kArcSpanDeg);
+    ArcBoundary healthCapacityBoundaryStorage;
     ArcBoundary healthFillBoundaryStorage;
+    ArcBoundary shieldCapacityBoundaryStorage;
     ArcBoundary shieldFillBoundaryStorage;
+
+    const ArcBoundary* healthCapacityBoundary = nullptr;
+    if (drawHealthLayer && healthCapacitySpanDeg > 0.0f) {
+        healthCapacityBoundary =
+            makeCenteredSpanBoundary(healthCapacitySpanDeg, 0.0f,
+                                     healthCapacityBoundaryStorage);
+    }
     const ArcBoundary* healthFillBoundary = nullptr;
     if (drawHealthLayer) {
         healthFillBoundary =
             makeFillBoundary(healthFillSpanDeg, kFillOutlinePx, healthMidR,
                              healthFillBoundaryStorage);
     }
+
+    const ArcBoundary* shieldCapacityBoundary = nullptr;
+    if (drawShieldLayer && shieldCapacitySpanDeg > 0.0f) {
+        shieldCapacityBoundary =
+            makeCenteredSpanBoundary(shieldCapacitySpanDeg, 0.0f,
+                                     shieldCapacityBoundaryStorage);
+    }
     const ArcBoundary* shieldFillBoundary = nullptr;
-    if (showShield) {
+    if (drawShieldLayer && shieldFillSpanDeg > 0.0f) {
         shieldFillBoundary =
             makeFillBoundary(shieldFillSpanDeg, kShieldFillOutlinePx, shieldMidR,
                              shieldFillBoundaryStorage);
@@ -177,20 +202,27 @@ void drawHealthAndShieldArcsImpl(uint16_t* framebuffer, int screenWidth, int scr
             const float dist2 = dx * dx + dy * dy;
 
             const bool inHealthBg = drawHealthLayer && inAnnulus(dist2, healthBg);
-            const bool inShieldBg = showShield && inAnnulus(dist2, shieldBg);
+            const bool inShieldBg = drawShieldLayer && inAnnulus(dist2, shieldBg);
             if (!inHealthBg && !inShieldBg) {
-                continue;
-            }
-            if (!inArcSweep(dx, dy, fullBoundary)) {
                 continue;
             }
 
             if (inHealthBg) {
+                if (!healthCapacityBoundary
+                    || !inArcSweep(dx, dy, *healthCapacityBoundary)) {
+                    continue;
+                }
+
                 const bool inFill = healthFillBoundary != nullptr
                     && healthFillRing.innerR < healthFillRing.outerR
                     && inAnnulus(dist2, healthFillRing)
                     && inArcSweep(dx, dy, *healthFillBoundary);
                 framebuffer[row + px] = inFill ? packedHealthFill : packedBg;
+                continue;
+            }
+
+            if (!shieldCapacityBoundary
+                || !inArcSweep(dx, dy, *shieldCapacityBoundary)) {
                 continue;
             }
 
@@ -220,25 +252,55 @@ int clampRatioValue(int value, int maxValue) {
 
 void Digits::drawHealthAndShieldArcs(uint16_t* framebuffer, int screenWidth, int screenHeight,
                                      int health, int maxHealth,
+                                     int healthCapVisual,
                                      uint16_t healthFillColor, uint16_t bgColor,
-                                     bool showShield, int shieldHp, int maxShieldHp,
+                                     bool showShieldCapacityRing, int maxShieldHp,
+                                     int shieldCapVisual,
+                                     bool showShieldActiveFill, int shieldHp,
                                      uint16_t shieldFillColor) {
     health = clampRatioValue(health, maxHealth);
-    shieldHp = clampRatioValue(shieldHp, maxShieldHp);
+    if (maxHealth < 1) {
+        maxHealth = 1;
+    }
+    if (healthCapVisual < 1) {
+        healthCapVisual = 1;
+    }
+    if (shieldCapVisual < 1) {
+        shieldCapVisual = 1;
+    }
 
     const float cx = screenCenterX(screenWidth);
     const float cy = screenCenterY(screenHeight);
     const float displayR = displayRadius(screenWidth, screenHeight);
-    const float healthFillSpan =
-        kArcSpanDeg * (static_cast<float>(health) / static_cast<float>(maxHealth));
-    const float shieldFillSpan = showShield
-        ? kArcSpanDeg * (static_cast<float>(shieldHp) / static_cast<float>(maxShieldHp))
+    const float healthCapacitySpan =
+        kArcSpanDeg * (static_cast<float>(maxHealth) /
+                       static_cast<float>(healthCapVisual));
+    const float healthFillSpan = healthCapacitySpan > 0.0f
+        ? healthCapacitySpan *
+          (static_cast<float>(health) / static_cast<float>(maxHealth))
         : 0.0f;
+
+    const int clampedMaxShield = maxShieldHp < 1 ? 1 : maxShieldHp;
+    const float shieldCapacitySpan = showShieldCapacityRing
+        ? kArcSpanDeg * (static_cast<float>(clampedMaxShield) /
+                         static_cast<float>(shieldCapVisual))
+        : 0.0f;
+
+    float shieldFillSpan = 0.0f;
+    if (showShieldActiveFill && showShieldCapacityRing) {
+        shieldHp = clampRatioValue(shieldHp, clampedMaxShield);
+        if (shieldCapacitySpan > 0.0f) {
+            shieldFillSpan =
+                shieldCapacitySpan *
+                (static_cast<float>(shieldHp) / static_cast<float>(clampedMaxShield));
+        }
+    }
 
     drawHealthAndShieldArcsImpl(framebuffer, screenWidth, screenHeight,
                                 cx, cy, displayR,
-                                healthFillSpan, shieldFillSpan,
-                                true, showShield,
+                                healthCapacitySpan, healthFillSpan,
+                                shieldCapacitySpan, shieldFillSpan,
+                                true, showShieldCapacityRing,
                                 healthFillColor, shieldFillColor, bgColor);
 }
 
@@ -246,26 +308,20 @@ void Digits::drawHealthArc(uint16_t* framebuffer, int screenWidth, int screenHei
                            int health, int maxHealth,
                            uint16_t fillColor, uint16_t bgColor) {
     drawHealthAndShieldArcs(framebuffer, screenWidth, screenHeight,
-                            health, maxHealth, fillColor, bgColor,
-                            false, 0, 1, fillColor);
+                            health, maxHealth, maxHealth,
+                            fillColor, bgColor,
+                            false, 1, 1,
+                            false, 0, fillColor);
 }
 
 void Digits::drawShieldArc(uint16_t* framebuffer, int screenWidth, int screenHeight,
                            int shieldHp, int maxShieldHp,
                            uint16_t fillColor, uint16_t bgColor) {
-    shieldHp = clampRatioValue(shieldHp, maxShieldHp);
-
-    const float cx = screenCenterX(screenWidth);
-    const float cy = screenCenterY(screenHeight);
-    const float displayR = displayRadius(screenWidth, screenHeight);
-    const float shieldFillSpan =
-        kArcSpanDeg * (static_cast<float>(shieldHp) / static_cast<float>(maxShieldHp));
-
-    drawHealthAndShieldArcsImpl(framebuffer, screenWidth, screenHeight,
-                                cx, cy, displayR,
-                                0.0f, shieldFillSpan,
-                                false, true,
-                                fillColor, fillColor, bgColor);
+    drawHealthAndShieldArcs(framebuffer, screenWidth, screenHeight,
+                            maxShieldHp, maxShieldHp, maxShieldHp,
+                            fillColor, bgColor,
+                            true, maxShieldHp, maxShieldHp,
+                            true, shieldHp, fillColor);
 }
 
 void Digits::drawAbilityReadyIcon(uint16_t* framebuffer, int screenWidth, int screenHeight,
