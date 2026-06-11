@@ -22,6 +22,10 @@ void drawUpgradePick(uint16_t* framebuffer, int width, int height,
                      const UpgradeOption& left, const UpgradeOption& right,
                      int selectedChoice, int score);
 
+/// Full-screen portal wipe: circle grows from center with @p alpha (0..255).
+void drawPortalTransitionSphere(uint16_t* framebuffer, int width, int height,
+                                float radiusPx, uint8_t alpha);
+
 /// Returns 0 = left, 1 = right, 2 = skip, -1 = no action.
 int upgradePickFromTouch(int touchX, int touchY, int width, int height);
 

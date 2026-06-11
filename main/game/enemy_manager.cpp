@@ -69,6 +69,27 @@ void EnemyManager::dismissPortalBoss() {
     }
 }
 
+void EnemyManager::clearAllEnemies() {
+    for (int i = 0; i < MAX_ENEMIES; ++i) {
+        m_enemies[static_cast<size_t>(i)]->deactivate();
+    }
+    dismissPortalBoss();
+    m_lastAliveCount = 0;
+}
+
+void EnemyManager::setSpawnPaused(bool paused) {
+    m_spawnPaused = paused;
+}
+
+void EnemyManager::prepareSpawnAfterTransition(float playerX, float playerZ,
+                                               float playerAngle) {
+    (void)playerX;
+    (void)playerZ;
+    (void)playerAngle;
+    m_spawnTimer = m_initialSpawnDelay;
+    m_lastAliveCount = 0;
+}
+
 bool EnemyManager::isPortalBossAlive() const {
     return m_portalBoss && m_portalBoss->isAlive();
 }
@@ -108,6 +129,10 @@ int EnemyManager::aliveCount() const {
 
 void EnemyManager::trySpawn(float deltaTime, float playerX, float playerZ,
                             float playerAngle) {
+    if (m_spawnPaused) {
+        return;
+    }
+
     m_spawnTimer -= deltaTime;
 
     if (aliveCount() >= m_maxEnemies || findFreeSlot() < 0) {

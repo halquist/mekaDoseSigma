@@ -62,6 +62,7 @@ namespace Colors {
 enum class GameState {
     MENU,
     PLAYING,
+    PORTAL_TRANSITION,
     UPGRADE_PICK,
     VICTORY,
     DEFEAT

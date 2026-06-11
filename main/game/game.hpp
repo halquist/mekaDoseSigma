@@ -49,12 +49,15 @@ private:
     void startNewRun();
     void returnToMenu();
     void applyWorldTier();
-    void transitionToNextWorld();
+    void applyWorldTransition();
+    void beginPortalTransition();
+    void updatePortalTransition(float deltaTime);
     void handlePortalTransition();
     void onPlayerDefeat();
     void randomizeSession();
     void drawEdgeFlash(uint16_t color, int thickness);
     void drawHudArcs();
+    void drawPortalTransitionOverlay();
     void renderMenuScene();
     void resetUiTouchLock();
 
@@ -102,6 +105,12 @@ private:
     float m_cameraLookAhead = 520.0f;
     float m_cameraLookDown = 90.0f;
     float m_cameraRigOffsetY = 55.0f;
+
+    float m_portalTransitionSec = 0.0f;
+    bool m_portalWorldSwapped = false;
+
+    static constexpr float kPortalGrowSec = 0.55f;
+    static constexpr float kPortalFadeSec = 0.55f;
 };
 
 } // namespace Game

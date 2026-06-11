@@ -56,7 +56,75 @@ void drawUpgradeHalf(uint16_t* framebuffer, int width, int height,
     }
 }
 
+uint16_t blendRgb565(uint16_t dst, uint16_t src, uint8_t alpha) {
+    const uint32_t a = alpha;
+    const uint32_t inv = 255u - a;
+    const uint32_t dr = (dst >> 11) & 0x1Fu;
+    const uint32_t dg = (dst >> 5) & 0x3Fu;
+    const uint32_t db = dst & 0x1Fu;
+    const uint32_t sr = (src >> 11) & 0x1Fu;
+    const uint32_t sg = (src >> 5) & 0x3Fu;
+    const uint32_t sb = src & 0x1Fu;
+    const uint32_t r = (sr * a + dr * inv + 127u) / 255u;
+    const uint32_t g = (sg * a + dg * inv + 127u) / 255u;
+    const uint32_t b = (sb * a + db * inv + 127u) / 255u;
+    return static_cast<uint16_t>((r << 11) | (g << 5) | b);
+}
+
+float smoothStep(float t) {
+    if (t <= 0.0f) {
+        return 0.0f;
+    }
+    if (t >= 1.0f) {
+        return 1.0f;
+    }
+    return t * t * (3.0f - 2.0f * t);
+}
+
 } // namespace
+
+void drawPortalTransitionSphere(uint16_t* framebuffer, int width, int height,
+                                float radiusPx, uint8_t alpha) {
+    if (alpha == 0 || radiusPx <= 0.5f) {
+        return;
+    }
+
+    const int cx = width / 2;
+    const int cy = height / 2;
+    const int r = static_cast<int>(radiusPx);
+    if (r <= 0) {
+        return;
+    }
+
+    const int rSq = r * r;
+    const int yMin = cy - r;
+    const int yMax = cy + r;
+    const uint16_t srcColor = Colors::PORTAL_VOID;
+
+    for (int y = yMin; y <= yMax; ++y) {
+        if (y < 0 || y >= height) {
+            continue;
+        }
+
+        const int dy = y - cy;
+        const int dySq = dy * dy;
+        if (dySq > rSq) {
+            continue;
+        }
+
+        const int dxMax = static_cast<int>(sqrtf(static_cast<float>(rSq - dySq)));
+        const int x0 = cx - dxMax;
+        const int x1 = cx + dxMax;
+        const int clipX0 = x0 < 0 ? 0 : x0;
+        const int clipX1 = x1 >= width ? width - 1 : x1;
+
+        uint16_t* row = framebuffer + y * width;
+        for (int x = clipX0; x <= clipX1; ++x) {
+            const uint16_t dst = fbUnpack(row[x]);
+            row[x] = fbPack(blendRgb565(dst, srcColor, alpha));
+        }
+    }
+}
 
 void fillScreen(uint16_t* framebuffer, int width, int height, uint16_t color) {
     fillRect(framebuffer, width, height, 0, 0, width, height, color);

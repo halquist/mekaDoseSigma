@@ -27,6 +27,10 @@ public:
     bool isPortalBossAlive() const;
     Enemy* portalBoss();
 
+    void clearAllEnemies();
+    void setSpawnPaused(bool paused);
+    void prepareSpawnAfterTransition(float playerX, float playerZ, float playerAngle);
+
     int aliveCount() const;
     Enemy* findClosestInArc(float fromX, float fromZ, float fromAngleDeg,
                               float maxRange, float aimConeDeg);
@@ -55,6 +59,7 @@ private:
     float m_initialSpawnDelay = INITIAL_SPAWN_DELAY;
     float m_refillSpawnDelay = REFILL_SPAWN_DELAY;
     int m_maxEnemies = MAX_ENEMIES;
+    bool m_spawnPaused = false;
 };
 
 } // namespace Game

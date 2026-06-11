@@ -334,7 +334,7 @@ void MekaGame::applyWorldTier() {
                            m_worldTier.objectivePointValue());
 }
 
-void MekaGame::transitionToNextWorld() {
+void MekaGame::applyWorldTransition() {
     m_worldTier.index++;
     m_mapConfig.worldIndex = m_worldTier.index;
     m_mapConfig.theme = m_worldTier.nextTheme(m_mapConfig.theme);
@@ -349,12 +349,38 @@ void MekaGame::transitionToNextWorld() {
     m_world->resetAt(px, pz);
     m_obstacles->reset();
     m_obstacles->update(px, pz, angle);
-    m_enemies->reset(px, pz, angle);
     m_projectiles->reset();
     m_portal->hide();
     m_objective->respawn(px, pz, angle);
     applyEnvironment();
-    m_particles->spawnHitEffect(px, m_mech->getBaseY(), pz, Colors::PORTAL_VOID);
+    updateCamera();
+}
+
+void MekaGame::beginPortalTransition() {
+    m_portalTransitionSec = 0.0f;
+    m_portalWorldSwapped = false;
+    m_projectiles->reset();
+    m_enemies->setSpawnPaused(true);
+    m_state = GameState::PORTAL_TRANSITION;
+}
+
+void MekaGame::updatePortalTransition(float deltaTime) {
+    m_portalTransitionSec += deltaTime;
+
+    if (!m_portalWorldSwapped && m_portalTransitionSec >= kPortalGrowSec) {
+        applyWorldTransition();
+        m_enemies->clearAllEnemies();
+        m_portalWorldSwapped = true;
+    }
+
+    if (m_portalTransitionSec >= kPortalGrowSec + kPortalFadeSec) {
+        m_enemies->setSpawnPaused(false);
+        m_enemies->prepareSpawnAfterTransition(
+            m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+        m_portalTransitionSec = 0.0f;
+        m_portalWorldSwapped = false;
+        m_state = GameState::PLAYING;
+    }
 }
 
 void MekaGame::handlePortalTransition() {
@@ -364,7 +390,35 @@ void MekaGame::handlePortalTransition() {
     if (!m_portal->playerTouches(m_mech->getX(), m_mech->getZ(), m_mech->getWidth())) {
         return;
     }
-    transitionToNextWorld();
+    beginPortalTransition();
+}
+
+void MekaGame::drawPortalTransitionOverlay() {
+    if (m_state != GameState::PORTAL_TRANSITION) {
+        return;
+    }
+
+    const float halfW = static_cast<float>(m_width) * 0.5f;
+    const float halfH = static_cast<float>(m_height) * 0.5f;
+    const float maxRadius = sqrtf(halfW * halfW + halfH * halfH) + 8.0f;
+    float radius = 0.0f;
+    uint8_t alpha = 255;
+
+    if (m_portalTransitionSec < kPortalGrowSec) {
+        const float t = m_portalTransitionSec / kPortalGrowSec;
+        const float eased = t * t * (3.0f - 2.0f * t);
+        radius = maxRadius * eased;
+        alpha = 255;
+    } else {
+        radius = maxRadius;
+        const float fadeT =
+            (m_portalTransitionSec - kPortalGrowSec) / kPortalFadeSec;
+        const float eased = fadeT * fadeT * (3.0f - 2.0f * fadeT);
+        alpha = static_cast<uint8_t>(255.0f * (1.0f - eased));
+    }
+
+    GameUi::drawPortalTransitionSphere(
+        m_framebuffer, m_width, m_height, radius, alpha);
 }
 
 void MekaGame::resumeAfterUpgradePick() {
@@ -537,6 +591,16 @@ void MekaGame::update(float deltaTime) {
         return;
     }
 
+    if (m_state == GameState::PORTAL_TRANSITION) {
+        updateDayNightCycle(deltaTime);
+        m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
+                        deltaTime, 0.0f);
+        m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+        m_particles->update(deltaTime);
+        updatePortalTransition(deltaTime);
+        return;
+    }
+
     if (m_state == GameState::PLAYING) {
         updateDayNightCycle(deltaTime);
 
@@ -682,6 +746,11 @@ void MekaGame::render() {
 
     if (!fullScreenUi) {
         m_parallelRenderer.render(*m_scene, m_height);
+
+        if (m_state == GameState::PORTAL_TRANSITION) {
+            drawPortalTransitionOverlay();
+            return;
+        }
 
         drawHudArcs();
 
