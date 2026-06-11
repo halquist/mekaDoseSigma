@@ -56,6 +56,13 @@ void ObjectiveBuilding::respawn(float playerX, float playerZ, float playerAngle)
     spawnNext(playerX, playerZ, playerAngle);
 }
 
+void ObjectiveBuilding::dismissTarget() {
+    m_hasTarget = false;
+    m_destroyed = false;
+    m_visible = false;
+    hide();
+}
+
 void ObjectiveBuilding::reset(float playerX, float playerZ, float playerAngle) {
     m_spawnIndex = 0;
     spawnNext(playerX, playerZ, playerAngle);

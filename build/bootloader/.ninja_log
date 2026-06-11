@@ -112,15 +112,7 @@
 493	558	1781025047994825314	bootloader.elf	9addaa0a76f97a41
 558	619	1781025048123222408	.bin_timestamp	ac28dc75bec84fa9
 558	619	1781025048123222408	/home/jon/esp32_testing/mekaDoseSigma/build/bootloader/.bin_timestamp	ac28dc75bec84fa9
-2	21	1781206628564508595	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-2	21	1781206628564508595	/home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-5	33	1781207240156557198	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-5	33	1781207240156557198	/home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-5	26	1781207334331255659	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-5	26	1781207334331255659	/home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-3	28	1781207721873651641	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-3	28	1781207721873651641	/home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-3	22	1781207728584269069	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
-3	22	1781207728584269069	/home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
 2	20	1781207739348817768	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
 2	20	1781207739348817768	/home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
+3	23	1781220589760290037	esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2
+3	23	1781220589760290037	/home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py/CMakeFiles/bootloader_check_size	d68f7c04b1ce8c2

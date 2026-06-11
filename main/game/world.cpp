@@ -134,6 +134,10 @@ bool World::shouldRecentreTerrain(float centerX, float centerZ,
     return fabsf(dx) > maxOffset || fabsf(dz) > maxOffset;
 }
 
+void World::resetAt(float originX, float originZ) {
+    rebuildTerrain(originX, originZ);
+}
+
 void World::update(float centerX, float centerZ, float lookAheadDist,
                    float deltaTime, float turnActivity) {
     (void)deltaTime;

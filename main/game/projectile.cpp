@@ -314,7 +314,8 @@ void ProjectileSystem::fireEnemyBomb(float x, float y, float z, float targetX, f
 }
 
 void ProjectileSystem::fireEnemyHomingAtTarget(float x, float y, float z, float targetX,
-                                               float targetZ, float targetAimY) {
+                                               float targetZ, float targetAimY,
+                                               float damageScale) {
     Projectile* slot = nullptr;
     for (auto& p : m_projectiles) {
         if (!p.active) {
@@ -361,6 +362,7 @@ void ProjectileSystem::fireEnemyHomingAtTarget(float x, float y, float z, float 
     slot->active = true;
     slot->isPlayerProjectile = false;
     slot->isHomingMissile = true;
+    slot->damageScale = damageScale;
     updateMissileVisual(*slot);
 }
 
@@ -375,6 +377,7 @@ void ProjectileSystem::destroyProjectile(Projectile& p) {
     p.active = false;
     p.isHomingMissile = false;
     p.isFallingBomb = false;
+    p.damageScale = 1.0f;
     stashSceneObject(p.missileObj);
     stashSceneObject(p.boltObj);
     stashSceneObject(p.bombObj);
@@ -542,6 +545,10 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
                                      float playerWidth,
                                      float* outHitX, float* outHitZ, float* outHitY) {
     const float hitDist = playerWidth / 2 + 18;
+    const auto scaledDamage = [this](int baseDamage, float perProjectileScale) {
+        return static_cast<int>(lroundf(
+            static_cast<float>(baseDamage) * m_enemyDamageScale * perProjectileScale));
+    };
 
     auto recordHit = [&](float x, float y, float z) {
         if (outHitX) {
@@ -573,7 +580,7 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
             if (closest < ENEMY_HIT_RADIUS && yDist < ENEMY_HIT_Y_TOLERANCE) {
                 recordHit(p.x, missileWorldY, p.z);
                 detonateMissile(p);
-                return PLAYER_DAMAGE_ENEMY_MISSILE;
+                return scaledDamage(PLAYER_DAMAGE_ENEMY_MISSILE, p.damageScale);
             }
             continue;
         }
@@ -592,7 +599,7 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
             if (closest < BOMB_SPLASH_RADIUS) {
                 recordHit(p.x, p.y, p.z);
                 destroyProjectile(p);
-                return PLAYER_DAMAGE_BOMB;
+                return scaledDamage(PLAYER_DAMAGE_BOMB, p.damageScale);
             }
             continue;
         }
@@ -604,7 +611,7 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
         if (dist < hitDist) {
             recordHit(p.x, Terrain::hoverHeight(p.x, p.z), p.z);
             destroyProjectile(p);
-            return PLAYER_DAMAGE_TANK_BOLT;
+            return scaledDamage(PLAYER_DAMAGE_TANK_BOLT, p.damageScale);
         }
     }
     return 0;
@@ -674,6 +681,10 @@ void ProjectileSystem::reset() {
         t.active = false;
         stashSceneObject(t.obj);
     }
+}
+
+void ProjectileSystem::setEnemyDamageScale(float scale) {
+    m_enemyDamageScale = scale;
 }
 
 } // namespace Game

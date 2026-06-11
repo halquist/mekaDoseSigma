@@ -13,8 +13,10 @@
 #include "obstacles.hpp"
 #include "objective.hpp"
 #include "objective_hud.hpp"
+#include "portal.hpp"
 #include "score.hpp"
 #include "run_upgrades.hpp"
+#include "world_tier.hpp"
 #include "high_scores.hpp"
 #include "menu_showcase.hpp"
 #include "parallel_scene_render.hpp"
@@ -46,6 +48,9 @@ private:
     void resumeAfterUpgradePick();
     void startNewRun();
     void returnToMenu();
+    void applyWorldTier();
+    void transitionToNextWorld();
+    void handlePortalTransition();
     void onPlayerDefeat();
     void randomizeSession();
     void drawEdgeFlash(uint16_t color, int thickness);
@@ -68,12 +73,14 @@ private:
     Mech* m_mech = nullptr;
     EnemyManager* m_enemies = nullptr;
     ObjectiveBuilding* m_objective = nullptr;
+    WorldPortal* m_portal = nullptr;
     ProjectileSystem* m_projectiles = nullptr;
     ParticleSystem* m_particles = nullptr;
     MenuShowcase* m_menuShowcase = nullptr;
     ParallelSceneRenderer m_parallelRenderer;
 
     MapConfig m_mapConfig;
+    WorldTier m_worldTier;
     RunScore m_score;
     UpgradePicker m_upgradePicker;
     int m_highScores[HighScores::kTopCount] = {};

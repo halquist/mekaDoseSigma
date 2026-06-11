@@ -1,4 +1,5 @@
 #include "enemy_manager.hpp"
+#include "world_tier.hpp"
 #include "rng.hpp"
 #include <cmath>
 
@@ -14,12 +15,32 @@ EnemyManager::EnemyManager(Renderer::Scene& scene, ProjectileSystem& projectiles
         m_enemies[static_cast<size_t>(i)] =
             new Enemy(scene, projectiles, mapConfig);
     }
+    m_portalBoss = new Enemy(scene, projectiles, mapConfig);
 }
 
 EnemyManager::~EnemyManager() {
     for (int i = 0; i < MAX_ENEMIES; ++i) {
         delete m_enemies[static_cast<size_t>(i)];
         m_enemies[static_cast<size_t>(i)] = nullptr;
+    }
+    delete m_portalBoss;
+    m_portalBoss = nullptr;
+}
+
+void EnemyManager::applyWorldTier(const WorldTier& tier) {
+    m_spawnIntervalMin = tier.spawnIntervalMin();
+    m_spawnIntervalJitter = tier.spawnIntervalJitter();
+    m_initialSpawnDelay = tier.initialSpawnDelay();
+    m_refillSpawnDelay = tier.refillSpawnDelay();
+    m_maxEnemies = tier.maxEnemies();
+
+    for (int i = 0; i < MAX_ENEMIES; ++i) {
+        m_enemies[static_cast<size_t>(i)]->setWorldScaling(
+            tier.enemySpeedScale(), tier.enemyShieldUseChance());
+    }
+    if (m_portalBoss) {
+        m_portalBoss->setWorldScaling(
+            tier.enemySpeedScale(), tier.enemyShieldUseChance());
     }
 }
 
@@ -28,9 +49,32 @@ void EnemyManager::reset(float playerX, float playerZ, float playerAngle) {
     for (int i = 0; i < MAX_ENEMIES; ++i) {
         m_enemies[static_cast<size_t>(i)]->deactivate();
     }
+    dismissPortalBoss();
     spawnOne(playerX, playerZ, playerAngle);
-    m_spawnTimer = INITIAL_SPAWN_DELAY;
+    m_spawnTimer = m_initialSpawnDelay;
     m_lastAliveCount = aliveCount();
+}
+
+void EnemyManager::spawnPortalBoss(float portalX, float portalZ, float portalAngle,
+                                   float playerX, float playerZ) {
+    if (!m_portalBoss) {
+        return;
+    }
+    m_portalBoss->spawnAsPortalBoss(portalX, portalZ, portalAngle, playerX, playerZ);
+}
+
+void EnemyManager::dismissPortalBoss() {
+    if (m_portalBoss) {
+        m_portalBoss->deactivate();
+    }
+}
+
+bool EnemyManager::isPortalBossAlive() const {
+    return m_portalBoss && m_portalBoss->isAlive();
+}
+
+Enemy* EnemyManager::portalBoss() {
+    return m_portalBoss;
 }
 
 int EnemyManager::findFreeSlot() const {
@@ -66,7 +110,7 @@ void EnemyManager::trySpawn(float deltaTime, float playerX, float playerZ,
                             float playerAngle) {
     m_spawnTimer -= deltaTime;
 
-    if (aliveCount() >= MAX_ENEMIES || findFreeSlot() < 0) {
+    if (aliveCount() >= m_maxEnemies || findFreeSlot() < 0) {
         return;
     }
 
@@ -75,8 +119,8 @@ void EnemyManager::trySpawn(float deltaTime, float playerX, float playerZ,
     }
 
     if (spawnOne(playerX, playerZ, playerAngle)) {
-        m_spawnTimer = SPAWN_INTERVAL_MIN +
-            Rng::nextFloat01() * SPAWN_INTERVAL_JITTER;
+        m_spawnTimer = m_spawnIntervalMin +
+            Rng::nextFloat01() * m_spawnIntervalJitter;
     }
 }
 
@@ -86,11 +130,14 @@ void EnemyManager::update(float deltaTime, float playerX, float playerZ,
         m_enemies[static_cast<size_t>(i)]->update(
             deltaTime, playerX, playerZ, playerAngle, playerAimY);
     }
+    if (m_portalBoss && m_portalBoss->isAlive()) {
+        m_portalBoss->update(deltaTime, playerX, playerZ, playerAngle, playerAimY);
+    }
 
     const int alive = aliveCount();
-    if (alive < m_lastAliveCount && alive < MAX_ENEMIES) {
-        if (m_spawnTimer > REFILL_SPAWN_DELAY) {
-            m_spawnTimer = REFILL_SPAWN_DELAY;
+    if (alive < m_lastAliveCount && alive < m_maxEnemies) {
+        if (m_spawnTimer > m_refillSpawnDelay) {
+            m_spawnTimer = m_refillSpawnDelay;
         }
     }
     m_lastAliveCount = alive;
@@ -120,6 +167,21 @@ Enemy* EnemyManager::findClosestInArc(float fromX, float fromZ, float fromAngleD
 
         bestDistSq = distSq;
         best = &e;
+    }
+
+    if (m_portalBoss && m_portalBoss->isAlive()) {
+        const float dx = m_portalBoss->getX() - fromX;
+        const float dz = m_portalBoss->getZ() - fromZ;
+        const float distSq = dx * dx + dz * dz;
+        if (distSq < bestDistSq) {
+            float angleToTarget = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+            float angleDiff = angleToTarget - fromAngleDeg;
+            while (angleDiff > 180.0f) angleDiff -= 360.0f;
+            while (angleDiff < -180.0f) angleDiff += 360.0f;
+            if (fabsf(angleDiff) <= aimConeDeg) {
+                best = m_portalBoss;
+            }
+        }
     }
     return best;
 }

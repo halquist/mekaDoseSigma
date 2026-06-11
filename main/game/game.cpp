@@ -57,6 +57,7 @@ MekaGame::~MekaGame() {
     delete m_particles;
     delete m_projectiles;
     delete m_enemies;
+    delete m_portal;
     delete m_objective;
     delete m_mech;
     delete m_obstacles;
@@ -71,6 +72,9 @@ MekaGame::~MekaGame() {
 
 void MekaGame::randomizeSession() {
     Rng::init();
+    m_worldTier = WorldTier{};
+    m_mapConfig.worldIndex = 0;
+    m_mapConfig.theme = m_worldTier.themeForWorld();
     m_mapConfig.worldSeed = Rng::nextU32() | 1u;
     m_dayNightPhase = Rng::nextFloat01();
     Terrain::setMapConfig(&m_mapConfig);
@@ -110,8 +114,11 @@ bool MekaGame::init() {
     m_health = m_maxHealth;
     m_enemies = new EnemyManager(*m_scene, *m_projectiles, m_mapConfig);
     m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    applyWorldTier();
     m_objective = new ObjectiveBuilding(*m_scene, m_mapConfig);
     m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_portal = new WorldPortal(*m_scene, m_mapConfig);
+    m_portal->hide();
     m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
     m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
                     0.0f, 0.0f);
@@ -121,6 +128,8 @@ bool MekaGame::init() {
 
     m_state = GameState::MENU;
     m_score.reset();
+    m_score.setPointValues(m_worldTier.killPointValue(),
+                           m_worldTier.objectivePointValue());
     m_uiPulseSec = 0.0f;
     resetUiTouchLock();
 
@@ -149,17 +158,20 @@ void MekaGame::setupLighting() {
 }
 
 void MekaGame::applyEnvironment() {
+    EnvPalette activePalette;
+    envPaletteAtCyclePhase(m_mapConfig.theme, m_dayNightPhase, activePalette);
+
     EnvPalette ruralPalette;
     EnvPalette desertPalette;
     envPaletteAtCyclePhase(MapTheme::RURAL, m_dayNightPhase, ruralPalette);
     envPaletteAtCyclePhase(MapTheme::DESERT, m_dayNightPhase, desertPalette);
 
-    m_scene->setBackcolor(ruralPalette.sky);
-    m_sunLight->color = ruralPalette.sunColor;
-    m_sunLight->intensity = ruralPalette.sunIntensity;
+    m_scene->setBackcolor(activePalette.sky);
+    m_sunLight->color = activePalette.sunColor;
+    m_sunLight->intensity = activePalette.sunIntensity;
     m_sunLight->updateDirection(
-        Vector3{ruralPalette.sunAzimuth, ruralPalette.sunElevation, 0});
-    m_ambient->color = ruralPalette.ambientColor;
+        Vector3{activePalette.sunAzimuth, activePalette.sunElevation, 0});
+    m_ambient->color = activePalette.ambientColor;
 
     m_world->applyEnvironment(ruralPalette, desertPalette);
     m_obstacles->applyEnvironment(ruralPalette, desertPalette);
@@ -265,30 +277,45 @@ void MekaGame::handleObjectiveCombat() {
 }
 
 void MekaGame::handleEnemyCombat() {
-    for (int i = 0; i < EnemyManager::MAX_ENEMIES; ++i) {
-        Enemy& enemy = m_enemies->enemy(i);
-        if (!enemy.isAlive()) continue;
+    auto tryHitEnemy = [&](Enemy& enemy) {
+        if (!enemy.isAlive()) {
+            return;
+        }
 
         float enemyMinY = 0.0f;
         float enemyMaxY = 0.0f;
         enemy.getHitVerticalRange(enemyMinY, enemyMaxY);
-        if (m_projectiles->checkEnemyHit(enemy.getX(),
+        if (!m_projectiles->checkEnemyHit(enemy.getX(),
                                          enemy.getZ(),
                                          enemyMinY,
                                          enemyMaxY,
                                          enemy.getWidth())) {
-            const bool wasAlive = enemy.isAlive();
-            bool hitEnemyShield = false;
-            enemy.takeDamage(m_mech->getWeaponDamage(), &hitEnemyShield);
-            m_particles->spawnHitEffect(
-                enemy.getX(), enemy.getAimY(), enemy.getZ(),
-                hitEnemyShield ? Colors::SHIELD_ENEMY : Colors::SPARK_ORANGE);
-            if (wasAlive && !enemy.isAlive()) {
-                m_score.kills++;
-                m_particles->spawnDeathEffect(
-                    enemy.getX(), enemy.getAimY(), enemy.getZ());
+            return;
+        }
+
+        const bool wasAlive = enemy.isAlive();
+        bool hitEnemyShield = false;
+        enemy.takeDamage(m_mech->getWeaponDamage(), &hitEnemyShield);
+        m_particles->spawnHitEffect(
+            enemy.getX(), enemy.getAimY(), enemy.getZ(),
+            hitEnemyShield ? Colors::SHIELD_ENEMY : Colors::SPARK_ORANGE);
+        if (wasAlive && !enemy.isAlive()) {
+            m_score.kills++;
+            m_particles->spawnDeathEffect(
+                enemy.getX(), enemy.getAimY(), enemy.getZ());
+            if (enemy.isPortalBoss() && m_portal->isActive() && m_portal->isLocked()) {
+                m_portal->setLocked(false);
             }
         }
+    };
+
+    for (int i = 0; i < EnemyManager::MAX_ENEMIES; ++i) {
+        tryHitEnemy(m_enemies->enemy(i));
+    }
+
+    Enemy* portalBoss = m_enemies->portalBoss();
+    if (portalBoss) {
+        tryHitEnemy(*portalBoss);
     }
 }
 
@@ -300,9 +327,60 @@ void MekaGame::beginUpgradePick() {
     resetUiTouchLock();
 }
 
+void MekaGame::applyWorldTier() {
+    m_enemies->applyWorldTier(m_worldTier);
+    m_projectiles->setEnemyDamageScale(m_worldTier.enemyDamageScale());
+    m_score.setPointValues(m_worldTier.killPointValue(),
+                           m_worldTier.objectivePointValue());
+}
+
+void MekaGame::transitionToNextWorld() {
+    m_worldTier.index++;
+    m_mapConfig.worldIndex = m_worldTier.index;
+    m_mapConfig.theme = m_worldTier.nextTheme(m_mapConfig.theme);
+    m_mapConfig.worldSeed = Rng::nextU32() | 1u;
+    Terrain::setMapConfig(&m_mapConfig);
+    applyWorldTier();
+
+    const float px = m_mech->getX();
+    const float pz = m_mech->getZ();
+    const float angle = m_mech->getAngle();
+
+    m_world->resetAt(px, pz);
+    m_obstacles->reset();
+    m_obstacles->update(px, pz, angle);
+    m_enemies->reset(px, pz, angle);
+    m_projectiles->reset();
+    m_portal->hide();
+    m_objective->respawn(px, pz, angle);
+    applyEnvironment();
+    m_particles->spawnHitEffect(px, m_mech->getBaseY(), pz, Colors::PORTAL_VOID);
+}
+
+void MekaGame::handlePortalTransition() {
+    if (!m_portal->isUsable()) {
+        return;
+    }
+    if (!m_portal->playerTouches(m_mech->getX(), m_mech->getZ(), m_mech->getWidth())) {
+        return;
+    }
+    transitionToNextWorld();
+}
+
 void MekaGame::resumeAfterUpgradePick() {
-    m_objective->respawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
     m_mech->deployPendingShield();
+    if (m_score.objectives > 0 &&
+        (m_score.objectives % kObjectivesPerPortal) == 0) {
+        m_objective->dismissTarget();
+        m_portal->spawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
+                        static_cast<uint32_t>(m_score.objectives));
+        m_enemies->spawnPortalBoss(m_portal->getX(), m_portal->getZ(),
+                                   m_mech->getAngle(),
+                                   m_mech->getX(), m_mech->getZ());
+    } else {
+        m_portal->hide();
+        m_objective->respawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    }
     m_state = GameState::PLAYING;
 }
 
@@ -325,8 +403,11 @@ void MekaGame::skipUpgradePick() {
 
 void MekaGame::startNewRun() {
     randomizeSession();
+    applyWorldTier();
     m_state = GameState::PLAYING;
     m_score.reset();
+    m_score.setPointValues(m_worldTier.killPointValue(),
+                           m_worldTier.objectivePointValue());
     m_newHighScore = false;
     m_maxHealth = m_mech->getMaxHp();
     m_health = m_maxHealth;
@@ -334,8 +415,10 @@ void MekaGame::startNewRun() {
     m_mech->reset();
     m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
     m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_portal->hide();
     m_obstacles->reset();
     m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_world->resetAt(m_mech->getX(), m_mech->getZ());
     m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
                     0.0f, 0.0f);
     m_projectiles->reset();
@@ -352,12 +435,21 @@ void MekaGame::returnToMenu() {
     m_damageFlash = 0;
     m_upgradePickChoice = -1;
     m_upgradePickConfirmSec = 0.0f;
+    m_worldTier = WorldTier{};
+    m_mapConfig.worldIndex = 0;
+    m_mapConfig.theme = m_worldTier.themeForWorld();
+    Terrain::setMapConfig(&m_mapConfig);
+    applyWorldTier();
     m_mech->reset();
+    m_world->resetAt(m_mech->getX(), m_mech->getZ());
     m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_portal->hide();
     m_projectiles->reset();
     m_particles->reset();
     m_menuShowcase->resume();
     updateCamera();
+    applyEnvironment();
     resetUiTouchLock();
 }
 
@@ -455,6 +547,8 @@ void MekaGame::update(float deltaTime) {
                           m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
                           m_mech->getBaseY());
         m_objective->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+        m_portal->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+        handlePortalTransition();
         m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
                         deltaTime, m_mech->getTurnActivity());
         m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
@@ -601,8 +695,13 @@ void MekaGame::render() {
                                          Colors::SHIELD_HUD);
         }
 
-        if (m_state == GameState::PLAYING &&
-            m_objective->hasTarget() && !m_objective->isDestroyed()) {
+        if (m_state == GameState::PLAYING && m_portal->isActive()) {
+            ObjectiveHud::drawArrow(m_framebuffer, m_width, m_height, *m_camera,
+                                    m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
+                                    m_portal->getX(), m_portal->getAimY(),
+                                    m_portal->getZ(), Colors::PORTAL_ARROW);
+        } else if (m_state == GameState::PLAYING &&
+                   m_objective->hasTarget() && !m_objective->isDestroyed()) {
             ObjectiveHud::drawArrow(m_framebuffer, m_width, m_height, *m_camera,
                                     m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
                                     m_objective->getX(), m_objective->getAimY(),

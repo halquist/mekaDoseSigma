@@ -10,6 +10,7 @@ namespace Game {
 enum class MechPalette : uint8_t {
     Default,
     EnemyRed,
+    BossBlue,
 };
 
 /// Builds and poses all mech part meshes from a loadout.

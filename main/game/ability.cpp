@@ -333,6 +333,17 @@ void MechAbility::breakShield() {
     startBreakVisual();
 }
 
+void MechAbility::rearmAfterShieldBreak() {
+    if (m_def.kind != AbilityKind::Shield) {
+        return;
+    }
+    m_state = State::Ready;
+    m_shieldHp = 0;
+    m_visualPhase = VisualPhase::Off;
+    m_animTimer = 0.0f;
+    showShieldMesh(false);
+}
+
 void MechAbility::beginCooldown() {
     m_state = State::Cooldown;
     m_cooldownRemaining = m_def.cooldownSec;

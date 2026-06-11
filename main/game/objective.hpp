@@ -11,6 +11,7 @@ public:
 
     void reset(float playerX, float playerZ, float playerAngle);
     void respawn(float playerX, float playerZ, float playerAngle);
+    void dismissTarget();
     void update(float playerX, float playerZ, float playerAngle);
 
     bool hasTarget() const { return m_hasTarget; }

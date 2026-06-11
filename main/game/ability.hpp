@@ -59,6 +59,9 @@ public:
 
     bool isReady() const { return m_state == State::Ready; }
     bool isActive() const { return m_state == State::Active; }
+    bool isSpent() const { return m_state == State::Spent; }
+    bool isBreakAnimating() const { return m_visualPhase == VisualPhase::BreakAnim; }
+    void rearmAfterShieldBreak();
     bool showReadyIcon() const {
         return !m_autoDeploy && isReady() && m_def.kind != AbilityKind::None;
     }

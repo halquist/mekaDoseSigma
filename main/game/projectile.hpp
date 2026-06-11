@@ -23,7 +23,7 @@ public:
     void firePlayerStraight(float x, float y, float z, float targetX, float targetZ,
                             float targetAimY);
     void fireEnemyHomingAtTarget(float x, float y, float z, float targetX, float targetZ,
-                                 float targetAimY);
+                                 float targetAimY, float damageScale = 1.0f);
     void fireEnemyAtTarget(float x, float z, float targetX, float targetZ);
     void fireEnemyBomb(float x, float y, float z, float targetX, float targetZ);
 
@@ -31,6 +31,7 @@ public:
     bool checkMissileTargetImpact(float* outX = nullptr, float* outZ = nullptr,
                                   float* outY = nullptr);
     void reset();
+    void setEnemyDamageScale(float scale);
 
     int checkPlayerHit(float playerX, float playerZ, float playerAimY, float playerWidth,
                        float* outHitX = nullptr, float* outHitZ = nullptr,
@@ -69,6 +70,7 @@ private:
         bool isPlayerProjectile = false;
         bool isHomingMissile = false;
         bool isFallingBomb = false;
+        float damageScale = 1.0f;
     };
 
     struct TrailPuff {
@@ -100,6 +102,7 @@ private:
     std::array<Projectile, MAX_PROJECTILES> m_projectiles;
     std::array<TrailPuff, TRAIL_PUFFS> m_trailPuffs;
     std::array<Renderer::Material, TRAIL_PUFFS> m_trailMats;
+    float m_enemyDamageScale = 1.0f;
 
     static constexpr float PROJECTILE_SPEED = 650.0f;
     static constexpr float PROJECTILE_LIFE = 2.8f;

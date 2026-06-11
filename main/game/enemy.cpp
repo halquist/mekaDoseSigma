@@ -137,32 +137,49 @@ void Enemy::configureForKind() {
     m_willUseShield = false;
     m_shieldTriggerHealth = 0;
     m_shieldActivated = false;
+    m_shieldActivationsLeft = 0;
+    m_shieldWasActive = false;
+    m_damageScale = 1.0f;
 
     switch (m_kind) {
         case EnemyKind::Tank:
             m_health = TANK_MAX_HEALTH;
-            m_speed = 110.0f;
+            m_speed = 110.0f * m_speedScale;
             m_fireInterval = 1.4f;
             m_tankBodyMat.color = Colors::TANK_BODY;
             break;
         case EnemyKind::Mech:
             m_health = MECH_MAX_HEALTH;
-            m_speed = 160.0f;
+            m_speed = 160.0f * m_speedScale;
             m_fireInterval = 1.6f;
             m_rig.ensureBuilt(m_loadout, MechPalette::EnemyRed);
             m_rig.setHidden(false);
             m_ability.equip(AbilityCatalog::SHIELD_ENEMY);
             m_ability.setSingleUse(true);
             m_ability.setShieldColor(Colors::SHIELD_ENEMY);
-            if (Rng::nextFloat01() < ENEMY_SHIELD_USE_CHANCE) {
+            if (Rng::nextFloat01() < m_shieldUseChance) {
                 m_willUseShield = true;
-                // Activate once health falls to 12–24 (~2–4 mk1 hits from full).
                 m_shieldTriggerHealth = (2 + static_cast<int>(Rng::nextRange(3))) * 6;
             }
             break;
+        case EnemyKind::BossMech:
+            m_health = BOSS_MECH_MAX_HEALTH;
+            m_speed = 155.0f * m_speedScale;
+            m_fireInterval = 1.25f;
+            m_damageScale = BOSS_DAMAGE_SCALE;
+            m_rig.ensureBuilt(m_loadout, MechPalette::BossBlue);
+            m_rig.setHidden(false);
+            m_ability.equip(AbilityCatalog::SHIELD_ENEMY);
+            m_ability.setSingleUse(true);
+            m_ability.setShieldColor(Colors::SHIELD_ENEMY);
+            m_shieldActivationsLeft = 1 + static_cast<int>(Rng::nextRange(2));
+            m_willUseShield = true;
+            m_shieldTriggerHealth =
+                (8 + static_cast<int>(Rng::nextRange(5))) * 6;
+            break;
         case EnemyKind::AirJet:
             m_health = AIR_MAX_HEALTH;
-            m_speed = AIR_RUN_SPEED;
+            m_speed = AIR_RUN_SPEED * m_speedScale;
             m_fireInterval = 1.8f;
             break;
     }
@@ -221,7 +238,7 @@ float Enemy::getAimY() const {
 }
 
 float Enemy::getMissileAimY() const {
-    if (m_kind == EnemyKind::Mech) {
+    if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
         const float span = MECH_AIM_Y_MAX - MECH_AIM_Y_MIN;
         const float offset = MECH_AIM_Y_MIN + Rng::nextFloat01() * span;
         return m_baseY + offset;
@@ -230,7 +247,7 @@ float Enemy::getMissileAimY() const {
 }
 
 void Enemy::getHitVerticalRange(float& minY, float& maxY) const {
-    if (m_kind == EnemyKind::Mech) {
+    if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
         const float base = (m_health > 0) ? m_baseY : hoverBaseY();
         minY = base + MECH_HIT_Y_MIN;
         maxY = base + MECH_HIT_Y_MAX;
@@ -315,6 +332,39 @@ void Enemy::spawnInRing(float playerX, float playerZ, float playerAngle, uint32_
     updateVisual(0.0f);
 }
 
+void Enemy::spawnAsPortalBoss(float portalX, float portalZ, float portalAngle,
+                              float playerX, float playerZ) {
+    hide();
+
+    const float side = Rng::coinFlip() ? 1.0f : -1.0f;
+    const float perpRad =
+        (portalAngle + side * 75.0f) * static_cast<float>(M_PI) / 180.0f;
+    const float offsetDist = 72.0f + Rng::nextFloat01() * 28.0f;
+    m_x = portalX + sinf(perpRad) * offsetDist;
+    m_z = portalZ + cosf(perpRad) * offsetDist;
+
+    m_active = true;
+    m_kind = EnemyKind::BossMech;
+    m_spawnIndex = 0;
+
+    const float dx = playerX - m_x;
+    const float dz = playerZ - m_z;
+    m_angle = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+    m_patrolAngle = m_angle;
+    m_state = AIState::ATTACK;
+    m_stateTimer = 0;
+    m_isIdle = false;
+    m_idleTimer = 0;
+    m_fireTimer = m_fireInterval * 0.35f;
+
+    configureForKind();
+
+    m_smoothedHoverY = hoverBaseY();
+    syncRenderPivot();
+    m_baseY = m_smoothedHoverY;
+    updateVisual(0.0f);
+}
+
 bool Enemy::isBehindPlayer(float playerX, float playerZ, float playerAngle) const {
     float radians = playerAngle * M_PI / 180.0f;
     float forwardX = sinf(radians);
@@ -322,6 +372,11 @@ bool Enemy::isBehindPlayer(float playerX, float playerZ, float playerAngle) cons
     float dx = m_x - playerX;
     float dz = m_z - playerZ;
     return (dx * forwardX + dz * forwardZ) < -DESPAWN_BEHIND_DIST;
+}
+
+void Enemy::setWorldScaling(float speedScale, float shieldUseChance) {
+    m_speedScale = speedScale;
+    m_shieldUseChance = shieldUseChance;
 }
 
 void Enemy::deactivate() {
@@ -344,16 +399,18 @@ void Enemy::update(float deltaTime, float playerX, float playerZ, float playerAn
                    float playerAimY) {
     if (!m_active || m_health <= 0) return;
 
-    if (isBehindPlayer(playerX, playerZ, playerAngle)) {
-        deactivate();
-        return;
-    }
+    if (m_kind != EnemyKind::BossMech) {
+        if (isBehindPlayer(playerX, playerZ, playerAngle)) {
+            deactivate();
+            return;
+        }
 
-    const float relX = m_x - playerX;
-    const float relZ = m_z - playerZ;
-    if (relX * relX + relZ * relZ > DESPAWN_FAR_DIST * DESPAWN_FAR_DIST) {
-        deactivate();
-        return;
+        const float relX = m_x - playerX;
+        const float relZ = m_z - playerZ;
+        if (relX * relX + relZ * relZ > DESPAWN_FAR_DIST * DESPAWN_FAR_DIST) {
+            deactivate();
+            return;
+        }
     }
 
     if (m_kind == EnemyKind::AirJet) {
@@ -519,11 +576,11 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
 
             if (m_fireTimer >= m_fireInterval && distToPlayer < ENGAGE_RANGE) {
                 m_fireTimer = 0;
-                if (m_kind == EnemyKind::Mech) {
+                if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
                     float mx, my, mz;
                     getMechMuzzleWorld(mx, my, mz);
                     m_projectiles.fireEnemyHomingAtTarget(
-                        mx, my, mz, playerX, playerZ, playerAimY);
+                        mx, my, mz, playerX, playerZ, playerAimY, m_damageScale);
                 } else {
                     float mx, my, mz;
                     getTankMuzzleWorld(mx, my, mz);
@@ -548,12 +605,40 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
     }
 }
 
+void Enemy::updateBossShield(float deltaTime) {
+    (void)deltaTime;
+    if (m_kind != EnemyKind::BossMech) {
+        return;
+    }
+
+    if (m_ability.isActive()) {
+        m_shieldWasActive = true;
+        return;
+    }
+
+    if (!m_shieldWasActive || m_ability.isBreakAnimating()) {
+        return;
+    }
+
+    m_shieldWasActive = false;
+    m_shieldActivated = false;
+    m_shieldActivationsLeft--;
+    if (m_shieldActivationsLeft > 0) {
+        m_ability.rearmAfterShieldBreak();
+        m_willUseShield = true;
+        m_shieldTriggerHealth =
+            (1 + static_cast<int>(Rng::nextRange(3))) * 6;
+    } else {
+        m_willUseShield = false;
+    }
+}
+
 void Enemy::updateVisual(float deltaTime) {
     if (m_health <= 0) return;
 
     syncRenderPivot();
 
-    if (m_kind == EnemyKind::Mech) {
+    if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
         const float targetY = hoverBaseY();
         if (deltaTime > 0.0f) {
             const float blend = fminf(1.0f, 0.75f * deltaTime);
@@ -568,6 +653,7 @@ void Enemy::updateVisual(float deltaTime) {
                          m_loadout.visualPitch(), m_loadout);
         m_ability.update(deltaTime, m_rig, m_renderX, m_renderZ, m_baseY,
                          m_renderAngle, m_loadout.visualPitch());
+        updateBossShield(deltaTime);
         return;
     }
 
@@ -615,7 +701,7 @@ int Enemy::takeDamage(int damage, bool* outHitShield) {
         return 0;
     }
 
-    if (m_kind == EnemyKind::Mech) {
+    if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
         if (m_willUseShield && !m_shieldActivated && m_ability.isReady() &&
             m_health - damage <= m_shieldTriggerHealth) {
             if (m_ability.tryActivate()) {

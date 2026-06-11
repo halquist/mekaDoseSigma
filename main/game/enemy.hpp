@@ -19,9 +19,13 @@ public:
     void update(float deltaTime, float playerX, float playerZ, float playerAngle,
                 float playerAimY);
     void reset(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex = 0);
+    void spawnAsPortalBoss(float portalX, float portalZ, float portalAngle,
+                           float playerX, float playerZ);
     void deactivate();
+    void setWorldScaling(float speedScale, float shieldUseChance);
 
     bool isActive() const { return m_active; }
+    bool isPortalBoss() const { return m_kind == EnemyKind::BossMech; }
     float getX() const { return m_x; }
     float getZ() const { return m_z; }
     float getWidth() const;
@@ -34,7 +38,7 @@ public:
 
 private:
     enum class AIState { PATROL, CHASE, ATTACK };
-    enum class EnemyKind { Tank, Mech, AirJet };
+    enum class EnemyKind { Tank, Mech, AirJet, BossMech };
     enum class AirPhase { Reposition, Approach, Strike, Exit };
 
     void spawnInRing(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex,
@@ -57,6 +61,7 @@ private:
     float groundBaseY() const;
     static EnemyKind pickKind();
     void configureForKind();
+    void updateBossShield(float deltaTime);
 
     Renderer::Scene& m_scene;
     ProjectileSystem& m_projectiles;
@@ -110,6 +115,11 @@ private:
     bool m_willUseShield = false;
     int m_shieldTriggerHealth = 0;
     bool m_shieldActivated = false;
+    int m_shieldActivationsLeft = 0;
+    bool m_shieldWasActive = false;
+    float m_damageScale = 1.0f;
+    float m_speedScale = 1.0f;
+    float m_shieldUseChance = ENEMY_SHIELD_USE_CHANCE;
 
     static constexpr float ENGAGE_RANGE = 420.0f;
     static constexpr float PREFERRED_DIST_MIN = 180.0f;
@@ -125,6 +135,8 @@ private:
     static constexpr float TANK_MUZZLE_OFFSET = 28.0f;
     static constexpr int TANK_MAX_HEALTH = 18;
     static constexpr int MECH_MAX_HEALTH = 36;
+    static constexpr int BOSS_MECH_MAX_HEALTH = MECH_MAX_HEALTH * 3;
+    static constexpr float BOSS_DAMAGE_SCALE = 1.75f;
     static constexpr int AIR_MAX_HEALTH = 24;
     static constexpr float ENEMY_SHIELD_USE_CHANCE = 0.45f;
     static constexpr int AIR_BOMBS_PER_RUN = 2;

@@ -17,6 +17,8 @@ idf_component_register(
           "game/enemy_manager.cpp"
           "game/objective.cpp"
           "game/objective_hud.cpp"
+          "game/portal.cpp"
+          "game/world_tier.cpp"
           "game/projectile.cpp"
           "game/particles.cpp"
           "game/digits.cpp"

@@ -13,6 +13,7 @@ public:
 
     void update(float centerX, float centerZ, float lookAheadDist,
                 float deltaTime, float turnActivity);
+    void resetAt(float originX, float originZ);
     void applyEnvironment(const EnvPalette& ruralPalette,
                           const EnvPalette& desertPalette);
 

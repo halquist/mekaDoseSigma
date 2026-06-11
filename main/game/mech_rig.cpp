@@ -123,6 +123,16 @@ uint16_t enemyPaletteColor(uint16_t source) {
     return ENEMY_BODY;
 }
 
+uint16_t bossPaletteColor(uint16_t source) {
+    using namespace Colors;
+    if (source == MECH_WHITE) return rgb(175, 195, 230);
+    if (source == MECH_BLUE) return rgb(45, 85, 210);
+    if (source == MECH_RED) return rgb(70, 110, 200);
+    if (source == TRACER_YELLOW) return rgb(90, 140, 220);
+    if (source == MISSILE_GREY) return rgb(100, 130, 190);
+    return MECH_BLUE;
+}
+
 } // namespace
 
 MechRig::MechRig(Renderer::Scene& scene)
@@ -217,9 +227,12 @@ void MechRig::rebuild(const MechLoadout& loadout, MechPalette palette) {
         if (!def) continue;
 
         PartMaterial& slotMat = m_partMats[i];
-        const uint16_t color = (palette == MechPalette::EnemyRed)
-            ? enemyPaletteColor(def->color)
-            : def->color;
+        uint16_t color = def->color;
+        if (palette == MechPalette::EnemyRed) {
+            color = enemyPaletteColor(def->color);
+        } else if (palette == MechPalette::BossBlue) {
+            color = bossPaletteColor(def->color);
+        }
         slotMat.mat = Renderer::Material(color);
         slotMat.mat.shadingMode = Renderer::ShadingMode::GOURAUD;
         slotMat.active = true;
