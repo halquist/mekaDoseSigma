@@ -22,6 +22,7 @@ idf_component_register(
           "game/digits.cpp"
           "game/font.cpp"
           "game/menu_showcase.cpp"
+          "game/parallel_scene_render.cpp"
           "game/score.cpp"
           "game/high_scores.cpp"
           "game/run_upgrades.cpp"

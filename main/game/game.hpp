@@ -17,6 +17,7 @@
 #include "run_upgrades.hpp"
 #include "high_scores.hpp"
 #include "menu_showcase.hpp"
+#include "parallel_scene_render.hpp"
 
 namespace Game {
 
@@ -65,6 +66,7 @@ private:
     ProjectileSystem* m_projectiles = nullptr;
     ParticleSystem* m_particles = nullptr;
     MenuShowcase* m_menuShowcase = nullptr;
+    ParallelSceneRenderer m_parallelRenderer;
 
     MapConfig m_mapConfig;
     RunScore m_score;

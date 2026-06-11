@@ -7,6 +7,7 @@
 #include "game_ui.hpp"
 #include "font.hpp"
 #include "menu_showcase.hpp"
+#include "parallel_scene_render.hpp"
 #include <cmath>
 
 #ifndef M_PI
@@ -63,6 +64,7 @@ MekaGame::~MekaGame() {
     delete m_sunLight;
     delete m_ambient;
     delete m_camera;
+    m_parallelRenderer.shutdown();
     delete m_scene;
 }
 
@@ -88,6 +90,10 @@ bool MekaGame::init() {
 
     m_scene = new Renderer::Scene(m_framebuffer, nullptr, m_width, m_height);
     m_scene->setCamera(m_camera);
+
+    if (!m_parallelRenderer.init()) {
+        return false;
+    }
 
     setupLighting();
 
@@ -493,7 +499,7 @@ void MekaGame::renderMenuScene() {
 
     m_scene->setBackcolor(Colors::BLACK);
     m_menuShowcase->applyCamera(*m_camera);
-    m_scene->render();
+    m_parallelRenderer.render(*m_scene, m_height);
 
     for (int i = 0; i < savedCount; ++i) {
         saved[i].obj->enabled = saved[i].enabled;
@@ -507,7 +513,7 @@ void MekaGame::render() {
         m_state == GameState::DEFEAT;
 
     if (!fullScreenUi) {
-        m_scene->render();
+        m_parallelRenderer.render(*m_scene, m_height);
 
         int displayHealth = m_health;
 
