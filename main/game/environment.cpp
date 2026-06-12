@@ -116,6 +116,62 @@ const EnvPalette* kDesertCycle[] = {
     &kDesertDay, &kDesertTwilight, &kDesertNight, &kDesertDawn,
 };
 
+const EnvPalette kCityDay = {
+    Colors::CITY_SKY,
+    Colors::CITY_GROUND,
+    Colors::CITY_BUILDING,
+    Colors::CITY_ROAD,
+    Colors::CITY_ROAD,
+    {220, 225, 235},
+    125,
+    18,
+    -28,
+    {90, 95, 105},
+};
+
+const EnvPalette kCityTwilight = {
+    Colors::rgb(48, 52, 72),
+    Colors::rgb(42, 44, 48),
+    Colors::rgb(58, 62, 72),
+    Colors::rgb(28, 30, 34),
+    Colors::rgb(28, 30, 34),
+    {200, 150, 180},
+    95,
+    24,
+    -14,
+    {72, 68, 88},
+};
+
+const EnvPalette kCityNight = {
+    Colors::rgb(18, 22, 36),
+    Colors::rgb(30, 32, 36),
+    Colors::rgb(40, 44, 52),
+    Colors::rgb(20, 22, 26),
+    Colors::rgb(20, 22, 26),
+    {140, 155, 200},
+    70,
+    10,
+    -36,
+    {48, 52, 68},
+};
+
+const EnvPalette kCityDawn = {
+    Colors::rgb(108, 98, 118),
+    Colors::rgb(48, 50, 54),
+    Colors::rgb(62, 68, 78),
+    Colors::rgb(30, 32, 36),
+    Colors::rgb(30, 32, 36),
+    {255, 190, 150},
+    100,
+    16,
+    -20,
+    {82, 78, 88},
+};
+
+const EnvPalette* kCityCycle[] = {
+    &kCityDay, &kCityTwilight, &kCityNight, &kCityDawn,
+};
+
 constexpr int kCycleKeyframeCount = 4;
 
 float clamp01(float t) {
@@ -189,6 +245,14 @@ const EnvPalette& paletteForThemeLighting(MapTheme theme, EnvLightingMode mode) 
         default: return kDesertDay;
         }
     }
+    if (theme == MapTheme::CITY) {
+        switch (mode) {
+        case EnvLightingMode::Twilight: return kCityTwilight;
+        case EnvLightingMode::Night: return kCityNight;
+        case EnvLightingMode::Day:
+        default: return kCityDay;
+        }
+    }
 
     switch (mode) {
     case EnvLightingMode::Twilight: return kRuralTwilight;
@@ -199,7 +263,13 @@ const EnvPalette& paletteForThemeLighting(MapTheme theme, EnvLightingMode mode) 
 }
 
 const EnvPalette* const* cycleForTheme(MapTheme theme) {
-    return theme == MapTheme::DESERT ? kDesertCycle : kRuralCycle;
+    if (theme == MapTheme::DESERT) {
+        return kDesertCycle;
+    }
+    if (theme == MapTheme::CITY) {
+        return kCityCycle;
+    }
+    return kRuralCycle;
 }
 
 } // namespace

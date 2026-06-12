@@ -1,33 +1,28 @@
 #include "world.hpp"
 #include "terrain.hpp"
-#include "worldgen.hpp"
 #include <climits>
 #include <cmath>
 
 namespace Game {
 
-namespace {
-constexpr float TERRAIN_EDGE_MARGIN = 90.0f;
-
-Renderer::Material* grassMaterialForTheme(MapTheme theme,
-                                          Renderer::Material* grassMats) {
-    return theme == MapTheme::DESERT ? &grassMats[1] : &grassMats[0];
-}
-} // namespace
-
 World::World(Renderer::Scene& scene)
     : m_scene(scene)
     , m_grassMats{Renderer::Material(Colors::GRASS), Renderer::Material(Colors::GRASS)}
+    , m_cityGroundMat(Colors::CITY_GROUND)
+    , m_cityRoadMat(Colors::CITY_ROAD)
+    , m_industrialGroundMat(Colors::INDUSTRIAL_GROUND)
 {
     m_grassMats[0].shadingMode = Renderer::ShadingMode::FLAT;
     m_grassMats[1].shadingMode = Renderer::ShadingMode::FLAT;
+    m_cityGroundMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_cityRoadMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_industrialGroundMat.shadingMode = Renderer::ShadingMode::FLAT;
     createTerrain();
     rebuildTerrain(0.0f, 0.0f);
 }
 
 void World::createTerrain() {
     m_terrain = new Renderer::Object();
-    // Chase camera looks down at the ground; backface cull hides the tops.
     m_terrain->cullingMode = Renderer::CullingMode::NO_CULLING;
     m_terrain->zBias = -20;
 
@@ -57,6 +52,23 @@ void World::createTerrain() {
     }
 
     m_scene.addObject(m_terrain);
+}
+
+Renderer::Material* World::terrainMaterialFor(float worldX, float worldZ,
+                                              const MapConfig& cfg) {
+    switch (cfg.theme) {
+    case MapTheme::CITY:
+        (void)worldX;
+        (void)worldZ;
+        return &m_cityGroundMat;
+    case MapTheme::INDUSTRIAL:
+        return &m_industrialGroundMat;
+    case MapTheme::DESERT:
+        return &m_grassMats[1];
+    case MapTheme::RURAL:
+    default:
+        return &m_grassMats[0];
+    }
 }
 
 void World::rebuildTerrain(float originX, float originZ) {
@@ -97,8 +109,7 @@ void World::rebuildTerrain(float originX, float originZ) {
                 static_cast<float>(iz * step + step / 2 - halfD);
             const float wx = static_cast<float>(snappedOriginX) + centerLx;
             const float wz = static_cast<float>(snappedOriginZ) + centerLz;
-            Renderer::Material* mat = grassMaterialForTheme(
-                WorldGen::biomeAt(wx, wz, cfg), m_grassMats);
+            Renderer::Material* mat = terrainMaterialFor(wx, wz, cfg);
             m_terrain->triangles[faceIndex * 2].material = mat;
             m_terrain->triangles[faceIndex * 2 + 1].material = mat;
             faceIndex++;
@@ -123,7 +134,7 @@ bool World::shouldRecentreTerrain(float centerX, float centerZ,
     }
 
     const float maxOffset = static_cast<float>(Terrain::meshHalfDepth()) -
-                            lookAheadDist - TERRAIN_EDGE_MARGIN;
+                            lookAheadDist - 90.0f;
     if (maxOffset <= 0.0f) {
         return true;
     }
@@ -135,6 +146,8 @@ bool World::shouldRecentreTerrain(float centerX, float centerZ,
 }
 
 void World::resetAt(float originX, float originZ) {
+    m_chunkOriginX = INT32_MIN;
+    m_chunkOriginZ = INT32_MIN;
     rebuildTerrain(originX, originZ);
 }
 
@@ -148,10 +161,11 @@ void World::update(float centerX, float centerZ, float lookAheadDist,
     }
 }
 
-void World::applyEnvironment(const EnvPalette& ruralPalette,
-                             const EnvPalette& desertPalette) {
-    m_grassMats[0].color = ruralPalette.grass;
-    m_grassMats[1].color = desertPalette.grass;
+void World::applyEnvironment(const EnvPalette& activePalette) {
+    m_grassMats[0].color = activePalette.grass;
+    m_grassMats[1].color = activePalette.grass;
+    m_cityGroundMat.color = activePalette.grass;
+    m_industrialGroundMat.color = activePalette.grass;
 }
 
 } // namespace Game

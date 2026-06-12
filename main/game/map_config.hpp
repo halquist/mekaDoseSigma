@@ -14,14 +14,16 @@ struct MapConfig {
 
     /// Fraction of grid cells that contain a tree (0..1).
     float obstacleCellRate = 0.125f;
+    /// Building placement rate in city theme (0..1).
+    float cityObstacleCellRate = 0.10f;
 
     /// Enemy ring spawn (world units from player).
     float enemySpawnDistMin = 520.0f;
     float enemySpawnDistMax = 720.0f;
 
     /// Objective building spawn (world units ahead of player).
-    float objectiveSpawnDistMin = 680.0f;
-    float objectiveSpawnDistMax = 920.0f;
+    float objectiveSpawnDistMin = 1360.0f;
+    float objectiveSpawnDistMax = 1840.0f;
 
     // Future hooks:
     // int difficulty = 1;

@@ -36,28 +36,31 @@ WorldPortal::WorldPortal(Renderer::Scene& scene, const MapConfig& mapConfig)
     hide();
 }
 
-void WorldPortal::hide() {
-    m_active = false;
+void WorldPortal::hideVisual() {
     m_visible = false;
-    m_locked = false;
     stashSceneObject(m_voidPanel);
     stashSceneObject(m_leftFrame);
     stashSceneObject(m_rightFrame);
     stashSceneObject(m_topFrame);
 }
 
+void WorldPortal::hide() {
+    m_active = false;
+    m_locked = false;
+    hideVisual();
+}
+
 void WorldPortal::spawn(float playerX, float playerZ, float playerAngle,
-                          uint32_t spawnIndex) {
+                        uint32_t spawnIndex, const ObstacleField* obstacles) {
     const uint32_t spawnSalt = Rng::nextU32() ^ 0xA11CE001u;
     WorldGen::sampleObjectiveSpawn(
         playerX, playerZ, playerAngle, spawnIndex, spawnSalt,
-        m_mapConfig, m_x, m_z);
+        m_mapConfig, obstacles, m_x, m_z);
     m_active = true;
     m_visible = false;
     m_locked = true;
     m_baseY = Terrain::groundHeight(m_x, m_z);
-    syncVisual();
-    m_visible = true;
+    hideVisual();
 }
 
 void WorldPortal::setLocked(bool locked) {
@@ -99,6 +102,11 @@ void WorldPortal::update(float playerX, float playerZ, float playerAngle) {
 
     if (!m_active) {
         hide();
+        return;
+    }
+
+    if (!Terrain::isInsideMesh(m_x, m_z)) {
+        hideVisual();
         return;
     }
 

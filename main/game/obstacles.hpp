@@ -16,8 +16,10 @@ public:
 
     void update(float playerX, float playerZ, float playerAngleDeg);
     void resolveMovement(float& x, float& z, float newX, float newZ, float radius) const;
+    bool isPositionBlocked(float x, float z, float radius) const;
     void reset();
-    void applyEnvironment(const EnvPalette& ruralPalette,
+    void applyEnvironment(const EnvPalette& activePalette,
+                          const EnvPalette& ruralPalette,
                           const EnvPalette& desertPalette);
 
     static constexpr float PLAYER_RADIUS = 16.0f;
@@ -32,7 +34,9 @@ private:
         uint32_t styleHash = 0;
         float surfaceY = 0.0f;
         MapTheme theme = MapTheme::RURAL;
+        WorldGen::ObstacleKind kind = WorldGen::ObstacleKind::Tree;
         Renderer::Object* tree = nullptr;
+        Renderer::Object* building = nullptr;
     };
 
     struct PlacedCell {
@@ -47,6 +51,9 @@ private:
                         float scale);
     void placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec, uint32_t styleHash);
     void refreshSlotHeights(Slot& slot);
+    int32_t slotRenderY(const Slot& slot) const;
+    void updateSlotVisibility(Slot& slot, float playerX, float playerZ,
+                              float forwardX, float forwardZ);
     void updateTreeVisibility(float playerX, float playerZ, float forwardX, float forwardZ);
     int findPlacedCell(int cellX, int cellZ) const;
     int allocSlot();
@@ -57,8 +64,10 @@ private:
     Renderer::Scene& m_scene;
     const MapConfig& m_mapConfig;
     Renderer::Material m_treeMats[2];
+    Renderer::Material m_buildingMat;
 
     std::vector<Renderer::Object::Vertex> m_treeProto;
+    std::vector<Renderer::Object::Vertex> m_buildingProto;
 
     static constexpr int MAX_SLOTS = 48;
     static constexpr int MAX_PLACED = 48;
@@ -72,13 +81,15 @@ private:
     static constexpr int FORWARD_CELL_RADIUS = 4;
     static constexpr int REAR_CELL_RADIUS = 3;
     static constexpr int LATERAL_CELL_RADIUS = 3;
-    /// Hide draw for trees behind the player; keep loaded for fast turn pop-in.
     static constexpr float BEHIND_RENDER_CULL = 90.0f;
     static constexpr int maxSpawnRadius() {
         return FORWARD_CELL_RADIUS * CELL_SIZE + CELL_SIZE / 2;
     }
     static constexpr int TREE_BASE = 24;
     static constexpr int TREE_HEIGHT = 38;
+    static constexpr int BUILDING_WIDTH = 36;
+    static constexpr int BUILDING_HEIGHT = 48;
+    static constexpr int BUILDING_DEPTH = 36;
 };
 
 } // namespace Game

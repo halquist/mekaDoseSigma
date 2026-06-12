@@ -8,6 +8,8 @@
 
 namespace Game {
 
+class ObstacleField;
+
 class EnemyManager {
 public:
     static constexpr int MAX_ENEMIES = 5;
@@ -16,9 +18,10 @@ public:
                  const MapConfig& mapConfig);
     ~EnemyManager();
 
-    void reset(float playerX, float playerZ, float playerAngle);
+    void reset(float playerX, float playerZ, float playerAngle,
+               const ObstacleField* obstacles);
     void update(float deltaTime, float playerX, float playerZ, float playerAngle,
-                float playerAimY);
+                float playerAimY, const ObstacleField* obstacles);
     void applyWorldTier(const WorldTier& tier);
 
     void spawnPortalBoss(float portalX, float portalZ, float portalAngle,
@@ -34,14 +37,19 @@ public:
     int aliveCount() const;
     Enemy* findClosestInArc(float fromX, float fromZ, float fromAngleDeg,
                               float maxRange, float aimConeDeg);
+    bool findBestStrikeTarget(float fromX, float fromZ, float fromAngleDeg,
+                              float maxRange, float aimConeDeg, float blastRadius,
+                              float& outX, float& outZ, float& outAimY) const;
 
     Enemy& enemy(int index) { return *m_enemies[static_cast<size_t>(index)]; }
     const Enemy& enemy(int index) const { return *m_enemies[static_cast<size_t>(index)]; }
 
 private:
     int findFreeSlot() const;
-    bool spawnOne(float playerX, float playerZ, float playerAngle);
-    void trySpawn(float deltaTime, float playerX, float playerZ, float playerAngle);
+    bool spawnOne(float playerX, float playerZ, float playerAngle,
+                  const ObstacleField* obstacles);
+    void trySpawn(float deltaTime, float playerX, float playerZ, float playerAngle,
+                  const ObstacleField* obstacles);
 
     std::array<Enemy*, MAX_ENEMIES> m_enemies = {};
     Enemy* m_portalBoss = nullptr;

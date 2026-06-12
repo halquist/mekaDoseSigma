@@ -57,6 +57,7 @@ MekaGame::~MekaGame() {
     delete m_particles;
     delete m_projectiles;
     delete m_drone;
+    delete m_airStrike;
     delete m_enemies;
     delete m_portal;
     delete m_objective;
@@ -112,13 +113,14 @@ bool MekaGame::init() {
     m_particles = new ParticleSystem(*m_scene);
     m_mech = new Mech(*m_scene);
     m_drone = new CompanionDrone(*m_scene);
+    m_airStrike = new AirStrikeSystem(*m_scene);
     m_maxHealth = m_mech->getMaxHp();
     m_health = m_maxHealth;
     m_enemies = new EnemyManager(*m_scene, *m_projectiles, m_mapConfig);
-    m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(), m_obstacles);
     applyWorldTier();
     m_objective = new ObjectiveBuilding(*m_scene, m_mapConfig);
-    m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(), m_obstacles);
     m_portal = new WorldPortal(*m_scene, m_mapConfig);
     m_portal->hide();
     m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
@@ -175,8 +177,8 @@ void MekaGame::applyEnvironment() {
         Vector3{activePalette.sunAzimuth, activePalette.sunElevation, 0});
     m_ambient->color = activePalette.ambientColor;
 
-    m_world->applyEnvironment(ruralPalette, desertPalette);
-    m_obstacles->applyEnvironment(ruralPalette, desertPalette);
+    m_world->applyEnvironment(activePalette);
+    m_obstacles->applyEnvironment(activePalette, ruralPalette, desertPalette);
 }
 
 void MekaGame::updateDayNightCycle(float deltaTime) {
@@ -345,6 +347,11 @@ void MekaGame::applyWorldTier() {
 }
 
 void MekaGame::applyWorldTransition() {
+    m_health += kPortalHealAmount;
+    if (m_health > m_maxHealth) {
+        m_health = m_maxHealth;
+    }
+
     m_worldTier.index++;
     m_mapConfig.worldIndex = m_worldTier.index;
     m_mapConfig.theme = m_worldTier.nextTheme(m_mapConfig.theme);
@@ -361,7 +368,8 @@ void MekaGame::applyWorldTransition() {
     m_obstacles->update(px, pz, angle);
     m_projectiles->reset();
     m_portal->hide();
-    m_objective->respawn(px, pz, angle);
+    m_portalBossPending = false;
+    m_objective->respawn(px, pz, angle, m_obstacles);
     applyEnvironment();
     updateCamera();
 }
@@ -433,17 +441,19 @@ void MekaGame::drawPortalTransitionOverlay() {
 
 void MekaGame::resumeAfterUpgradePick() {
     m_mech->deployPendingShield();
-    if (m_score.objectives > 0 &&
-        (m_score.objectives % kObjectivesPerPortal) == 0) {
+    const int needed = m_worldTier.objectivesPerPortal();
+    const int sincePortal = m_score.objectives - m_objectivesAtLastPortal;
+    if (sincePortal >= needed) {
         m_objective->dismissTarget();
         m_portal->spawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
-                        static_cast<uint32_t>(m_score.objectives));
-        m_enemies->spawnPortalBoss(m_portal->getX(), m_portal->getZ(),
-                                   m_mech->getAngle(),
-                                   m_mech->getX(), m_mech->getZ());
+                        static_cast<uint32_t>(m_score.objectives), m_obstacles);
+        m_objectivesAtLastPortal = m_score.objectives;
+        m_portalBossPending = true;
     } else {
         m_portal->hide();
-        m_objective->respawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+        m_portalBossPending = false;
+        m_objective->respawn(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
+                             m_obstacles);
     }
     m_state = GameState::PLAYING;
 }
@@ -453,8 +463,12 @@ void MekaGame::applyUpgradePick(int choiceIndex) {
         return;
     }
 
-    UpgradePicker::apply(m_upgradePicker.option(choiceIndex),
-                         *m_mech, m_health, m_maxHealth);
+    const UpgradeOption& choice = m_upgradePicker.option(choiceIndex);
+    const uint8_t oldAirStrikeTier = m_mech->loadout().bonuses().airStrikeTier;
+    UpgradePicker::apply(choice, *m_mech, m_health, m_maxHealth);
+    if (choice.id == UpgradeId::AirStrike) {
+        m_airStrike->onTierEquipped(choice.tier, oldAirStrikeTier);
+    }
     m_maxHealth = m_mech->getMaxHp();
     if (m_health > m_maxHealth) {
         m_health = m_maxHealth;
@@ -476,10 +490,13 @@ void MekaGame::startNewRun() {
     m_maxHealth = m_mech->getMaxHp();
     m_health = m_maxHealth;
     m_damageFlash = 0;
+    m_objectivesAtLastPortal = 0;
+    m_portalBossPending = false;
     m_mech->reset();
     m_drone->reset();
-    m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
-    m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_airStrike->reset();
+    m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(), m_obstacles);
+    m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(), m_obstacles);
     m_portal->hide();
     m_obstacles->reset();
     m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
@@ -498,6 +515,8 @@ void MekaGame::returnToMenu() {
     m_score.reset();
     m_newHighScore = false;
     m_damageFlash = 0;
+    m_objectivesAtLastPortal = 0;
+    m_portalBossPending = false;
     m_upgradePickChoice = -1;
     m_upgradePickConfirmSec = 0.0f;
     m_worldTier = WorldTier{};
@@ -507,9 +526,10 @@ void MekaGame::returnToMenu() {
     applyWorldTier();
     m_mech->reset();
     m_drone->reset();
+    m_airStrike->reset();
     m_world->resetAt(m_mech->getX(), m_mech->getZ());
-    m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
-    m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(), m_obstacles);
+    m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle(), m_obstacles);
     m_portal->hide();
     m_projectiles->reset();
     m_particles->reset();
@@ -620,12 +640,25 @@ void MekaGame::update(float deltaTime) {
         m_drone->update(deltaTime, m_mech->getX(), m_mech->getZ(), m_mech->getBaseY(),
                          m_mech->loadout().bonuses().droneTier > 0 && m_mech->isAlive());
         handleAutoFire();
+        const float airStrikeSkyY = m_mech->getBaseY() + m_cameraRigOffsetY +
+                                    m_cameraHeightAboveMech + 220.0f;
+        m_airStrike->update(deltaTime,
+                            m_mech->loadout().bonuses().airStrikeTier,
+                            m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
+                            airStrikeSkyY, *m_enemies, *m_particles, m_score, m_portal);
 
         m_enemies->update(deltaTime,
                           m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
-                          m_mech->getBaseY());
+                          m_mech->getBaseY(), m_obstacles);
         m_objective->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
         m_portal->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+        if (m_portalBossPending && m_portal->isVisible() &&
+            !m_enemies->isPortalBossAlive()) {
+            m_enemies->spawnPortalBoss(m_portal->getX(), m_portal->getZ(),
+                                       m_mech->getAngle(),
+                                       m_mech->getX(), m_mech->getZ());
+            m_portalBossPending = false;
+        }
         handlePortalTransition();
         m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
                         deltaTime, m_mech->getTurnActivity());

@@ -30,6 +30,8 @@ public:
                          float targetAimY, int damage);
     void fireEnemyHomingAtTarget(float x, float y, float z, float targetX, float targetZ,
                                  float targetAimY, float damageScale = 1.0f);
+    void fireEnemyLaserAtTarget(float x, float y, float z, float targetX, float targetZ,
+                                float targetAimY, float damageScale = 1.0f);
     void fireEnemyAtTarget(float x, float z, float targetX, float targetZ);
     void fireEnemyBomb(float x, float y, float z, float targetX, float targetZ);
 
@@ -122,6 +124,7 @@ private:
 
     static constexpr int PLAYER_DAMAGE_TANK_BOLT = 9;
     static constexpr int PLAYER_DAMAGE_ENEMY_MISSILE = 6;
+    static constexpr int PLAYER_DAMAGE_ENEMY_LASER = 3;
     static constexpr int PLAYER_DAMAGE_BOMB = 14;
 
     static constexpr float MISSILE_PEAK_ARC_Y = 24.0f;

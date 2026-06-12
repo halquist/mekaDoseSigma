@@ -94,7 +94,6 @@ private:
     bool m_alive = true;
     bool m_touchActive = false;
     bool m_dodgeTriggeredThisTouch = false;
-    float m_angleAtTouchStart = 0.0f;
     float m_touchClock = 0.0f;
 
     static constexpr float DODGE_DURATION = 0.22f;

@@ -6,10 +6,10 @@ namespace Game {
 namespace {
 
 constexpr MapTheme kWorldThemeOrder[] = {
+    MapTheme::CITY,
     MapTheme::RURAL,
     MapTheme::DESERT,
     MapTheme::INDUSTRIAL,
-    MapTheme::CITY,
 };
 
 MapTheme themeAtIndex(int worldIndex) {
@@ -37,7 +37,13 @@ MapTheme WorldTier::nextTheme(MapTheme previous) const {
 }
 
 int WorldTier::maxEnemies() const {
-    return std::min(5, 1 + index / 4);
+    if (index < 4) {
+        return 3;
+    }
+    if (index < 7) {
+        return 4;
+    }
+    return 5;
 }
 
 float WorldTier::spawnIntervalMin() const {
@@ -82,6 +88,13 @@ int WorldTier::killPointValue() const {
 
 int WorldTier::objectivePointValue() const {
     return 500 + index * 100;
+}
+
+int WorldTier::objectivesPerPortal() const {
+    if (index < 6) {
+        return 3;
+    }
+    return 3 + 1 + (index - 6) / 3;
 }
 
 } // namespace Game

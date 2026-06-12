@@ -1,4 +1,6 @@
 #include "enemy.hpp"
+#include "obstacles.hpp"
+#include "run_upgrades.hpp"
 #include "scene_util.hpp"
 #include "terrain.hpp"
 #include "worldgen.hpp"
@@ -139,6 +141,7 @@ void Enemy::configureForKind() {
     m_shieldActivated = false;
     m_shieldActivationsLeft = 0;
     m_shieldWasActive = false;
+    m_mechUsesLaser = false;
     m_damageScale = 1.0f;
 
     const auto scaleHp = [this](int baseHp) {
@@ -164,19 +167,33 @@ void Enemy::configureForKind() {
         case EnemyKind::Mech:
             m_health = scaleHp(MECH_MAX_HEALTH);
             m_speed = 160.0f * m_speedScale;
-            m_fireInterval = scaleFireInterval(1.6f);
             m_rig.ensureBuilt(m_loadout, MechPalette::EnemyRed);
             m_rig.setHidden(false);
-            m_ability.equip(AbilityCatalog::SHIELD_ENEMY);
-            m_ability.setSingleUse(true);
-            m_ability.setShieldColor(Colors::SHIELD_ENEMY);
-            if (Rng::nextFloat01() < m_shieldUseChance) {
-                m_willUseShield = true;
-                m_shieldTriggerHealth = (2 + static_cast<int>(Rng::nextRange(3))) * 6;
+            if (m_worldIndex < MECH_TIER2_WORLD_INDEX) {
+                m_mechUsesLaser = true;
+                m_fireInterval = scaleFireInterval(MECH_LASER_FIRE_INTERVAL);
+            } else {
+                m_mechUsesLaser = false;
+                m_fireInterval = scaleFireInterval(missileCooldownForTier(1));
+                m_ability.equip(AbilityCatalog::SHIELD_ENEMY);
+                m_ability.setSingleUse(true);
+                m_ability.setShieldColor(Colors::SHIELD_ENEMY);
+                if (Rng::nextFloat01() < m_shieldUseChance) {
+                    m_willUseShield = true;
+                    m_shieldTriggerHealth =
+                        (2 + static_cast<int>(Rng::nextRange(3))) * 6;
+                }
             }
             break;
-        case EnemyKind::BossMech:
+        case EnemyKind::BossMech: {
             m_health = scaleHp(BOSS_MECH_MAX_HEALTH);
+            if (m_worldIndex <= EARLY_BOSS_MAX_WORLD_INDEX) {
+                m_health = static_cast<int>(lroundf(
+                    static_cast<float>(m_health) * EARLY_BOSS_HP_SCALE));
+                if (m_health < 1) {
+                    m_health = 1;
+                }
+            }
             m_speed = 155.0f * m_speedScale;
             m_fireInterval = scaleFireInterval(1.25f);
             m_damageScale = BOSS_DAMAGE_SCALE;
@@ -185,11 +202,16 @@ void Enemy::configureForKind() {
             m_ability.equip(AbilityCatalog::SHIELD_ENEMY);
             m_ability.setSingleUse(true);
             m_ability.setShieldColor(Colors::SHIELD_ENEMY);
-            m_shieldActivationsLeft = 1 + static_cast<int>(Rng::nextRange(2));
+            if (m_worldIndex <= EARLY_BOSS_MAX_WORLD_INDEX) {
+                m_shieldActivationsLeft = 1;
+            } else {
+                m_shieldActivationsLeft = 1 + static_cast<int>(Rng::nextRange(2));
+            }
             m_willUseShield = true;
             m_shieldTriggerHealth =
                 (8 + static_cast<int>(Rng::nextRange(5))) * 6;
             break;
+        }
         case EnemyKind::AirJet:
             m_health = scaleHp(AIR_MAX_HEALTH);
             m_speed = AIR_RUN_SPEED * m_speedScale;
@@ -284,21 +306,34 @@ void Enemy::syncRenderPivot() {
     m_renderAngle = static_cast<int32_t>(lroundf(m_angle));
 }
 
-void Enemy::getMechMuzzleWorld(float& wx, float& wy, float& wz) const {
-    const WeaponDef* weapon = m_loadout.weapon(m_loadout.activeWeaponSlot());
-    if (!weapon) {
-        wx = static_cast<float>(m_renderX);
-        wy = m_baseY;
-        wz = static_cast<float>(m_renderZ);
-        return;
-    }
-    float lx, ly, lz;
-    m_rig.weaponMuzzleLocal(*weapon, lx, ly, lz);
+void Enemy::getLaserMuzzleWorld(float& wx, float& wy, float& wz) const {
+    float lx = MECH_LASER_MUZZLE_X;
+    float ly = MECH_LASER_MUZZLE_Y;
+    float lz = MECH_LASER_MUZZLE_Z;
     m_rig.transformLocalToWorld(static_cast<float>(m_renderX),
                                 static_cast<float>(m_renderZ),
                                 m_baseY,
                                 static_cast<float>(m_renderAngle),
                                 m_loadout.visualPitch(), lx, ly, lz, wx, wy, wz);
+}
+
+void Enemy::getMissileMuzzleWorld(float& wx, float& wy, float& wz) const {
+    float lx = MECH_MISSILE_MUZZLE_X;
+    float ly = MECH_MISSILE_MUZZLE_Y;
+    float lz = MECH_MISSILE_MUZZLE_Z;
+    m_rig.transformLocalToWorld(static_cast<float>(m_renderX),
+                                static_cast<float>(m_renderZ),
+                                m_baseY,
+                                static_cast<float>(m_renderAngle),
+                                m_loadout.visualPitch(), lx, ly, lz, wx, wy, wz);
+}
+
+void Enemy::getMechMuzzleWorld(float& wx, float& wy, float& wz) const {
+    if (m_mechUsesLaser) {
+        getLaserMuzzleWorld(wx, wy, wz);
+    } else {
+        getMissileMuzzleWorld(wx, wy, wz);
+    }
 }
 
 void Enemy::getTankMuzzleWorld(float& wx, float& wy, float& wz) const {
@@ -309,10 +344,10 @@ void Enemy::getTankMuzzleWorld(float& wx, float& wy, float& wz) const {
 }
 
 void Enemy::spawnInRing(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex,
-                        AIState state) {
+                        AIState state, const ObstacleField* obstacles) {
     const uint32_t spawnSalt = Rng::nextU32();
     WorldGen::sampleEnemySpawn(playerX, playerZ, playerAngle, spawnIndex, spawnSalt,
-                               m_mapConfig, m_x, m_z);
+                               m_mapConfig, obstacles, m_x, m_z);
 
     m_active = true;
     m_kind = pickKind();
@@ -326,6 +361,7 @@ void Enemy::spawnInRing(float playerX, float playerZ, float playerAngle, uint32_
     m_isIdle = false;
     m_idleTimer = 0;
     m_fireTimer = 0;
+    m_behindDespawnGrace = SPAWN_BEHIND_DESPAWN_GRACE;
 
     configureForKind();
 
@@ -388,11 +424,12 @@ bool Enemy::isBehindPlayer(float playerX, float playerZ, float playerAngle) cons
 }
 
 void Enemy::setWorldScaling(float speedScale, float shieldUseChance,
-                            float hpScale, float fireRateScale) {
+                            float hpScale, float fireRateScale, int worldIndex) {
     m_speedScale = speedScale;
     m_shieldUseChance = shieldUseChance;
     m_hpScale = hpScale;
     m_fireRateScale = fireRateScale;
+    m_worldIndex = worldIndex;
 }
 
 void Enemy::deactivate() {
@@ -401,9 +438,10 @@ void Enemy::deactivate() {
     hide();
 }
 
-void Enemy::reset(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex) {
+void Enemy::reset(float playerX, float playerZ, float playerAngle,
+                  const ObstacleField* obstacles, uint32_t spawnIndex) {
     m_spawnIndex = spawnIndex;
-    spawnInRing(playerX, playerZ, playerAngle, m_spawnIndex, AIState::CHASE);
+    spawnInRing(playerX, playerZ, playerAngle, m_spawnIndex, AIState::CHASE, obstacles);
 }
 
 void Enemy::startIdle(float duration) {
@@ -412,11 +450,13 @@ void Enemy::startIdle(float duration) {
 }
 
 void Enemy::update(float deltaTime, float playerX, float playerZ, float playerAngle,
-                   float playerAimY) {
+                   float playerAimY, const ObstacleField* obstacles) {
     if (!m_active || m_health <= 0) return;
 
     if (m_kind != EnemyKind::BossMech) {
-        if (isBehindPlayer(playerX, playerZ, playerAngle)) {
+        if (m_behindDespawnGrace > 0.0f) {
+            m_behindDespawnGrace -= deltaTime;
+        } else if (isBehindPlayer(playerX, playerZ, playerAngle)) {
             deactivate();
             return;
         }
@@ -432,7 +472,7 @@ void Enemy::update(float deltaTime, float playerX, float playerZ, float playerAn
     if (m_kind == EnemyKind::AirJet) {
         updateAirAI(deltaTime, playerX, playerZ, playerAngle, playerAimY);
     } else {
-        updateAI(deltaTime, playerX, playerZ, playerAimY);
+        updateAI(deltaTime, playerX, playerZ, playerAimY, obstacles);
     }
     updateVisual(deltaTime);
 }
@@ -540,7 +580,8 @@ void Enemy::updateAirAI(float deltaTime, float playerX, float playerZ, float pla
     m_z += cosf(radians) * moveSpeed * deltaTime;
 }
 
-void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float playerAimY) {
+void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float playerAimY,
+                     const ObstacleField* obstacles) {
     float dx = playerX - m_x;
     float dz = playerZ - m_z;
     float distToPlayer = sqrtf(dx * dx + dz * dz);
@@ -597,9 +638,15 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
                 m_fireTimer = 0;
                 if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
                     float mx, my, mz;
-                    getMechMuzzleWorld(mx, my, mz);
-                    m_projectiles.fireEnemyHomingAtTarget(
-                        mx, my, mz, playerX, playerZ, playerAimY, m_damageScale);
+                    if (m_kind == EnemyKind::Mech && m_mechUsesLaser) {
+                        getLaserMuzzleWorld(mx, my, mz);
+                        m_projectiles.fireEnemyLaserAtTarget(
+                            mx, my, mz, playerX, playerZ, playerAimY, m_damageScale);
+                    } else {
+                        getMissileMuzzleWorld(mx, my, mz);
+                        m_projectiles.fireEnemyHomingAtTarget(
+                            mx, my, mz, playerX, playerZ, playerAimY, m_damageScale);
+                    }
                 } else {
                     float mx, my, mz;
                     getTankMuzzleWorld(mx, my, mz);
@@ -615,9 +662,15 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
     while (angleDiff < -180) angleDiff += 360;
 
     if (moveSpeed > 0 && !m_isIdle) {
-        float radians = targetAngle * M_PI / 180.0f;
-        m_x += sinf(radians) * moveSpeed * deltaTime;
-        m_z += cosf(radians) * moveSpeed * deltaTime;
+        const float radians = targetAngle * M_PI / 180.0f;
+        const float newX = m_x + sinf(radians) * moveSpeed * deltaTime;
+        const float newZ = m_z + cosf(radians) * moveSpeed * deltaTime;
+        if (obstacles) {
+            obstacles->resolveMovement(m_x, m_z, newX, newZ, ENEMY_COLLISION_RADIUS);
+        } else {
+            m_x = newX;
+            m_z = newZ;
+        }
         m_angle = targetAngle;
     } else {
         m_angle += angleDiff * 8.0f * deltaTime;

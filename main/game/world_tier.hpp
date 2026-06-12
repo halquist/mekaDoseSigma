@@ -25,8 +25,7 @@ struct WorldTier {
 
     int killPointValue() const;
     int objectivePointValue() const;
+    int objectivesPerPortal() const;
 };
-
-constexpr int kObjectivesPerPortal = 6;
 
 } // namespace Game

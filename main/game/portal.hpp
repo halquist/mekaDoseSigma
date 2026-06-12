@@ -5,12 +5,15 @@
 
 namespace Game {
 
+class ObstacleField;
+
 class WorldPortal {
 public:
     WorldPortal(Renderer::Scene& scene, const MapConfig& mapConfig);
 
     void hide();
-    void spawn(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex);
+    void spawn(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex,
+               const ObstacleField* obstacles);
 
     void update(float playerX, float playerZ, float playerAngle);
 
@@ -28,6 +31,7 @@ public:
     bool playerTouches(float playerX, float playerZ, float playerWidth) const;
 
 private:
+    void hideVisual();
     void syncVisual();
 
     Renderer::Scene& m_scene;

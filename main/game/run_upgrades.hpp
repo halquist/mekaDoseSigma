@@ -24,6 +24,7 @@ enum class UpgradeId : uint8_t {
     Drone,
     Laser,
     Missile,
+    AirStrike,
     COUNT
 };
 
@@ -52,6 +53,11 @@ int missileDamageForTier(uint8_t tier);
 float missileCooldownForTier(uint8_t tier);
 float missileRangeForTier(uint8_t tier);
 float missileAimConeDeg();
+int airStrikeDamageForTier(uint8_t tier);
+float airStrikeCooldownForTier(uint8_t tier);
+float airStrikeRadiusForTier(uint8_t tier);
+float airStrikeRangeForTier(uint8_t tier);
+float airStrikeAimConeDeg();
 float playerAutoFireRange(const RunBonuses& bonuses);
 
 class UpgradePicker {

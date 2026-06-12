@@ -37,22 +37,23 @@ void EnemyManager::applyWorldTier(const WorldTier& tier) {
     for (int i = 0; i < MAX_ENEMIES; ++i) {
         m_enemies[static_cast<size_t>(i)]->setWorldScaling(
             tier.enemySpeedScale(), tier.enemyShieldUseChance(),
-            tier.enemyHpScale(), tier.enemyFireRateScale());
+            tier.enemyHpScale(), tier.enemyFireRateScale(), tier.index);
     }
     if (m_portalBoss) {
         m_portalBoss->setWorldScaling(
             tier.enemySpeedScale(), tier.enemyShieldUseChance(),
-            tier.enemyHpScale(), tier.enemyFireRateScale());
+            tier.enemyHpScale(), tier.enemyFireRateScale(), tier.index);
     }
 }
 
-void EnemyManager::reset(float playerX, float playerZ, float playerAngle) {
+void EnemyManager::reset(float playerX, float playerZ, float playerAngle,
+                         const ObstacleField* obstacles) {
     m_spawnIndex = 0;
     for (int i = 0; i < MAX_ENEMIES; ++i) {
         m_enemies[static_cast<size_t>(i)]->deactivate();
     }
     dismissPortalBoss();
-    spawnOne(playerX, playerZ, playerAngle);
+    spawnOne(playerX, playerZ, playerAngle, obstacles);
     m_spawnTimer = m_initialSpawnDelay;
     m_lastAliveCount = aliveCount();
 }
@@ -109,13 +110,14 @@ int EnemyManager::findFreeSlot() const {
     return -1;
 }
 
-bool EnemyManager::spawnOne(float playerX, float playerZ, float playerAngle) {
+bool EnemyManager::spawnOne(float playerX, float playerZ, float playerAngle,
+                            const ObstacleField* obstacles) {
     const int slot = findFreeSlot();
     if (slot < 0) {
         return false;
     }
     m_enemies[static_cast<size_t>(slot)]->reset(
-        playerX, playerZ, playerAngle, m_spawnIndex++);
+        playerX, playerZ, playerAngle, obstacles, m_spawnIndex++);
     return true;
 }
 
@@ -130,7 +132,7 @@ int EnemyManager::aliveCount() const {
 }
 
 void EnemyManager::trySpawn(float deltaTime, float playerX, float playerZ,
-                            float playerAngle) {
+                            float playerAngle, const ObstacleField* obstacles) {
     if (m_spawnPaused) {
         return;
     }
@@ -145,20 +147,22 @@ void EnemyManager::trySpawn(float deltaTime, float playerX, float playerZ,
         return;
     }
 
-    if (spawnOne(playerX, playerZ, playerAngle)) {
+    if (spawnOne(playerX, playerZ, playerAngle, obstacles)) {
         m_spawnTimer = m_spawnIntervalMin +
             Rng::nextFloat01() * m_spawnIntervalJitter;
     }
 }
 
 void EnemyManager::update(float deltaTime, float playerX, float playerZ,
-                          float playerAngle, float playerAimY) {
+                          float playerAngle, float playerAimY,
+                          const ObstacleField* obstacles) {
     for (int i = 0; i < MAX_ENEMIES; ++i) {
         m_enemies[static_cast<size_t>(i)]->update(
-            deltaTime, playerX, playerZ, playerAngle, playerAimY);
+            deltaTime, playerX, playerZ, playerAngle, playerAimY, obstacles);
     }
     if (m_portalBoss && m_portalBoss->isAlive()) {
-        m_portalBoss->update(deltaTime, playerX, playerZ, playerAngle, playerAimY);
+        m_portalBoss->update(deltaTime, playerX, playerZ, playerAngle, playerAimY,
+                             obstacles);
     }
 
     const int alive = aliveCount();
@@ -169,7 +173,7 @@ void EnemyManager::update(float deltaTime, float playerX, float playerZ,
     }
     m_lastAliveCount = alive;
 
-    trySpawn(deltaTime, playerX, playerZ, playerAngle);
+    trySpawn(deltaTime, playerX, playerZ, playerAngle, obstacles);
 }
 
 Enemy* EnemyManager::findClosestInArc(float fromX, float fromZ, float fromAngleDeg,
@@ -211,6 +215,107 @@ Enemy* EnemyManager::findClosestInArc(float fromX, float fromZ, float fromAngleD
         }
     }
     return best;
+}
+
+bool EnemyManager::findBestStrikeTarget(float fromX, float fromZ, float fromAngleDeg,
+                                        float maxRange, float aimConeDeg,
+                                        float blastRadius,
+                                        float& outX, float& outZ,
+                                        float& outAimY) const {
+    struct Candidate {
+        float x = 0.0f;
+        float z = 0.0f;
+        float aimY = 0.0f;
+        float mechDistSq = 0.0f;
+    };
+
+    Candidate candidates[MAX_ENEMIES + 1];
+    int candidateCount = 0;
+
+    const auto tryAdd = [&](const Enemy& e) {
+        if (!e.isAlive()) {
+            return;
+        }
+        const float dx = e.getX() - fromX;
+        const float dz = e.getZ() - fromZ;
+        const float distSq = dx * dx + dz * dz;
+        if (distSq > maxRange * maxRange) {
+            return;
+        }
+
+        float angleToTarget = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+        float angleDiff = angleToTarget - fromAngleDeg;
+        while (angleDiff > 180.0f) angleDiff -= 360.0f;
+        while (angleDiff < -180.0f) angleDiff += 360.0f;
+        if (fabsf(angleDiff) > aimConeDeg) {
+            return;
+        }
+
+        Candidate& c = candidates[candidateCount++];
+        c.x = e.getX();
+        c.z = e.getZ();
+        c.aimY = e.getAimY();
+        c.mechDistSq = distSq;
+    };
+
+    for (int i = 0; i < MAX_ENEMIES; ++i) {
+        tryAdd(*m_enemies[static_cast<size_t>(i)]);
+    }
+    if (m_portalBoss) {
+        tryAdd(*m_portalBoss);
+    }
+
+    if (candidateCount == 0) {
+        return false;
+    }
+
+    const float radiusSq = blastRadius * blastRadius;
+
+    const auto countInBlast = [&](float cx, float cz) -> int {
+        int count = 0;
+        for (int i = 0; i < MAX_ENEMIES; ++i) {
+            const Enemy& e = *m_enemies[static_cast<size_t>(i)];
+            if (!e.isAlive()) {
+                continue;
+            }
+            const float dx = e.getX() - cx;
+            const float dz = e.getZ() - cz;
+            if (dx * dx + dz * dz <= radiusSq) {
+                ++count;
+            }
+        }
+        if (m_portalBoss && m_portalBoss->isAlive()) {
+            const float dx = m_portalBoss->getX() - cx;
+            const float dz = m_portalBoss->getZ() - cz;
+            if (dx * dx + dz * dz <= radiusSq) {
+                ++count;
+            }
+        }
+        return count;
+    };
+
+    int bestCount = -1;
+    float bestMechDistSq = 0.0f;
+    int bestIdx = -1;
+
+    for (int i = 0; i < candidateCount; ++i) {
+        const int hitCount = countInBlast(candidates[i].x, candidates[i].z);
+        if (hitCount > bestCount ||
+            (hitCount == bestCount && candidates[i].mechDistSq < bestMechDistSq)) {
+            bestCount = hitCount;
+            bestMechDistSq = candidates[i].mechDistSq;
+            bestIdx = i;
+        }
+    }
+
+    if (bestIdx < 0) {
+        return false;
+    }
+
+    outX = candidates[bestIdx].x;
+    outZ = candidates[bestIdx].z;
+    outAimY = candidates[bestIdx].aimY;
+    return true;
 }
 
 } // namespace Game

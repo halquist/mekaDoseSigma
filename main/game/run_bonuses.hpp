@@ -11,6 +11,7 @@ struct RunBonuses {
     uint8_t droneTier = 0;
     uint8_t laserTier = 1;   // 1 = MK1 default weapon, 2–6 = upgrades
     uint8_t missileTier = 0; // 0 = locked, 1–6 = unlock + upgrades
+    uint8_t airStrikeTier = 0; // 0 = locked, 1–6 = unlock + upgrades
 };
 
 } // namespace Game

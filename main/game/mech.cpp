@@ -139,7 +139,6 @@ void Mech::reset() {
     m_dodgeDir = 0;
     m_touchActive = false;
     m_dodgeTriggeredThisTouch = false;
-    m_angleAtTouchStart = 0.0f;
     m_touchClock = 0.0f;
     m_alive = true;
     m_ability.reset();
@@ -256,7 +255,6 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int
     if (input.touched) {
         if (!m_touchActive) {
             m_touchActive = true;
-            m_angleAtTouchStart = m_angle;
             m_dodgeTriggeredThisTouch = false;
 
             if (TouchZones::isForward(input.x, screenWidth)
@@ -272,7 +270,6 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int
             if (!m_dodgeTriggeredThisTouch) {
                 const int8_t dir = dodgeLeft ? static_cast<int8_t>(-1) : static_cast<int8_t>(1);
                 if (tryStartDodge(dir)) {
-                    m_angle = m_angleAtTouchStart;
                     m_dodgeTriggeredThisTouch = true;
                 }
             }

@@ -17,6 +17,7 @@
 #include "score.hpp"
 #include "run_upgrades.hpp"
 #include "companion_drone.hpp"
+#include "air_strike.hpp"
 #include "world_tier.hpp"
 #include "high_scores.hpp"
 #include "menu_showcase.hpp"
@@ -77,6 +78,7 @@ private:
     ObstacleField* m_obstacles = nullptr;
     Mech* m_mech = nullptr;
     CompanionDrone* m_drone = nullptr;
+    AirStrikeSystem* m_airStrike = nullptr;
     EnemyManager* m_enemies = nullptr;
     ObjectiveBuilding* m_objective = nullptr;
     WorldPortal* m_portal = nullptr;
@@ -111,9 +113,12 @@ private:
 
     float m_portalTransitionSec = 0.0f;
     bool m_portalWorldSwapped = false;
+    int m_objectivesAtLastPortal = 0;
+    bool m_portalBossPending = false;
 
     static constexpr float kPortalGrowSec = 0.55f;
     static constexpr float kPortalFadeSec = 0.55f;
+    static constexpr int kPortalHealAmount = 100;
 };
 
 } // namespace Game

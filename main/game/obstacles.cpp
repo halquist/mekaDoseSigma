@@ -11,22 +11,33 @@ ObstacleField::ObstacleField(Renderer::Scene& scene, const MapConfig& mapConfig)
     , m_mapConfig(mapConfig)
     , m_treeMats{Renderer::Material(Colors::TREE_FOLIAGE),
                  Renderer::Material(Colors::TREE_FOLIAGE)}
+    , m_buildingMat(Colors::CITY_BUILDING)
 {
     m_treeMats[0].shadingMode = Renderer::ShadingMode::FLAT;
     m_treeMats[1].shadingMode = Renderer::ShadingMode::FLAT;
+    m_buildingMat.shadingMode = Renderer::ShadingMode::FLAT;
 
     auto* treeProtoObj = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMats[0]);
     m_treeProto = treeProtoObj->vertices;
     delete treeProtoObj;
 
+    auto* buildingProtoObj = Primitives::createCube(
+        BUILDING_WIDTH, BUILDING_HEIGHT, BUILDING_DEPTH, &m_buildingMat);
+    m_buildingProto = buildingProtoObj->vertices;
+    delete buildingProtoObj;
+
     for (auto& slot : m_slots) {
         slot.tree = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMats[0]);
-        // Screen-space backface cull drops outer pyramid faces from the chase
-        // camera angle and leaves opposite lit FLAT faces visible — use NO_CULLING.
         slot.tree->cullingMode = Renderer::CullingMode::NO_CULLING;
-        // slot.tree->zBias = 8;
         m_scene.addObject(slot.tree);
         stashSceneObject(slot.tree);
+
+        slot.building = Primitives::createCube(
+            BUILDING_WIDTH, BUILDING_HEIGHT, BUILDING_DEPTH, &m_buildingMat);
+        slot.building->cullingMode = Renderer::CullingMode::NO_CULLING;
+        // slot.building->zBias = 4;
+        m_scene.addObject(slot.building);
+        stashSceneObject(slot.building);
     }
 }
 
@@ -44,10 +55,19 @@ void ObstacleField::applyMeshScale(Renderer::Object* obj,
     obj->calculateBoundingBox();
 }
 
+int32_t ObstacleField::slotRenderY(const Slot& slot) const {
+    if (slot.kind == WorldGen::ObstacleKind::Building) {
+        return static_cast<int32_t>(lroundf(
+            slot.surfaceY + BUILDING_HEIGHT * slot.scale * 0.5f));
+    }
+    return static_cast<int32_t>(lroundf(slot.surfaceY));
+}
+
 void ObstacleField::hideSlot(Slot& slot) {
     slot.inUse = false;
     slot.styleHash = 0;
     stashSceneObject(slot.tree);
+    stashSceneObject(slot.building);
 }
 
 void ObstacleField::placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec,
@@ -55,6 +75,7 @@ void ObstacleField::placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec,
     const bool meshDirty = !slot.inUse || slot.styleHash != styleHash;
     const MapTheme theme = WorldGen::biomeAt(spec.x, spec.z, m_mapConfig);
     const bool themeChanged = !slot.inUse || slot.theme != theme;
+    const bool kindChanged = !slot.inUse || slot.kind != spec.kind;
 
     slot.inUse = true;
     slot.x = spec.x;
@@ -62,25 +83,41 @@ void ObstacleField::placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec,
     slot.scale = spec.scale;
     slot.styleHash = styleHash;
     slot.theme = theme;
-    slot.radius = 12.0f * spec.scale;
+    slot.kind = spec.kind;
+    slot.radius = spec.collisionRadius;
 
     slot.surfaceY = Terrain::heightAt(spec.x, spec.z);
 
-    if (meshDirty) {
-        applyMeshScale(slot.tree, m_treeProto, spec.scale);
-    }
-    if (meshDirty || themeChanged) {
-        Renderer::Material* mat =
-            theme == MapTheme::DESERT ? &m_treeMats[1] : &m_treeMats[0];
-        for (auto& tri : slot.tree->triangles) {
-            tri.material = mat;
+    Renderer::Object* activeObj = nullptr;
+    if (spec.kind == WorldGen::ObstacleKind::Building) {
+        if (meshDirty || kindChanged) {
+            applyMeshScale(slot.building, m_buildingProto, spec.scale);
+            for (auto& tri : slot.building->triangles) {
+                tri.material = &m_buildingMat;
+            }
         }
+        stashSceneObject(slot.tree);
+        activeObj = slot.building;
+    } else {
+        if (meshDirty || kindChanged) {
+            applyMeshScale(slot.tree, m_treeProto, spec.scale);
+        }
+        if (meshDirty || themeChanged || kindChanged) {
+            Renderer::Material* mat =
+                theme == MapTheme::DESERT ? &m_treeMats[1] : &m_treeMats[0];
+            for (auto& tri : slot.tree->triangles) {
+                tri.material = mat;
+            }
+        }
+        stashSceneObject(slot.building);
+        activeObj = slot.tree;
     }
-    showSceneObject(slot.tree,
+
+    showSceneObject(activeObj,
                     static_cast<int32_t>(lroundf(spec.x)),
-                    static_cast<int32_t>(lroundf(slot.surfaceY)),
+                    slotRenderY(slot),
                     static_cast<int32_t>(lroundf(spec.z)));
-    slot.tree->setRotation(0, 0, 0);
+    activeObj->setRotation(0, 0, 0);
 }
 
 void ObstacleField::refreshSlotHeights(Slot& slot) {
@@ -88,10 +125,33 @@ void ObstacleField::refreshSlotHeights(Slot& slot) {
 
     WorldGen::ObstacleSpec spec;
     spec.present = true;
+    spec.kind = slot.kind;
     spec.x = slot.x;
     spec.z = slot.z;
     spec.scale = slot.scale;
+    spec.collisionRadius = slot.radius;
     placeSlot(slot, spec, slot.styleHash);
+}
+
+void ObstacleField::updateSlotVisibility(Slot& slot, float playerX, float playerZ,
+                                         float forwardX, float forwardZ) {
+    if (!slot.inUse) return;
+
+    const float dx = slot.x - playerX;
+    const float dz = slot.z - playerZ;
+    const float along = dx * forwardX + dz * forwardZ;
+
+    Renderer::Object* activeObj =
+        slot.kind == WorldGen::ObstacleKind::Building ? slot.building : slot.tree;
+
+    if (along < -BEHIND_RENDER_CULL) {
+        stashSceneObject(activeObj);
+    } else {
+        showSceneObject(activeObj,
+                        static_cast<int32_t>(lroundf(slot.x)),
+                        slotRenderY(slot),
+                        static_cast<int32_t>(lroundf(slot.z)));
+    }
 }
 
 int ObstacleField::findPlacedCell(int cellX, int cellZ) const {
@@ -150,20 +210,7 @@ void ObstacleField::ensureCell(int cellX, int cellZ) {
 void ObstacleField::updateTreeVisibility(float playerX, float playerZ,
                                          float forwardX, float forwardZ) {
     for (auto& slot : m_slots) {
-        if (!slot.inUse) continue;
-
-        const float dx = slot.x - playerX;
-        const float dz = slot.z - playerZ;
-        const float along = dx * forwardX + dz * forwardZ;
-
-        if (along < -BEHIND_RENDER_CULL) {
-            stashSceneObject(slot.tree);
-        } else {
-            showSceneObject(slot.tree,
-                            static_cast<int32_t>(lroundf(slot.x)),
-                            static_cast<int32_t>(lroundf(slot.surfaceY)),
-                            static_cast<int32_t>(lroundf(slot.z)));
-        }
+        updateSlotVisibility(slot, playerX, playerZ, forwardX, forwardZ);
     }
 }
 
@@ -210,6 +257,20 @@ void ObstacleField::update(float playerX, float playerZ, float playerAngleDeg) {
     updateTreeVisibility(playerX, playerZ, sinf(rad), cosf(rad));
 }
 
+bool ObstacleField::isPositionBlocked(float x, float z, float radius) const {
+    for (const auto& slot : m_slots) {
+        if (!slot.inUse) continue;
+
+        const float dx = x - slot.x;
+        const float dz = z - slot.z;
+        const float minDist = radius + slot.radius;
+        if (dx * dx + dz * dz < minDist * minDist) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void ObstacleField::resolveMovement(float& x, float& z,
                                     float newX, float newZ, float radius) const {
     x = newX;
@@ -249,10 +310,12 @@ void ObstacleField::reset() {
     m_placedCount = 0;
 }
 
-void ObstacleField::applyEnvironment(const EnvPalette& ruralPalette,
+void ObstacleField::applyEnvironment(const EnvPalette& activePalette,
+                                     const EnvPalette& ruralPalette,
                                      const EnvPalette& desertPalette) {
     m_treeMats[0].color = ruralPalette.treeFoliage;
     m_treeMats[1].color = desertPalette.treeFoliage;
+    m_buildingMat.color = activePalette.treeFoliage;
 }
 
 } // namespace Game

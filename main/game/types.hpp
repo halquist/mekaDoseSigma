@@ -52,6 +52,11 @@ namespace Colors {
     constexpr uint16_t PORTAL_VOID       = rgb(255, 40, 200);
     constexpr uint16_t PORTAL_FRAME      = rgb(110, 110, 118);
     constexpr uint16_t PORTAL_ARROW      = rgb(255, 120, 220);
+    constexpr uint16_t CITY_GROUND       = rgb(68, 70, 74);
+    constexpr uint16_t CITY_ROAD         = rgb(32, 34, 38);
+    constexpr uint16_t CITY_BUILDING     = rgb(100, 108, 120);
+    constexpr uint16_t CITY_SKY          = rgb(78, 88, 102);
+    constexpr uint16_t INDUSTRIAL_GROUND = rgb(88, 86, 82);
 
     // Legacy aliases kept for gradual migration
     constexpr uint16_t CYAN          = STEEL_BLUE;

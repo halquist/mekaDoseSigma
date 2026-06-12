@@ -35,25 +35,28 @@ void ObjectiveBuilding::hide() {
     stashSceneObject(m_dome);
 }
 
-void ObjectiveBuilding::pickSpawn(float playerX, float playerZ, float playerAngle) {
+void ObjectiveBuilding::pickSpawn(float playerX, float playerZ, float playerAngle,
+                                  const ObstacleField* obstacles) {
     const uint32_t spawnSalt = Rng::nextU32();
     WorldGen::sampleObjectiveSpawn(
         playerX, playerZ, playerAngle, m_spawnIndex, spawnSalt,
-        m_mapConfig, m_x, m_z);
+        m_mapConfig, obstacles, m_x, m_z);
 }
 
-void ObjectiveBuilding::spawnNext(float playerX, float playerZ, float playerAngle) {
+void ObjectiveBuilding::spawnNext(float playerX, float playerZ, float playerAngle,
+                                  const ObstacleField* obstacles) {
     m_spawnIndex++;
     m_destroyed = false;
     m_visible = false;
     m_health = MAX_HEALTH;
     m_hasTarget = true;
-    pickSpawn(playerX, playerZ, playerAngle);
+    pickSpawn(playerX, playerZ, playerAngle, obstacles);
     hide();
 }
 
-void ObjectiveBuilding::respawn(float playerX, float playerZ, float playerAngle) {
-    spawnNext(playerX, playerZ, playerAngle);
+void ObjectiveBuilding::respawn(float playerX, float playerZ, float playerAngle,
+                                const ObstacleField* obstacles) {
+    spawnNext(playerX, playerZ, playerAngle, obstacles);
 }
 
 void ObjectiveBuilding::dismissTarget() {
@@ -63,9 +66,10 @@ void ObjectiveBuilding::dismissTarget() {
     hide();
 }
 
-void ObjectiveBuilding::reset(float playerX, float playerZ, float playerAngle) {
+void ObjectiveBuilding::reset(float playerX, float playerZ, float playerAngle,
+                              const ObstacleField* obstacles) {
     m_spawnIndex = 0;
-    spawnNext(playerX, playerZ, playerAngle);
+    spawnNext(playerX, playerZ, playerAngle, obstacles);
 }
 
 void ObjectiveBuilding::syncVisual() {

@@ -5,12 +5,16 @@
 
 namespace Game {
 
+class ObstacleField;
+
 class ObjectiveBuilding {
 public:
     ObjectiveBuilding(Renderer::Scene& scene, const MapConfig& mapConfig);
 
-    void reset(float playerX, float playerZ, float playerAngle);
-    void respawn(float playerX, float playerZ, float playerAngle);
+    void reset(float playerX, float playerZ, float playerAngle,
+               const ObstacleField* obstacles);
+    void respawn(float playerX, float playerZ, float playerAngle,
+                 const ObstacleField* obstacles);
     void dismissTarget();
     void update(float playerX, float playerZ, float playerAngle);
 
@@ -31,8 +35,10 @@ public:
 private:
     void hide();
     void syncVisual();
-    void pickSpawn(float playerX, float playerZ, float playerAngle);
-    void spawnNext(float playerX, float playerZ, float playerAngle);
+    void pickSpawn(float playerX, float playerZ, float playerAngle,
+                   const ObstacleField* obstacles);
+    void spawnNext(float playerX, float playerZ, float playerAngle,
+                   const ObstacleField* obstacles);
 
     Renderer::Scene& m_scene;
     const MapConfig& m_mapConfig;

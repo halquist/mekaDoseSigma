@@ -446,6 +446,55 @@ void ProjectileSystem::fireEnemyBomb(float x, float y, float z, float targetX, f
     slot->obj->setPosition((int16_t)slot->x, (int16_t)slot->y, (int16_t)slot->z);
 }
 
+void ProjectileSystem::fireEnemyLaserAtTarget(float x, float y, float z, float targetX,
+                                              float targetZ, float targetAimY,
+                                              float damageScale) {
+    Projectile* slot = nullptr;
+    for (auto& p : m_projectiles) {
+        if (!p.active) {
+            slot = &p;
+            break;
+        }
+    }
+    if (!slot) return;
+
+    applyProjectileVisual(*slot, ProjectileVisualKind::Laser);
+
+    float dx = targetX - x;
+    float dz = targetZ - z;
+    float dy = targetAimY - y;
+    float dist = sqrtf(dx * dx + dy * dy + dz * dz);
+    if (dist < 1.0f) dist = 1.0f;
+
+    slot->x = x;
+    slot->z = z;
+    slot->prevX = x;
+    slot->prevZ = z;
+    slot->prevY = y;
+    slot->y = y;
+    slot->vx = (dx / dist) * LASER_SPEED;
+    slot->vy = (dy / dist) * LASER_SPEED;
+    slot->vz = (dz / dist) * LASER_SPEED;
+    slot->life = LASER_LIFE;
+    slot->trailTimer = 0;
+    slot->active = true;
+    slot->isPlayerProjectile = false;
+    slot->isHomingMissile = false;
+    slot->isFallingBomb = false;
+    slot->damageScale = damageScale;
+
+    const float horizDist = sqrtf(dx * dx + dz * dz);
+    const float pitch = horizDist > 1.0f
+        ? -atan2f(dy, horizDist) * 180.0f / static_cast<float>(M_PI)
+        : 0.0f;
+    const float yaw = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+    slot->obj->setRotation((int16_t)pitch, (int16_t)yaw, 0);
+    showSceneObject(slot->obj,
+                    static_cast<int32_t>(slot->x),
+                    static_cast<int32_t>(slot->y),
+                    static_cast<int32_t>(slot->z));
+}
+
 void ProjectileSystem::fireEnemyHomingAtTarget(float x, float y, float z, float targetX,
                                                float targetZ, float targetAimY,
                                                float damageScale) {
@@ -711,6 +760,34 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
 
     for (auto& p : m_projectiles) {
         if (!p.active || p.isPlayerProjectile) continue;
+
+        if (p.visualKind == ProjectileVisualKind::Laser) {
+            const float segDist = distPointToSegment(
+                playerX, playerZ, p.prevX, p.prevZ, p.x, p.z);
+            const float dx = p.x - playerX;
+            const float dz = p.z - playerZ;
+            const float dist = sqrtf(dx * dx + dz * dz);
+            const float closest = (dist < segDist) ? dist : segDist;
+
+            const float segDx = p.x - p.prevX;
+            const float segDz = p.z - p.prevZ;
+            const float segLen2 = segDx * segDx + segDz * segDz;
+            float t = 0.5f;
+            if (segLen2 > 0.01f) {
+                t = ((playerX - p.prevX) * segDx + (playerZ - p.prevZ) * segDz) / segLen2;
+                if (t < 0.0f) t = 0.0f;
+                else if (t > 1.0f) t = 1.0f;
+            }
+            const float projectileWorldY = p.prevY + t * (p.y - p.prevY);
+            const float yDist = fabsf(projectileWorldY - playerAimY);
+
+            if (closest < hitDist && yDist < ENEMY_HIT_Y_TOLERANCE) {
+                recordHit(p.x, projectileWorldY, p.z);
+                destroyProjectile(p);
+                return scaledDamage(PLAYER_DAMAGE_ENEMY_LASER, p.damageScale);
+            }
+            continue;
+        }
 
         if (p.isHomingMissile) {
             const float dx = p.x - playerX;

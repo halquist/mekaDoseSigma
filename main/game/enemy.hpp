@@ -11,19 +11,22 @@
 
 namespace Game {
 
+class ObstacleField;
+
 class Enemy {
 public:
     Enemy(Renderer::Scene& scene, ProjectileSystem& projectiles,
             const MapConfig& mapConfig);
 
     void update(float deltaTime, float playerX, float playerZ, float playerAngle,
-                float playerAimY);
-    void reset(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex = 0);
+                float playerAimY, const ObstacleField* obstacles);
+    void reset(float playerX, float playerZ, float playerAngle,
+               const ObstacleField* obstacles, uint32_t spawnIndex = 0);
     void spawnAsPortalBoss(float portalX, float portalZ, float portalAngle,
                            float playerX, float playerZ);
     void deactivate();
     void setWorldScaling(float speedScale, float shieldUseChance,
-                         float hpScale, float fireRateScale);
+                         float hpScale, float fireRateScale, int worldIndex);
 
     bool isActive() const { return m_active; }
     bool isPortalBoss() const { return m_kind == EnemyKind::BossMech; }
@@ -43,12 +46,13 @@ private:
     enum class AirPhase { Reposition, Approach, Strike, Exit };
 
     void spawnInRing(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex,
-                     AIState state);
+                     AIState state, const ObstacleField* obstacles);
     void hide();
     void hideTankParts();
     void hideAirJet();
     bool isBehindPlayer(float playerX, float playerZ, float playerAngle) const;
-    void updateAI(float deltaTime, float playerX, float playerZ, float playerAimY);
+    void updateAI(float deltaTime, float playerX, float playerZ, float playerAimY,
+                  const ObstacleField* obstacles);
     void updateAirAI(float deltaTime, float playerX, float playerZ, float playerAngle,
                      float playerAimY);
     void setupAirRun(float playerX, float playerZ, float playerAngle);
@@ -56,6 +60,8 @@ private:
     void updateVisual(float deltaTime);
     void startIdle(float duration);
     void getMechMuzzleWorld(float& wx, float& wy, float& wz) const;
+    void getLaserMuzzleWorld(float& wx, float& wy, float& wz) const;
+    void getMissileMuzzleWorld(float& wx, float& wy, float& wz) const;
     void getTankMuzzleWorld(float& wx, float& wy, float& wz) const;
     void syncRenderPivot();
     float hoverBaseY() const;
@@ -123,12 +129,24 @@ private:
     float m_hpScale = 1.0f;
     float m_fireRateScale = 1.0f;
     float m_shieldUseChance = ENEMY_SHIELD_USE_CHANCE;
+    int m_worldIndex = 0;
+    bool m_mechUsesLaser = false;
+    float m_behindDespawnGrace = 0.0f;
 
     static constexpr float ENGAGE_RANGE = 420.0f;
     static constexpr float PREFERRED_DIST_MIN = 180.0f;
     static constexpr float PREFERRED_DIST_MAX = 280.0f;
     static constexpr float DESPAWN_BEHIND_DIST = 350.0f;
     static constexpr float DESPAWN_FAR_DIST = 820.0f;
+    static constexpr float SPAWN_BEHIND_DESPAWN_GRACE = 2.0f;
+    static constexpr float MECH_LASER_MUZZLE_X = 0.0f;
+    static constexpr float MECH_LASER_MUZZLE_Y = 30.0f;
+    static constexpr float MECH_LASER_MUZZLE_Z = 10.0f;
+    static constexpr float MECH_MISSILE_MUZZLE_X = 0.0f;
+    static constexpr float MECH_MISSILE_MUZZLE_Y = 29.0f;
+    static constexpr float MECH_MISSILE_MUZZLE_Z = -7.0f;
+    static constexpr int MECH_TIER2_WORLD_INDEX = 3;
+    static constexpr float MECH_LASER_FIRE_INTERVAL = 1.15f;
     static constexpr float HOVER_OFFSET = 10.0f;
     static constexpr float FLIGHT_ALTITUDE = 92.0f;
     static constexpr float TANK_WIDTH = 28.0f;
@@ -140,6 +158,8 @@ private:
     static constexpr int MECH_MAX_HEALTH = 36;
     static constexpr int BOSS_MECH_MAX_HEALTH = MECH_MAX_HEALTH * 3;
     static constexpr float BOSS_DAMAGE_SCALE = 1.75f;
+    static constexpr int EARLY_BOSS_MAX_WORLD_INDEX = 1;
+    static constexpr float EARLY_BOSS_HP_SCALE = 0.7f;
     static constexpr int AIR_MAX_HEALTH = 24;
     static constexpr float ENEMY_SHIELD_USE_CHANCE = 0.45f;
     static constexpr int AIR_BOMBS_PER_RUN = 2;
@@ -153,6 +173,7 @@ private:
     static constexpr float MECH_AIM_Y_MAX = 42.0f;
     static constexpr float MECH_HIT_Y_MIN = 8.0f;
     static constexpr float MECH_HIT_Y_MAX = 46.0f;
+    static constexpr float ENEMY_COLLISION_RADIUS = 14.0f;
 };
 
 } // namespace Game
