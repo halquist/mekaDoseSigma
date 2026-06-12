@@ -165,8 +165,11 @@ void AirStrikeSystem::applySplash(float strikeX, float strikeZ, float strikeAimY
         if (wasAlive && !enemy.isAlive()) {
             score.kills++;
             particles.spawnDeathEffect(enemy.getX(), enemy.getAimY(), enemy.getZ());
-            if (enemy.isPortalBoss() && portal && portal->isActive() && portal->isLocked()) {
-                portal->setLocked(false);
+            if (enemy.isPortalBoss()) {
+                if (portal && portal->isActive() && portal->isLocked()) {
+                    portal->setLocked(false);
+                }
+                enemies.onPortalBossDefeated();
             }
         }
     };

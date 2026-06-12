@@ -330,8 +330,11 @@ void MekaGame::handleEnemyCombat() {
             m_score.kills++;
             m_particles->spawnDeathEffect(
                 enemy.getX(), enemy.getAimY(), enemy.getZ());
-            if (enemy.isPortalBoss() && m_portal->isActive() && m_portal->isLocked()) {
-                m_portal->setLocked(false);
+            if (enemy.isPortalBoss()) {
+                if (m_portal->isActive() && m_portal->isLocked()) {
+                    m_portal->setLocked(false);
+                }
+                m_enemies->onPortalBossDefeated();
             }
         }
     };
@@ -350,6 +353,7 @@ void MekaGame::beginUpgradePick() {
     m_upgradePicker.roll(m_mech->loadout());
     m_upgradePickChoice = -1;
     m_upgradePickConfirmSec = 0.0f;
+    m_upgradePickAnimSec = 0.0f;
     m_state = GameState::UPGRADE_PICK;
     resetUiTouchLock();
 }
@@ -491,7 +495,8 @@ void MekaGame::applyUpgradePick(int choiceIndex) {
 }
 
 void MekaGame::skipUpgradePick() {
-    resumeAfterUpgradePick();
+    m_upgradePickChoice = 2;
+    m_upgradePickConfirmSec = 1.0f;
 }
 
 void MekaGame::prepareNewRun() {
@@ -731,9 +736,14 @@ void MekaGame::update(float deltaTime) {
     }
 
     if (m_state == GameState::UPGRADE_PICK) {
+        m_upgradePickAnimSec += deltaTime;
+
         if (m_upgradePickConfirmSec > 0.0f) {
             m_upgradePickConfirmSec -= deltaTime;
             if (m_upgradePickConfirmSec <= 0.0f) {
+                if (m_upgradePickChoice != 2) {
+                    applyUpgradePick(m_upgradePickChoice);
+                }
                 resumeAfterUpgradePick();
                 m_upgradePickChoice = -1;
             }
@@ -746,7 +756,6 @@ void MekaGame::update(float deltaTime) {
             if (choice == 2) {
                 skipUpgradePick();
             } else if (choice >= 0) {
-                applyUpgradePick(choice);
                 m_upgradePickChoice = choice;
                 m_upgradePickConfirmSec = 1.0f;
             }
@@ -917,11 +926,17 @@ void MekaGame::render() {
         GameUi::drawDefeat(m_framebuffer, m_width, m_height,
                            m_score, m_highScores, m_newHighScore);
     } else if (m_state == GameState::UPGRADE_PICK) {
+        m_parallelRenderer.render(*m_scene, m_height);
+        const GameUi::UpgradePickAnim upgradeAnim =
+            GameUi::upgradePickAnimForTime(m_upgradePickAnimSec,
+                                          m_upgradePickConfirmSec,
+                                          m_upgradePickChoice);
         GameUi::drawUpgradePick(m_framebuffer, m_width, m_height,
                                 m_upgradePicker.option(0),
                                 m_upgradePicker.option(1),
                                 m_upgradePickChoice,
-                                m_score.total());
+                                m_score.total(),
+                                upgradeAnim);
         drawHudArcs();
     }
 }

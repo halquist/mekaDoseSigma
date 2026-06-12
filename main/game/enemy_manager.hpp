@@ -32,6 +32,7 @@ public:
 
     void clearAllEnemies();
     void setSpawnPaused(bool paused);
+    void onPortalBossDefeated();
     void prepareSpawnAfterTransition(float playerX, float playerZ, float playerAngle);
 
     int aliveCount() const;
@@ -72,6 +73,7 @@ private:
     float m_refillSpawnDelay = REFILL_SPAWN_DELAY;
     int m_maxEnemies = MAX_ENEMIES;
     bool m_spawnPaused = false;
+    bool m_levelSpawnsEnabled = true;
 };
 
 } // namespace Game

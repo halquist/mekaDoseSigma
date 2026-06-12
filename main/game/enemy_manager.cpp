@@ -51,6 +51,7 @@ void EnemyManager::applyWorldTier(const WorldTier& tier) {
 void EnemyManager::reset(float playerX, float playerZ, float playerAngle,
                          const ObstacleField* obstacles) {
     m_spawnIndex = 0;
+    m_levelSpawnsEnabled = true;
     for (int i = 0; i < MAX_ENEMIES; ++i) {
         m_enemies[static_cast<size_t>(i)]->deactivate();
     }
@@ -86,11 +87,16 @@ void EnemyManager::setSpawnPaused(bool paused) {
     m_spawnPaused = paused;
 }
 
+void EnemyManager::onPortalBossDefeated() {
+    m_levelSpawnsEnabled = false;
+}
+
 void EnemyManager::prepareSpawnAfterTransition(float playerX, float playerZ,
                                                float playerAngle) {
     (void)playerX;
     (void)playerZ;
     (void)playerAngle;
+    m_levelSpawnsEnabled = true;
     m_spawnTimer = m_initialSpawnDelay;
     m_lastAliveCount = 0;
 }
@@ -135,7 +141,7 @@ int EnemyManager::aliveCount() const {
 
 void EnemyManager::trySpawn(float deltaTime, float playerX, float playerZ,
                             float playerAngle, const ObstacleField* obstacles) {
-    if (m_spawnPaused) {
+    if (m_spawnPaused || !m_levelSpawnsEnabled) {
         return;
     }
 
@@ -168,7 +174,7 @@ void EnemyManager::update(float deltaTime, float playerX, float playerZ,
     }
 
     const int alive = aliveCount();
-    if (alive < m_lastAliveCount && alive < m_maxEnemies) {
+    if (m_levelSpawnsEnabled && alive < m_lastAliveCount && alive < m_maxEnemies) {
         if (m_spawnTimer > m_refillSpawnDelay) {
             m_spawnTimer = m_refillSpawnDelay;
         }

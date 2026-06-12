@@ -26,6 +26,16 @@ MenuDoorAnim menuDoorAnimForTime(float elapsedSec);
 void drawMenuDoors(uint16_t* framebuffer, int width, int height,
                    const MenuDoorAnim& anim);
 
+struct UpgradePickAnim {
+    float sideCover    = 0.0f;
+    float topCover     = 0.0f;
+    float botCover     = 0.0f;
+    int   invertChoice = -1;
+};
+
+UpgradePickAnim upgradePickAnimForTime(float entrySec, float confirmSec,
+                                       int selectedChoice);
+
 void drawMenu(uint16_t* framebuffer, int width, int height,
               const int highScores[HighScores::kTopCount], float pulseSec);
 void drawDefeat(uint16_t* framebuffer, int width, int height,
@@ -34,7 +44,8 @@ void drawDefeat(uint16_t* framebuffer, int width, int height,
                 bool newHighScore);
 void drawUpgradePick(uint16_t* framebuffer, int width, int height,
                      const UpgradeOption& left, const UpgradeOption& right,
-                     int selectedChoice, int score);
+                     int selectedChoice, int score,
+                     const UpgradePickAnim& anim);
 
 /// Full-screen portal wipe: circle grows from center with @p alpha (0..255).
 void drawPortalTransitionSphere(uint16_t* framebuffer, int width, int height,

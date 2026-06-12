@@ -101,6 +101,7 @@ private:
     float m_lastDeltaTime = 0.016f;
     float m_uiTouchLockSec = 0.0f;
     float m_upgradePickConfirmSec = 0.0f;
+    float m_upgradePickAnimSec = 0.0f;
     int m_upgradePickChoice = -1;
 
     GameState m_state = GameState::MENU;

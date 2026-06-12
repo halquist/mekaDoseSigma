@@ -10,8 +10,6 @@ namespace GameUi {
 
 namespace {
 
-constexpr int kSkipBandHeightDivisor = 5;
-
 void fillRect(uint16_t* framebuffer, int width, int height,
               int x0, int y0, int x1, int y1, uint16_t color) {
     if (x0 < 0) {
@@ -39,30 +37,6 @@ void fillRect(uint16_t* framebuffer, int width, int height,
     }
 }
 
-void drawUpgradeHalf(uint16_t* framebuffer, int width, int height,
-                     int x0, int x1, int y0, int y1,
-                     const UpgradeOption& option, bool selected) {
-    const uint16_t bgColor = selected ? Colors::BLACK : option.color;
-    const uint16_t textColor = selected ? option.color : Colors::BLACK;
-
-    fillRect(framebuffer, width, height, x0, y0, x1, y1, bgColor);
-
-    const int cx = (x0 + x1) / 2;
-    const int cy = (y0 + y1) / 2;
-    Font::drawTextCentered(framebuffer, width, height, option.title,
-                           cx, cy - 34, 2, textColor);
-    if (option.subtitle[0] != '\0') {
-        Font::drawTextCentered(framebuffer, width, height, option.subtitle,
-                               cx, cy - 14, 2, textColor);
-        if (option.tierLabel[0] != '\0') {
-            Font::drawTextCentered(framebuffer, width, height, option.tierLabel,
-                                   cx, cy + 6, 2, textColor);
-        }
-    } else if (option.tierLabel[0] != '\0') {
-        Font::drawTextCentered(framebuffer, width, height, option.tierLabel,
-                               cx, cy - 10, 2, textColor);
-    }
-}
 
 uint16_t blendRgb565(uint16_t dst, uint16_t src, uint8_t alpha) {
     const uint32_t a = alpha;
@@ -409,6 +383,193 @@ void drawDoorPanel(uint16_t* framebuffer, int width, int height,
     }
 }
 
+// ---------------------------------------------------------------------------
+// Upgrade pick animation helpers
+// ---------------------------------------------------------------------------
+
+constexpr float kUpgradeSideAnimSec   = 0.40f;
+constexpr float kUpgradeTabStartSec   = 0.30f;
+constexpr float kUpgradeTabAnimSec    = 0.35f;
+constexpr float kUpgradeInvertHoldSec = 0.50f;
+constexpr float kUpgradeExitSec       = 0.50f;
+
+constexpr int kUpgradeSkipTabH  = 48;
+constexpr int kUpgradeScoreTabH = 48;
+constexpr int kTabCutSize       = 18;
+constexpr int kTabEdgeThick     = 2;
+
+uint16_t colorDarken(uint16_t c, float f) {
+    const float s = 1.0f - f;
+    const uint32_t r = static_cast<uint32_t>(static_cast<float>((c >> 11) & 0x1Fu) * s);
+    const uint32_t g = static_cast<uint32_t>(static_cast<float>((c >> 5) & 0x3Fu) * s);
+    const uint32_t b = static_cast<uint32_t>(static_cast<float>(c & 0x1Fu) * s);
+    return static_cast<uint16_t>((r << 11) | (g << 5) | b);
+}
+
+uint16_t colorLighten(uint16_t c, float f) {
+    const uint32_t r = (c >> 11) & 0x1Fu;
+    const uint32_t g = (c >> 5) & 0x3Fu;
+    const uint32_t b = c & 0x1Fu;
+    const uint32_t ro = static_cast<uint32_t>(
+        static_cast<float>(r) + static_cast<float>(0x1Fu - r) * f);
+    const uint32_t go = static_cast<uint32_t>(
+        static_cast<float>(g) + static_cast<float>(0x3Fu - g) * f);
+    const uint32_t bo = static_cast<uint32_t>(
+        static_cast<float>(b) + static_cast<float>(0x1Fu - b) * f);
+    return static_cast<uint16_t>((ro << 11) | (go << 5) | bo);
+}
+
+void drawEmbossText(uint16_t* framebuffer, int width, int height,
+                    const char* text, int cx, int cy, int scale,
+                    uint16_t baseColor) {
+    const uint16_t mainColor = colorDarken(baseColor, 0.58f);
+    const uint16_t hiColor   = colorLighten(baseColor, 0.45f);
+    const uint16_t shColor   = colorDarken(baseColor, 0.82f);
+
+    Font::drawTextCentered(framebuffer, width, height, text,
+                           cx + 1, cy - 1, scale, shColor);
+    Font::drawTextCentered(framebuffer, width, height, text,
+                           cx - 1, cy + 1, scale, hiColor);
+    Font::drawTextCentered(framebuffer, width, height, text,
+                           cx, cy, scale, mainColor);
+}
+
+void drawEmbossNumber(uint16_t* framebuffer, int width, int height,
+                      int number, int cx, int cy, int scale,
+                      uint16_t baseColor) {
+    const uint16_t mainColor = colorDarken(baseColor, 0.58f);
+    const uint16_t hiColor   = colorLighten(baseColor, 0.45f);
+    const uint16_t shColor   = colorDarken(baseColor, 0.82f);
+
+    Font::drawNumber(framebuffer, width, height, number,
+                     cx + 1, cy - 1, scale, shColor);
+    Font::drawNumber(framebuffer, width, height, number,
+                     cx - 1, cy + 1, scale, hiColor);
+    Font::drawNumber(framebuffer, width, height, number,
+                     cx, cy, scale, mainColor);
+}
+
+void drawDiagonalStreakClipped(uint16_t* framebuffer, int width, int height,
+                               int x0, int x1, int y0, int y1,
+                               int yStart, int thickness, uint16_t color) {
+    const int panelW = x1 - x0;
+    if (panelW <= 2) {
+        return;
+    }
+    const int halfT = thickness / 2;
+    for (int i = 0; i <= panelW; ++i) {
+        const int cx = x0 + i;
+        const int cy = yStart + i;
+        for (int t = -halfT; t <= halfT; ++t) {
+            const int px = cx + t;
+            const int py = cy - t;
+            if (px >= x0 && px < x1 && py >= y0 && py < y1) {
+                putPixel(framebuffer, width, height, px, py, color);
+            }
+        }
+    }
+}
+
+void drawUpgradePanel(uint16_t* framebuffer, int width, int height,
+                      int x0, int x1, int y0, int y1,
+                      const UpgradeOption& option, bool isLeft,
+                      bool inverted) {
+    if (x1 <= x0 || y1 <= y0) {
+        return;
+    }
+
+    const uint16_t baseColor  = inverted
+        ? colorDarken(option.color, 0.60f) : option.color;
+    const uint16_t edgeColor  = inverted
+        ? option.color : colorDarken(option.color, 0.45f);
+
+    fillDoorRect(framebuffer, width, height, x0, x1, y0, y1, baseColor);
+
+    if (!inverted) {
+        drawDiagonalStreakClipped(framebuffer, width, height, x0, x1, y0, y1,
+                                  y0 + 18, 7, colorLighten(option.color, 0.25f));
+        drawDiagonalStreakClipped(framebuffer, width, height, x0, x1, y0, y1,
+                                  y0 + 72, 3, colorLighten(option.color, 0.12f));
+    }
+
+    const int edgeX0 = isLeft ? x1 - 3 : x0;
+    const int edgeX1 = isLeft ? x1     : x0 + 3;
+    fillDoorRect(framebuffer, width, height, edgeX0, edgeX1, y0, y1, edgeColor);
+
+    const int cx    = (x0 + x1) / 2;
+    const int panCy = (y0 + y1) / 2;
+    const uint16_t textBase = baseColor;
+
+    drawEmbossText(framebuffer, width, height, option.title,
+                   cx, panCy - 18, 2, textBase);
+    if (option.subtitle[0] != '\0') {
+        drawEmbossText(framebuffer, width, height, option.subtitle,
+                       cx, panCy + 2, 2, textBase);
+        if (option.tierLabel[0] != '\0') {
+            drawEmbossText(framebuffer, width, height, option.tierLabel,
+                           cx, panCy + 22, 2, textBase);
+        }
+    } else if (option.tierLabel[0] != '\0') {
+        drawEmbossText(framebuffer, width, height, option.tierLabel,
+                       cx, panCy + 6, 2, textBase);
+    }
+}
+
+void drawTabShape(uint16_t* framebuffer, int width, int height,
+                  int tabY, int tabH, bool isTopTab,
+                  uint16_t fillColor, uint16_t edgeColor) {
+    const int y0 = tabY;
+    const int y1 = tabY + tabH;
+
+    for (int y = y0; y < y1; ++y) {
+        if (y < 0 || y >= height) {
+            continue;
+        }
+
+        int xMin = 0;
+        int xMax = width;
+
+        if (isTopTab) {
+            // SKIP tab: free edge at bottom, corners chamfer inward
+            // d = 0 at bottom-most row, increases going up
+            const int d = y1 - 1 - y;
+            if (d < kTabCutSize) {
+                xMin = kTabCutSize - d;
+                xMax = width - kTabCutSize + d;
+            }
+        } else {
+            // Score tab: free edge at top, reversed — wide at free edge
+            // corners cut outward going down from free edge
+            // d = 0 at top row (free edge), increases going down
+            const int d = y - y0;
+            if (d < kTabCutSize) {
+                xMin = d;
+                xMax = width - d;
+            }
+        }
+
+        if (xMin < 0) {
+            xMin = 0;
+        }
+        if (xMax > width) {
+            xMax = width;
+        }
+        if (xMin >= xMax) {
+            continue;
+        }
+
+        const bool isEdgeRow = isTopTab
+            ? (y >= y1 - kTabEdgeThick)
+            : (y < y0 + kTabEdgeThick);
+        const uint16_t rowColor = isEdgeRow ? edgeColor : fillColor;
+        const uint16_t packed   = fbPack(rowColor);
+        uint16_t* row = framebuffer + y * width;
+        for (int x = xMin; x < xMax; ++x) {
+            row[x] = packed;
+        }
+    }
+}
+
 } // namespace
 
 float menuDoorTransitionDuration() {
@@ -516,36 +677,112 @@ void drawDefeat(uint16_t* framebuffer, int width, int height,
                            cx, height - 32, 1, Colors::HUD_TEXT);
 }
 
+UpgradePickAnim upgradePickAnimForTime(float entrySec, float confirmSec,
+                                       int selectedChoice) {
+    UpgradePickAnim anim;
+
+    if (confirmSec <= 0.0f) {
+        // Entry phase
+        anim.sideCover = smoothStep(entrySec / kUpgradeSideAnimSec);
+        const float tabProgress =
+            (entrySec - kUpgradeTabStartSec) / kUpgradeTabAnimSec;
+        anim.topCover = smoothStep(tabProgress);
+        anim.botCover = anim.topCover;
+        anim.invertChoice = -1;
+    } else if (confirmSec > kUpgradeExitSec) {
+        // Invert-hold phase
+        anim.sideCover    = 1.0f;
+        anim.topCover     = 1.0f;
+        anim.botCover     = 1.0f;
+        anim.invertChoice = selectedChoice;
+    } else {
+        // Exit phase
+        const float exitT = smoothStep(1.0f - confirmSec / kUpgradeExitSec);
+        anim.sideCover    = 1.0f - exitT;
+        anim.topCover     = 1.0f - exitT;
+        anim.botCover     = 1.0f - exitT;
+        anim.invertChoice = selectedChoice;
+    }
+
+    return anim;
+}
+
 void drawUpgradePick(uint16_t* framebuffer, int width, int height,
                      const UpgradeOption& left, const UpgradeOption& right,
-                     int selectedChoice, int score) {
-    const int skipBottom = height / kSkipBandHeightDivisor;
-    fillRect(framebuffer, width, height, 0, 0, width, skipBottom,
-             Colors::OBJECTIVE_ARROW);
-    Font::drawTextCentered(framebuffer, width, height, "SKIP",
-                           width / 2, skipBottom / 2 - 1, 2, Colors::BLACK);
+                     int selectedChoice, int score,
+                     const UpgradePickAnim& anim) {
+    (void)selectedChoice;
 
-    const int choiceTop = skipBottom;
-    drawUpgradeHalf(framebuffer, width, height,
-                    0, width / 2, choiceTop, height,
-                    left, selectedChoice == 0);
-    drawUpgradeHalf(framebuffer, width, height,
-                    width / 2, width, choiceTop, height,
-                    right, selectedChoice == 1);
+    const int cx        = width / 2;
+    const int skipTabH  = kUpgradeSkipTabH;
+    const int scoreTabH = kUpgradeScoreTabH;
+    const int panelY0   = skipTabH;
+    const int panelY1   = height - scoreTabH;
 
-    Font::drawTextCentered(framebuffer, width, height, "SCORE",
-                           width / 2, height - 44, 1, Colors::BLACK);
-    Font::drawNumber(framebuffer, width, height, score,
-                     width / 2, height - 32, 2, Colors::BLACK);
+    // Side panels — rigid slide in/out (text anchored to panel center)
+    if (anim.sideCover > 0.001f) {
+        const int halfW = cx;
+        const int slideOffset = static_cast<int>(lroundf(
+            static_cast<float>(halfW) * (1.0f - anim.sideCover)));
+        const int leftX0  = -slideOffset;
+        const int leftX1  = halfW - slideOffset;
+        const int rightX0 = width - halfW + slideOffset;
+        const int rightX1 = width + slideOffset;
+
+        if (leftX1 > 0) {
+            drawUpgradePanel(framebuffer, width, height,
+                             leftX0, leftX1, panelY0, panelY1,
+                             left, true, anim.invertChoice == 0);
+        }
+        if (rightX0 < width) {
+            drawUpgradePanel(framebuffer, width, height,
+                             rightX0, rightX1, panelY0, panelY1,
+                             right, false, anim.invertChoice == 1);
+        }
+    }
+
+    // SKIP tab — slides from top
+    if (anim.topCover > 0.001f) {
+        const int tabY = static_cast<int>(lroundf(
+            static_cast<float>(-skipTabH) * (1.0f - anim.topCover)));
+        const bool skipInv = (anim.invertChoice == 2);
+        const uint16_t skipFill = skipInv
+            ? colorDarken(Colors::OBJECTIVE_ARROW, 0.5f)
+            : Colors::OBJECTIVE_ARROW;
+        const uint16_t skipEdge = colorDarken(Colors::OBJECTIVE_ARROW, 0.35f);
+        drawTabShape(framebuffer, width, height,
+                     tabY, skipTabH, true, skipFill, skipEdge);
+
+        const int textCy = tabY + skipTabH / 2;
+        drawEmbossText(framebuffer, width, height, "SKIP",
+                       cx, textCy, 2, skipFill);
+    }
+
+    // Score tab — slides from bottom
+    if (anim.botCover > 0.001f) {
+        const int tabY = static_cast<int>(lroundf(
+            static_cast<float>(height)
+            - static_cast<float>(scoreTabH) * anim.botCover));
+        constexpr uint16_t kScoreFill = Colors::rgb(50, 53, 58);
+        constexpr uint16_t kScoreEdge = Colors::rgb(30, 32, 36);
+        drawTabShape(framebuffer, width, height,
+                     tabY, scoreTabH, false, kScoreFill, kScoreEdge);
+
+        const int labelCy = tabY + 8;
+        const int numCy   = tabY + 24;
+        drawEmbossText(framebuffer, width, height, "SCORE",
+                       cx, labelCy, 1, kScoreFill);
+        drawEmbossNumber(framebuffer, width, height, score,
+                         cx, numCy, 2, kScoreFill);
+    }
 }
 
 int upgradePickFromTouch(int touchX, int touchY, int width, int height) {
-    (void)touchX;
-
-    const int skipTouchMinY = (height * (kSkipBandHeightDivisor - 1))
-                              / kSkipBandHeightDivisor;
-    if (touchY >= skipTouchMinY) {
+    if (touchY < kUpgradeSkipTabH) {
         return 2;
+    }
+    if (touchY >= height - kUpgradeScoreTabH) {
+        return -1;
     }
 
     return touchX < width / 2 ? 0 : 1;

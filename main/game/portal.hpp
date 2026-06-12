@@ -57,7 +57,7 @@ private:
     static constexpr float PORTAL_HEIGHT = 58.0f;
     static constexpr float VOID_SIZE = 34.0f;
     static constexpr float FRAME_THICKNESS = 9.0f;
-    static constexpr float TOUCH_RADIUS = 42.0f;
+    static constexpr float TOUCH_RADIUS = 58.0f;
 };
 
 } // namespace Game
