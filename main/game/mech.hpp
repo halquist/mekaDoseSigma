@@ -57,7 +57,16 @@ public:
 
 private:
     void updateVisual(float deltaTime);
-    void getMuzzleWorld(float& wx, float& wy, float& wz) const;
+    static constexpr float PLAYER_LASER_MUZZLE_X = 0.0f;
+    static constexpr float PLAYER_LASER_MUZZLE_Y = 30.0f;
+    static constexpr float PLAYER_LASER_MUZZLE_Z = 10.0f;
+    static constexpr float PLAYER_MISSILE_MUZZLE_X = 0.0f;
+    static constexpr float PLAYER_MISSILE_MUZZLE_Y = 29.0f;
+    static constexpr float PLAYER_MISSILE_MUZZLE_Z = -7.0f;
+
+    void getLaserMuzzleWorld(float& wx, float& wy, float& wz) const;
+    void getMissileMuzzleWorld(float& wx, float& wy, float& wz) const;
+    bool targetInWeaponArc(float targetX, float targetZ, float range, float aimConeDeg) const;
     void snapHoverHeight();
     void syncRenderPivot();
     bool tryStartDodge(int8_t dir);
@@ -77,7 +86,8 @@ private:
     int32_t m_renderAngle = 0;
     float m_angle = 0;
     float m_turnActivity = 0.0f;
-    float m_fireCooldown = 0;
+    float m_laserCooldown = 0.0f;
+    float m_missileCooldown = 0.0f;
     float m_dodgeRemaining = 0.0f;
     float m_dodgeCooldown = 0.0f;
     int8_t m_dodgeDir = 0;

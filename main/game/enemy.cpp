@@ -141,17 +141,30 @@ void Enemy::configureForKind() {
     m_shieldWasActive = false;
     m_damageScale = 1.0f;
 
+    const auto scaleHp = [this](int baseHp) {
+        const int hp = static_cast<int>(
+            lroundf(static_cast<float>(baseHp) * m_hpScale));
+        return hp < 1 ? 1 : hp;
+    };
+    const auto scaleFireInterval = [this](float baseInterval) {
+        float interval = baseInterval / m_fireRateScale;
+        if (interval < 0.32f) {
+            interval = 0.32f;
+        }
+        return interval;
+    };
+
     switch (m_kind) {
         case EnemyKind::Tank:
-            m_health = TANK_MAX_HEALTH;
+            m_health = scaleHp(TANK_MAX_HEALTH);
             m_speed = 110.0f * m_speedScale;
-            m_fireInterval = 1.4f;
+            m_fireInterval = scaleFireInterval(1.4f);
             m_tankBodyMat.color = Colors::TANK_BODY;
             break;
         case EnemyKind::Mech:
-            m_health = MECH_MAX_HEALTH;
+            m_health = scaleHp(MECH_MAX_HEALTH);
             m_speed = 160.0f * m_speedScale;
-            m_fireInterval = 1.6f;
+            m_fireInterval = scaleFireInterval(1.6f);
             m_rig.ensureBuilt(m_loadout, MechPalette::EnemyRed);
             m_rig.setHidden(false);
             m_ability.equip(AbilityCatalog::SHIELD_ENEMY);
@@ -163,9 +176,9 @@ void Enemy::configureForKind() {
             }
             break;
         case EnemyKind::BossMech:
-            m_health = BOSS_MECH_MAX_HEALTH;
+            m_health = scaleHp(BOSS_MECH_MAX_HEALTH);
             m_speed = 155.0f * m_speedScale;
-            m_fireInterval = 1.25f;
+            m_fireInterval = scaleFireInterval(1.25f);
             m_damageScale = BOSS_DAMAGE_SCALE;
             m_rig.ensureBuilt(m_loadout, MechPalette::BossBlue);
             m_rig.setHidden(false);
@@ -178,9 +191,9 @@ void Enemy::configureForKind() {
                 (8 + static_cast<int>(Rng::nextRange(5))) * 6;
             break;
         case EnemyKind::AirJet:
-            m_health = AIR_MAX_HEALTH;
+            m_health = scaleHp(AIR_MAX_HEALTH);
             m_speed = AIR_RUN_SPEED * m_speedScale;
-            m_fireInterval = 1.8f;
+            m_fireInterval = scaleFireInterval(1.8f);
             break;
     }
 }
@@ -374,9 +387,12 @@ bool Enemy::isBehindPlayer(float playerX, float playerZ, float playerAngle) cons
     return (dx * forwardX + dz * forwardZ) < -DESPAWN_BEHIND_DIST;
 }
 
-void Enemy::setWorldScaling(float speedScale, float shieldUseChance) {
+void Enemy::setWorldScaling(float speedScale, float shieldUseChance,
+                            float hpScale, float fireRateScale) {
     m_speedScale = speedScale;
     m_shieldUseChance = shieldUseChance;
+    m_hpScale = hpScale;
+    m_fireRateScale = fireRateScale;
 }
 
 void Enemy::deactivate() {
@@ -473,7 +489,10 @@ void Enemy::updateAirAI(float deltaTime, float playerX, float playerZ, float pla
                 m_projectiles.fireEnemyBomb(
                     m_x, m_baseY - 6.0f, m_z, playerX, playerZ);
                 m_bombsThisRun++;
-                m_bombDropCooldown = AIR_BOMB_INTERVAL;
+                m_bombDropCooldown = AIR_BOMB_INTERVAL / m_fireRateScale;
+                if (m_bombDropCooldown < 0.22f) {
+                    m_bombDropCooldown = 0.22f;
+                }
             }
 
             const float fwdX = sinf(playerAngle * static_cast<float>(M_PI) / 180.0f);

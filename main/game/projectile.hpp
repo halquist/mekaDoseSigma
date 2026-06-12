@@ -12,6 +12,8 @@ enum class ProjectileVisualKind : uint8_t {
     PlayerMissile,
     Bolt,
     Bomb,
+    Laser,
+    PlayerLaser,
 };
 
 class ProjectileSystem {
@@ -19,9 +21,13 @@ public:
     explicit ProjectileSystem(Renderer::Scene& scene);
 
     void firePlayerAtTarget(float x, float y, float z, float targetX, float targetZ,
-                            float targetAimY);
+                            float targetAimY, int damage);
     void firePlayerStraight(float x, float y, float z, float targetX, float targetZ,
-                            float targetAimY);
+                            float targetAimY, int damage);
+    void fireDroneLaser(float x, float y, float z, float targetX, float targetZ,
+                        float targetAimY, int damage);
+    void firePlayerLaser(float x, float y, float z, float targetX, float targetZ,
+                         float targetAimY, int damage);
     void fireEnemyHomingAtTarget(float x, float y, float z, float targetX, float targetZ,
                                  float targetAimY, float damageScale = 1.0f);
     void fireEnemyAtTarget(float x, float z, float targetX, float targetZ);
@@ -37,7 +43,7 @@ public:
                        float* outHitX = nullptr, float* outHitZ = nullptr,
                        float* outHitY = nullptr);
     bool checkEnemyHit(float enemyX, float enemyZ, float enemyMinY, float enemyMaxY,
-                       float enemyWidth);
+                       float enemyWidth, int* outDamage = nullptr);
 
 private:
     struct Projectile {
@@ -45,11 +51,13 @@ private:
         Renderer::Object* missileObj = nullptr;
         Renderer::Object* boltObj = nullptr;
         Renderer::Object* bombObj = nullptr;
+        Renderer::Object* laserObj = nullptr;
         ProjectileVisualKind visualKind = ProjectileVisualKind::None;
         float x = 0;
         float z = 0;
         float prevX = 0;
         float prevZ = 0;
+        float prevY = 0;
         float vx = 0;
         float vz = 0;
         float y = 0;
@@ -71,6 +79,7 @@ private:
         bool isHomingMissile = false;
         bool isFallingBomb = false;
         float damageScale = 1.0f;
+        int playerHitDamage = 0;
     };
 
     struct TrailPuff {
@@ -98,6 +107,8 @@ private:
     Renderer::Material m_missileMat;
     Renderer::Material m_enemyProjMat;
     Renderer::Material m_bombMat;
+    Renderer::Material m_laserMat;
+    Renderer::Material m_playerLaserMat;
 
     std::array<Projectile, MAX_PROJECTILES> m_projectiles;
     std::array<TrailPuff, TRAIL_PUFFS> m_trailPuffs;
@@ -133,6 +144,12 @@ private:
     static constexpr float BOMB_SPLASH_RADIUS = 42.0f;
     static constexpr int32_t BOMB_VIS_SIZE = 7;
     static constexpr int32_t MISSILE_TRAIL_PUFF_SIZE = 2;
+
+    static constexpr float LASER_SPEED = 1000.0f;
+    static constexpr float LASER_LIFE = 0.35f;
+    static constexpr int32_t LASER_VIS_W = 2;
+    static constexpr int32_t LASER_VIS_H = 2;
+    static constexpr int32_t LASER_VIS_LEN = 48;
 };
 
 } // namespace Game

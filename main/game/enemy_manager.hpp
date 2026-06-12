@@ -10,7 +10,7 @@ namespace Game {
 
 class EnemyManager {
 public:
-    static constexpr int MAX_ENEMIES = 3;
+    static constexpr int MAX_ENEMIES = 5;
 
     EnemyManager(Renderer::Scene& scene, ProjectileSystem& projectiles,
                  const MapConfig& mapConfig);

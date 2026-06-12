@@ -22,7 +22,8 @@ public:
     void spawnAsPortalBoss(float portalX, float portalZ, float portalAngle,
                            float playerX, float playerZ);
     void deactivate();
-    void setWorldScaling(float speedScale, float shieldUseChance);
+    void setWorldScaling(float speedScale, float shieldUseChance,
+                         float hpScale, float fireRateScale);
 
     bool isActive() const { return m_active; }
     bool isPortalBoss() const { return m_kind == EnemyKind::BossMech; }
@@ -119,6 +120,8 @@ private:
     bool m_shieldWasActive = false;
     float m_damageScale = 1.0f;
     float m_speedScale = 1.0f;
+    float m_hpScale = 1.0f;
+    float m_fireRateScale = 1.0f;
     float m_shieldUseChance = ENEMY_SHIELD_USE_CHANCE;
 
     static constexpr float ENGAGE_RANGE = 420.0f;

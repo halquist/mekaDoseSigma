@@ -65,7 +65,7 @@ const MechLoadoutPreset LOADOUT_STRIKER_HOVER = {
     &FRAME_striker,
     STRIKER_HOVER_PARTS,
     static_cast<uint8_t>(sizeof(STRIKER_HOVER_PARTS) / sizeof(STRIKER_HOVER_PARTS[0])),
-    &WEAPON_homing_missile_mk1,
+    nullptr,
     nullptr,
 };
 

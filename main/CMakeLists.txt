@@ -28,6 +28,7 @@ idf_component_register(
           "game/score.cpp"
           "game/high_scores.cpp"
           "game/run_upgrades.cpp"
+          "game/companion_drone.cpp"
           "game/game_ui.cpp"
     INCLUDE_DIRS "."
     REQUIRES driver esp_lcd esp_timer nvs_flash

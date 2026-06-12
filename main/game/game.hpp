@@ -16,6 +16,7 @@
 #include "portal.hpp"
 #include "score.hpp"
 #include "run_upgrades.hpp"
+#include "companion_drone.hpp"
 #include "world_tier.hpp"
 #include "high_scores.hpp"
 #include "menu_showcase.hpp"
@@ -39,6 +40,7 @@ private:
     void applyEnvironment();
     void updateDayNightCycle(float deltaTime);
     void updateCamera();
+    bool findAutoFireTarget(float& targetX, float& targetZ, float& targetAimY);
     void handleAutoFire();
     void handleEnemyCombat();
     void handleObjectiveCombat();
@@ -74,6 +76,7 @@ private:
     World* m_world = nullptr;
     ObstacleField* m_obstacles = nullptr;
     Mech* m_mech = nullptr;
+    CompanionDrone* m_drone = nullptr;
     EnemyManager* m_enemies = nullptr;
     ObjectiveBuilding* m_objective = nullptr;
     WorldPortal* m_portal = nullptr;

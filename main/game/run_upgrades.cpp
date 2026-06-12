@@ -36,6 +36,104 @@ float turnBonusForSpeedTier(uint8_t tier) {
     return static_cast<float>(tier) * (kSpeedTurnBonusMk6 / static_cast<float>(kMaxUpgradeTier));
 }
 
+namespace {
+
+constexpr int kDroneDamageByTier[] = {0, 2, 3, 4, 5, 6, 8};
+constexpr float kDroneCooldownByTier[] = {0.0f, 0.85f, 0.72f, 0.60f, 0.50f, 0.42f, 0.35f};
+constexpr float kDroneRangeByTier[] = {0.0f, 300.0f, 320.0f, 340.0f, 360.0f, 380.0f, 400.0f};
+
+constexpr int kLaserDamageByTier[] = {0, 3, 4, 5, 6, 7, 9};
+constexpr float kLaserCooldownByTier[] = {0.0f, 0.30f, 0.26f, 0.22f, 0.19f, 0.16f, 0.14f};
+constexpr float kLaserRangeByTier[] = {0.0f, 320.0f, 335.0f, 350.0f, 365.0f, 380.0f, 400.0f};
+
+constexpr int kMissileDamageByTier[] = {0, 6, 7, 8, 9, 10, 12};
+constexpr float kMissileCooldownByTier[] = {0.0f, 0.50f, 0.42f, 0.36f, 0.31f, 0.28f, 0.24f};
+constexpr float kMissileRangeByTier[] = {0.0f, 340.0f, 355.0f, 370.0f, 385.0f, 400.0f, 420.0f};
+
+uint8_t clampDroneTier(uint8_t tier) {
+    if (tier > kMaxUpgradeTier) {
+        return kMaxUpgradeTier;
+    }
+    return tier;
+}
+
+uint8_t clampUpgradeTier(uint8_t tier) {
+    if (tier > kMaxUpgradeTier) {
+        return kMaxUpgradeTier;
+    }
+    return tier;
+}
+
+} // namespace
+
+int droneDamageForTier(uint8_t tier) {
+    tier = clampDroneTier(tier);
+    return kDroneDamageByTier[tier];
+}
+
+float droneCooldownForTier(uint8_t tier) {
+    tier = clampDroneTier(tier);
+    return kDroneCooldownByTier[tier];
+}
+
+float droneRangeForTier(uint8_t tier) {
+    tier = clampDroneTier(tier);
+    return kDroneRangeByTier[tier];
+}
+
+float droneAimConeDeg() {
+    return 55.0f;
+}
+
+int laserDamageForTier(uint8_t tier) {
+    tier = clampUpgradeTier(tier);
+    return kLaserDamageByTier[tier];
+}
+
+float laserCooldownForTier(uint8_t tier) {
+    tier = clampUpgradeTier(tier);
+    return kLaserCooldownByTier[tier];
+}
+
+float laserRangeForTier(uint8_t tier) {
+    tier = clampUpgradeTier(tier);
+    return kLaserRangeByTier[tier];
+}
+
+float laserAimConeDeg() {
+    return 48.0f;
+}
+
+int missileDamageForTier(uint8_t tier) {
+    tier = clampUpgradeTier(tier);
+    return kMissileDamageByTier[tier];
+}
+
+float missileCooldownForTier(uint8_t tier) {
+    tier = clampUpgradeTier(tier);
+    return kMissileCooldownByTier[tier];
+}
+
+float missileRangeForTier(uint8_t tier) {
+    tier = clampUpgradeTier(tier);
+    return kMissileRangeByTier[tier];
+}
+
+float missileAimConeDeg() {
+    return 45.0f;
+}
+
+float playerAutoFireRange(const RunBonuses& bonuses) {
+    float range = laserRangeForTier(bonuses.laserTier);
+    if (bonuses.missileTier > 0) {
+        const float missileRange = missileRangeForTier(bonuses.missileTier);
+        if (missileRange > range) {
+            range = missileRange;
+        }
+    }
+    return range;
+}
+
 uint16_t UpgradePicker::colorFor(UpgradeId id) {
     switch (id) {
     case UpgradeId::Armor:
@@ -44,6 +142,12 @@ uint16_t UpgradePicker::colorFor(UpgradeId id) {
         return Colors::SHIELD_HUD;
     case UpgradeId::Speed:
         return Colors::ORANGE;
+    case UpgradeId::Drone:
+        return Colors::PORTAL_VOID;
+    case UpgradeId::Laser:
+        return Colors::TRACER_YELLOW;
+    case UpgradeId::Missile:
+        return Colors::MISSILE_GREY;
     default:
         return Colors::HUD_TEXT;
     }
@@ -57,6 +161,12 @@ uint8_t UpgradePicker::currentTier(UpgradeId id, const RunBonuses& bonuses) {
         return bonuses.shieldTier;
     case UpgradeId::Speed:
         return bonuses.speedTier;
+    case UpgradeId::Drone:
+        return bonuses.droneTier;
+    case UpgradeId::Laser:
+        return bonuses.laserTier;
+    case UpgradeId::Missile:
+        return bonuses.missileTier;
     default:
         return kMaxUpgradeTier;
     }
@@ -78,11 +188,27 @@ void UpgradePicker::buildOption(UpgradeOption& out, UpgradeId id, uint8_t tier) 
     case UpgradeId::Speed:
         name = "SPEED";
         break;
+    case UpgradeId::Drone:
+        name = "LASER";
+        break;
+    case UpgradeId::Laser:
+        name = "GUN";
+        break;
+    case UpgradeId::Missile:
+        name = "MISSILE";
+        break;
     default:
         break;
     }
 
     snprintf(out.title, sizeof(out.title), "%s", name);
+    if (id == UpgradeId::Drone) {
+        snprintf(out.subtitle, sizeof(out.subtitle), "DRONE");
+    } else if (id == UpgradeId::Laser) {
+        snprintf(out.subtitle, sizeof(out.subtitle), "LASER");
+    } else {
+        out.subtitle[0] = '\0';
+    }
     snprintf(out.tierLabel, sizeof(out.tierLabel), "MK%u", static_cast<unsigned>(tier));
 }
 
@@ -120,6 +246,15 @@ void UpgradePicker::apply(const UpgradeOption& choice, Mech& mech, int& health, 
     }
     case UpgradeId::Speed:
         bonuses.speedTier = choice.tier;
+        break;
+    case UpgradeId::Drone:
+        bonuses.droneTier = choice.tier;
+        break;
+    case UpgradeId::Laser:
+        bonuses.laserTier = choice.tier;
+        break;
+    case UpgradeId::Missile:
+        bonuses.missileTier = choice.tier;
         break;
     default:
         break;

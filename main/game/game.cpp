@@ -56,6 +56,7 @@ MekaGame::~MekaGame() {
     delete m_menuShowcase;
     delete m_particles;
     delete m_projectiles;
+    delete m_drone;
     delete m_enemies;
     delete m_portal;
     delete m_objective;
@@ -110,6 +111,7 @@ bool MekaGame::init() {
     m_projectiles = new ProjectileSystem(*m_scene);
     m_particles = new ParticleSystem(*m_scene);
     m_mech = new Mech(*m_scene);
+    m_drone = new CompanionDrone(*m_scene);
     m_maxHealth = m_mech->getMaxHp();
     m_health = m_maxHealth;
     m_enemies = new EnemyManager(*m_scene, *m_projectiles, m_mapConfig);
@@ -212,43 +214,47 @@ void MekaGame::updateCamera() {
 }
 
 void MekaGame::handleAutoFire() {
-    const WeaponDef* weapon =
-        m_mech->loadout().weapon(m_mech->loadout().activeWeaponSlot());
-    if (!weapon) {
+    float targetX = 0.0f;
+    float targetZ = 0.0f;
+    float targetAimY = 0.0f;
+    if (!findAutoFireTarget(targetX, targetZ, targetAimY)) {
         return;
     }
+
+    m_mech->tryAutoFire(*m_projectiles, targetX, targetZ, targetAimY, true);
+    m_drone->tryFire(*m_projectiles, targetX, targetZ, targetAimY,
+                     m_mech->loadout().bonuses().droneTier);
+}
+
+bool MekaGame::findAutoFireTarget(float& targetX, float& targetZ, float& targetAimY) {
+    const RunBonuses& bonuses = m_mech->loadout().bonuses();
+    const float range = playerAutoFireRange(bonuses);
+    const float aimCone = laserAimConeDeg();
 
     const float mechX = m_mech->getX();
     const float mechZ = m_mech->getZ();
     const float mechAngle = m_mech->getAngle();
 
-    float targetX = 0.0f;
-    float targetZ = 0.0f;
-    float targetAimY = 0.0f;
-    bool haveTarget = false;
-
     Enemy* enemyTarget = m_enemies->findClosestInArc(
-        mechX, mechZ, mechAngle, weapon->range, weapon->aimConeDeg);
+        mechX, mechZ, mechAngle, range, aimCone);
     if (enemyTarget) {
         targetX = enemyTarget->getX();
         targetZ = enemyTarget->getZ();
         targetAimY = enemyTarget->getMissileAimY();
-        haveTarget = true;
-    } else if (m_objective->isAlive() && m_objective->isVisible() &&
-               isInWeaponArc(mechX, mechZ, mechAngle,
-                             m_objective->getX(), m_objective->getZ(),
-                             weapon->range, weapon->aimConeDeg)) {
+        return true;
+    }
+
+    if (m_objective->isAlive() && m_objective->isVisible() &&
+        isInWeaponArc(mechX, mechZ, mechAngle,
+                      m_objective->getX(), m_objective->getZ(),
+                      range, aimCone)) {
         targetX = m_objective->getX();
         targetZ = m_objective->getZ();
         targetAimY = m_objective->getMissileAimY();
-        haveTarget = true;
+        return true;
     }
 
-    if (!haveTarget) {
-        return;
-    }
-
-    m_mech->tryAutoFire(*m_projectiles, targetX, targetZ, targetAimY, true);
+    return false;
 }
 
 void MekaGame::handleObjectiveCombat() {
@@ -285,17 +291,21 @@ void MekaGame::handleEnemyCombat() {
         float enemyMinY = 0.0f;
         float enemyMaxY = 0.0f;
         enemy.getHitVerticalRange(enemyMinY, enemyMaxY);
+        int hitDamage = 0;
         if (!m_projectiles->checkEnemyHit(enemy.getX(),
                                          enemy.getZ(),
                                          enemyMinY,
                                          enemyMaxY,
-                                         enemy.getWidth())) {
+                                         enemy.getWidth(),
+                                         &hitDamage)) {
             return;
         }
 
+        const int damage =
+            hitDamage > 0 ? hitDamage : m_mech->getWeaponDamage();
         const bool wasAlive = enemy.isAlive();
         bool hitEnemyShield = false;
-        enemy.takeDamage(m_mech->getWeaponDamage(), &hitEnemyShield);
+        enemy.takeDamage(damage, &hitEnemyShield);
         m_particles->spawnHitEffect(
             enemy.getX(), enemy.getAimY(), enemy.getZ(),
             hitEnemyShield ? Colors::SHIELD_ENEMY : Colors::SPARK_ORANGE);
@@ -467,6 +477,7 @@ void MekaGame::startNewRun() {
     m_health = m_maxHealth;
     m_damageFlash = 0;
     m_mech->reset();
+    m_drone->reset();
     m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
     m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
     m_portal->hide();
@@ -495,6 +506,7 @@ void MekaGame::returnToMenu() {
     Terrain::setMapConfig(&m_mapConfig);
     applyWorldTier();
     m_mech->reset();
+    m_drone->reset();
     m_world->resetAt(m_mech->getX(), m_mech->getZ());
     m_enemies->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
     m_objective->reset(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
@@ -605,6 +617,8 @@ void MekaGame::update(float deltaTime) {
         updateDayNightCycle(deltaTime);
 
         m_mech->update(touch, deltaTime, m_width, m_height, m_obstacles);
+        m_drone->update(deltaTime, m_mech->getX(), m_mech->getZ(), m_mech->getBaseY(),
+                         m_mech->loadout().bonuses().droneTier > 0 && m_mech->isAlive());
         handleAutoFire();
 
         m_enemies->update(deltaTime,

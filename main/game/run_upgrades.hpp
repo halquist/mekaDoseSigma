@@ -21,6 +21,9 @@ enum class UpgradeId : uint8_t {
     Armor,
     Shield,
     Speed,
+    Drone,
+    Laser,
+    Missile,
     COUNT
 };
 
@@ -28,6 +31,7 @@ struct UpgradeOption {
     UpgradeId id = UpgradeId::Armor;
     uint8_t tier = 1;
     char title[12] = {};
+    char subtitle[12] = {};
     char tierLabel[8] = {};
     uint16_t color = 0;
 };
@@ -36,6 +40,19 @@ int maxHpForArmorTier(uint8_t tier);
 int shieldCapacityForTier(uint8_t tier);
 float moveBonusForSpeedTier(uint8_t tier);
 float turnBonusForSpeedTier(uint8_t tier);
+int droneDamageForTier(uint8_t tier);
+float droneCooldownForTier(uint8_t tier);
+float droneRangeForTier(uint8_t tier);
+float droneAimConeDeg();
+int laserDamageForTier(uint8_t tier);
+float laserCooldownForTier(uint8_t tier);
+float laserRangeForTier(uint8_t tier);
+float laserAimConeDeg();
+int missileDamageForTier(uint8_t tier);
+float missileCooldownForTier(uint8_t tier);
+float missileRangeForTier(uint8_t tier);
+float missileAimConeDeg();
+float playerAutoFireRange(const RunBonuses& bonuses);
 
 class UpgradePicker {
 public:

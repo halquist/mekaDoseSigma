@@ -37,7 +37,7 @@ MapTheme WorldTier::nextTheme(MapTheme previous) const {
 }
 
 int WorldTier::maxEnemies() const {
-    return std::min(3, 2 + index / 2);
+    return std::min(5, 1 + index / 4);
 }
 
 float WorldTier::spawnIntervalMin() const {
@@ -61,7 +61,15 @@ float WorldTier::enemySpeedScale() const {
 }
 
 float WorldTier::enemyDamageScale() const {
-    return 1.0f + static_cast<float>(index) * 0.12f;
+    return 1.0f + static_cast<float>(index) * 0.20f;
+}
+
+float WorldTier::enemyHpScale() const {
+    return 1.0f + static_cast<float>(index) * 0.45f;
+}
+
+float WorldTier::enemyFireRateScale() const {
+    return 1.0f + static_cast<float>(index) * 0.14f;
 }
 
 float WorldTier::enemyShieldUseChance() const {

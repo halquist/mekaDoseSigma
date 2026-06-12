@@ -122,12 +122,7 @@ int MechLoadout::maxHp() const {
 }
 
 int MechLoadout::weaponDamage() const {
-    const WeaponDef* w = weapon(m_activeWeaponSlot);
-    int damage = (w && w->damage >= 1) ? w->damage : 1;
-    if (damage < 1) {
-        damage = 1;
-    }
-    return damage;
+    return laserDamageForTier(m_bonuses.laserTier);
 }
 
 int8_t MechLoadout::visualPitch() const {

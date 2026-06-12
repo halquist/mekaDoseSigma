@@ -72,21 +72,42 @@ void Mech::syncRenderPivot() {
     m_renderAngle = static_cast<int32_t>(lroundf(m_angle));
 }
 
-void Mech::getMuzzleWorld(float& wx, float& wy, float& wz) const {
-    const WeaponDef* weapon = m_loadout.weapon(m_loadout.activeWeaponSlot());
-    if (!weapon) {
-        wx = static_cast<float>(m_renderX);
-        wy = m_baseY;
-        wz = static_cast<float>(m_renderZ);
-        return;
-    }
-    float lx, ly, lz;
-    m_rig.weaponMuzzleLocal(*weapon, lx, ly, lz);
+void Mech::getLaserMuzzleWorld(float& wx, float& wy, float& wz) const {
+    float lx = PLAYER_LASER_MUZZLE_X;
+    float ly = PLAYER_LASER_MUZZLE_Y;
+    float lz = PLAYER_LASER_MUZZLE_Z;
     m_rig.transformLocalToWorld(static_cast<float>(m_renderX),
                                 static_cast<float>(m_renderZ),
                                 m_baseY,
                                 static_cast<float>(m_renderAngle),
                                 m_loadout.visualPitch(), lx, ly, lz, wx, wy, wz);
+}
+
+void Mech::getMissileMuzzleWorld(float& wx, float& wy, float& wz) const {
+    float lx = PLAYER_MISSILE_MUZZLE_X;
+    float ly = PLAYER_MISSILE_MUZZLE_Y;
+    float lz = PLAYER_MISSILE_MUZZLE_Z;
+    m_rig.transformLocalToWorld(static_cast<float>(m_renderX),
+                                static_cast<float>(m_renderZ),
+                                m_baseY,
+                                static_cast<float>(m_renderAngle),
+                                m_loadout.visualPitch(), lx, ly, lz, wx, wy, wz);
+}
+
+bool Mech::targetInWeaponArc(float targetX, float targetZ, float range,
+                             float aimConeDeg) const {
+    const float dx = targetX - m_x;
+    const float dz = targetZ - m_z;
+    const float dist = sqrtf(dx * dx + dz * dz);
+    if (dist > range) {
+        return false;
+    }
+
+    const float angleToTarget = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+    float angleDiff = angleToTarget - m_angle;
+    while (angleDiff > 180.0f) angleDiff -= 360.0f;
+    while (angleDiff < -180.0f) angleDiff += 360.0f;
+    return fabsf(angleDiff) <= aimConeDeg;
 }
 
 void Mech::updateVisual(float deltaTime) {
@@ -111,7 +132,8 @@ void Mech::reset() {
     m_z = 0;
     m_angle = 0;
     m_turnActivity = 0.0f;
-    m_fireCooldown = 0;
+    m_laserCooldown = 0;
+    m_missileCooldown = 0;
     m_dodgeRemaining = 0;
     m_dodgeCooldown = 0;
     m_dodgeDir = 0;
@@ -138,33 +160,42 @@ void Mech::explode() {
 bool Mech::tryAutoFire(ProjectileSystem& projectiles,
                        float targetX, float targetZ, float targetAimY,
                        bool targetAlive) {
-    if (m_fireCooldown > 0.0f || !targetAlive) return false;
-
-    const WeaponDef* weapon = m_loadout.weapon(m_loadout.activeWeaponSlot());
-    if (!weapon) return false;
-
-    float dx = targetX - m_x;
-    float dz = targetZ - m_z;
-    float dist = sqrtf(dx * dx + dz * dz);
-    if (dist > weapon->range) return false;
-
-    float angleToTarget = atan2f(dx, dz) * 180.0f / M_PI;
-    float angleDiff = angleToTarget - m_angle;
-    while (angleDiff > 180.0f) angleDiff -= 360.0f;
-    while (angleDiff < -180.0f) angleDiff += 360.0f;
-    if (fabsf(angleDiff) > weapon->aimConeDeg) return false;
-
-    float mx, my, mz;
-    getMuzzleWorld(mx, my, mz);
-
-    if (weapon->kind == WeaponKind::HomingMissile) {
-        projectiles.firePlayerAtTarget(mx, my, mz, targetX, targetZ, targetAimY);
-    } else {
-        projectiles.firePlayerStraight(mx, my, mz, targetX, targetZ, targetAimY);
+    if (!targetAlive) {
+        return false;
     }
 
-    m_fireCooldown = weapon->cooldown;
-    return true;
+    const RunBonuses& bonuses = m_loadout.bonuses();
+    bool fired = false;
+
+    if (bonuses.laserTier >= 1 && m_laserCooldown <= 0.0f &&
+        targetInWeaponArc(targetX, targetZ,
+                          laserRangeForTier(bonuses.laserTier),
+                          laserAimConeDeg())) {
+        float mx = 0.0f;
+        float my = 0.0f;
+        float mz = 0.0f;
+        getLaserMuzzleWorld(mx, my, mz);
+        projectiles.firePlayerLaser(mx, my, mz, targetX, targetZ, targetAimY,
+                                    laserDamageForTier(bonuses.laserTier));
+        m_laserCooldown = laserCooldownForTier(bonuses.laserTier);
+        fired = true;
+    }
+
+    if (bonuses.missileTier >= 1 && m_missileCooldown <= 0.0f &&
+        targetInWeaponArc(targetX, targetZ,
+                          missileRangeForTier(bonuses.missileTier),
+                          missileAimConeDeg())) {
+        float mx = 0.0f;
+        float my = 0.0f;
+        float mz = 0.0f;
+        getMissileMuzzleWorld(mx, my, mz);
+        projectiles.firePlayerAtTarget(mx, my, mz, targetX, targetZ, targetAimY,
+                                       missileDamageForTier(bonuses.missileTier));
+        m_missileCooldown = missileCooldownForTier(bonuses.missileTier);
+        fired = true;
+    }
+
+    return fired;
 }
 
 bool Mech::tryStartDodge(int8_t dir) {
@@ -208,8 +239,11 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int
     m_touchClock += deltaTime;
     m_turnActivity = 0.0f;
 
-    if (m_fireCooldown > 0.0f) {
-        m_fireCooldown -= deltaTime;
+    if (m_laserCooldown > 0.0f) {
+        m_laserCooldown -= deltaTime;
+    }
+    if (m_missileCooldown > 0.0f) {
+        m_missileCooldown -= deltaTime;
     }
     if (m_dodgeCooldown > 0.0f) {
         m_dodgeCooldown -= deltaTime;

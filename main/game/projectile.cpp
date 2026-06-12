@@ -46,10 +46,16 @@ ProjectileSystem::ProjectileSystem(Renderer::Scene& scene)
     , m_missileMat(Colors::MISSILE_GREY)
     , m_enemyProjMat(Colors::ORANGE)
     , m_bombMat(Colors::BOMB_BODY)
+    , m_laserMat(Colors::DAMAGE_RED)
+    , m_playerLaserMat(Colors::TRACER_YELLOW)
 {
     m_missileMat.shadingMode = Renderer::ShadingMode::UNLIT;
     m_enemyProjMat.shadingMode = Renderer::ShadingMode::UNLIT;
     m_bombMat.shadingMode = Renderer::ShadingMode::UNLIT;
+    m_laserMat.shadingMode = Renderer::ShadingMode::UNLIT;
+    m_laserMat.emissive = true;
+    m_playerLaserMat.shadingMode = Renderer::ShadingMode::UNLIT;
+    m_playerLaserMat.emissive = true;
 
     for (auto& p : m_projectiles) {
         p.obj = nullptr;
@@ -86,6 +92,7 @@ void ProjectileSystem::applyProjectileVisual(Projectile& p, ProjectileVisualKind
         }
         stashSceneObject(p.boltObj);
         stashSceneObject(p.bombObj);
+        stashSceneObject(p.laserObj);
         p.obj = p.missileObj;
         mat = &m_missileMat;
     } else if (kind == ProjectileVisualKind::Bolt) {
@@ -96,6 +103,7 @@ void ProjectileSystem::applyProjectileVisual(Projectile& p, ProjectileVisualKind
         }
         stashSceneObject(p.missileObj);
         stashSceneObject(p.bombObj);
+        stashSceneObject(p.laserObj);
         p.obj = p.boltObj;
         mat = &m_enemyProjMat;
     } else if (kind == ProjectileVisualKind::Bomb) {
@@ -108,8 +116,35 @@ void ProjectileSystem::applyProjectileVisual(Projectile& p, ProjectileVisualKind
         }
         stashSceneObject(p.missileObj);
         stashSceneObject(p.boltObj);
+        stashSceneObject(p.laserObj);
         p.obj = p.bombObj;
         mat = &m_bombMat;
+    } else if (kind == ProjectileVisualKind::Laser) {
+        if (!p.laserObj) {
+            p.laserObj = Primitives::createCube(LASER_VIS_W, LASER_VIS_H, LASER_VIS_LEN,
+                                                  &m_laserMat);
+            p.laserObj->cullingMode = Renderer::CullingMode::NO_CULLING;
+            m_scene.addObject(p.laserObj);
+            stashSceneObject(p.laserObj);
+        }
+        stashSceneObject(p.missileObj);
+        stashSceneObject(p.boltObj);
+        stashSceneObject(p.bombObj);
+        p.obj = p.laserObj;
+        mat = &m_laserMat;
+    } else if (kind == ProjectileVisualKind::PlayerLaser) {
+        if (!p.laserObj) {
+            p.laserObj = Primitives::createCube(LASER_VIS_W, LASER_VIS_H, LASER_VIS_LEN,
+                                                  &m_playerLaserMat);
+            p.laserObj->cullingMode = Renderer::CullingMode::NO_CULLING;
+            m_scene.addObject(p.laserObj);
+            stashSceneObject(p.laserObj);
+        }
+        stashSceneObject(p.missileObj);
+        stashSceneObject(p.boltObj);
+        stashSceneObject(p.bombObj);
+        p.obj = p.laserObj;
+        mat = &m_playerLaserMat;
     }
 
     if (p.obj && mat) {
@@ -154,7 +189,7 @@ void ProjectileSystem::spawnTrailPuff(float x, float y, float z) {
 }
 
 void ProjectileSystem::firePlayerAtTarget(float x, float y, float z, float targetX, float targetZ,
-                                          float targetAimY) {
+                                          float targetAimY, int damage) {
     Projectile* slot = nullptr;
     for (auto& p : m_projectiles) {
         if (!p.active) {
@@ -201,11 +236,12 @@ void ProjectileSystem::firePlayerAtTarget(float x, float y, float z, float targe
     slot->active = true;
     slot->isPlayerProjectile = true;
     slot->isHomingMissile = true;
+    slot->playerHitDamage = damage;
     updateMissileVisual(*slot);
 }
 
 void ProjectileSystem::firePlayerStraight(float x, float y, float z, float targetX, float targetZ,
-                                          float targetAimY) {
+                                          float targetAimY, int damage) {
     Projectile* slot = nullptr;
     for (auto& p : m_projectiles) {
         if (!p.active) {
@@ -238,9 +274,106 @@ void ProjectileSystem::firePlayerStraight(float x, float y, float z, float targe
     slot->active = true;
     slot->isPlayerProjectile = true;
     slot->isHomingMissile = false;
+    slot->playerHitDamage = damage;
     slot->obj->setPosition((int16_t)slot->x,
                            (int16_t)(launchHover + slot->y),
                            (int16_t)slot->z);
+}
+
+void ProjectileSystem::fireDroneLaser(float x, float y, float z, float targetX, float targetZ,
+                                      float targetAimY, int damage) {
+    Projectile* slot = nullptr;
+    for (auto& p : m_projectiles) {
+        if (!p.active) {
+            slot = &p;
+            break;
+        }
+    }
+    if (!slot) return;
+
+    applyProjectileVisual(*slot, ProjectileVisualKind::Laser);
+
+    float dx = targetX - x;
+    float dz = targetZ - z;
+    float dy = targetAimY - y;
+    float dist = sqrtf(dx * dx + dy * dy + dz * dz);
+    if (dist < 1.0f) dist = 1.0f;
+
+    slot->x = x;
+    slot->z = z;
+    slot->prevX = x;
+    slot->prevZ = z;
+    slot->prevY = y;
+    slot->y = y;
+    slot->vx = (dx / dist) * LASER_SPEED;
+    slot->vy = (dy / dist) * LASER_SPEED;
+    slot->vz = (dz / dist) * LASER_SPEED;
+    slot->life = LASER_LIFE;
+    slot->trailTimer = 0;
+    slot->active = true;
+    slot->isPlayerProjectile = true;
+    slot->isHomingMissile = false;
+    slot->isFallingBomb = false;
+    slot->playerHitDamage = damage;
+
+    const float horizDist = sqrtf(dx * dx + dz * dz);
+    const float pitch = horizDist > 1.0f
+        ? -atan2f(dy, horizDist) * 180.0f / static_cast<float>(M_PI)
+        : 0.0f;
+    const float yaw = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+    slot->obj->setRotation((int16_t)pitch, (int16_t)yaw, 0);
+    showSceneObject(slot->obj,
+                    static_cast<int32_t>(slot->x),
+                    static_cast<int32_t>(slot->y),
+                    static_cast<int32_t>(slot->z));
+}
+
+void ProjectileSystem::firePlayerLaser(float x, float y, float z, float targetX, float targetZ,
+                                       float targetAimY, int damage) {
+    Projectile* slot = nullptr;
+    for (auto& p : m_projectiles) {
+        if (!p.active) {
+            slot = &p;
+            break;
+        }
+    }
+    if (!slot) return;
+
+    applyProjectileVisual(*slot, ProjectileVisualKind::PlayerLaser);
+
+    float dx = targetX - x;
+    float dz = targetZ - z;
+    float dy = targetAimY - y;
+    float dist = sqrtf(dx * dx + dy * dy + dz * dz);
+    if (dist < 1.0f) dist = 1.0f;
+
+    slot->x = x;
+    slot->z = z;
+    slot->prevX = x;
+    slot->prevZ = z;
+    slot->prevY = y;
+    slot->y = y;
+    slot->vx = (dx / dist) * LASER_SPEED;
+    slot->vy = (dy / dist) * LASER_SPEED;
+    slot->vz = (dz / dist) * LASER_SPEED;
+    slot->life = LASER_LIFE;
+    slot->trailTimer = 0;
+    slot->active = true;
+    slot->isPlayerProjectile = true;
+    slot->isHomingMissile = false;
+    slot->isFallingBomb = false;
+    slot->playerHitDamage = damage;
+
+    const float horizDist = sqrtf(dx * dx + dz * dz);
+    const float pitch = horizDist > 1.0f
+        ? -atan2f(dy, horizDist) * 180.0f / static_cast<float>(M_PI)
+        : 0.0f;
+    const float yaw = atan2f(dx, dz) * 180.0f / static_cast<float>(M_PI);
+    slot->obj->setRotation((int16_t)pitch, (int16_t)yaw, 0);
+    showSceneObject(slot->obj,
+                    static_cast<int32_t>(slot->x),
+                    static_cast<int32_t>(slot->y),
+                    static_cast<int32_t>(slot->z));
 }
 
 void ProjectileSystem::fireEnemyAtTarget(float x, float z, float targetX, float targetZ) {
@@ -378,9 +511,11 @@ void ProjectileSystem::destroyProjectile(Projectile& p) {
     p.isHomingMissile = false;
     p.isFallingBomb = false;
     p.damageScale = 1.0f;
+    p.playerHitDamage = 0;
     stashSceneObject(p.missileObj);
     stashSceneObject(p.boltObj);
     stashSceneObject(p.bombObj);
+    stashSceneObject(p.laserObj);
     p.obj = nullptr;
     p.visualKind = ProjectileVisualKind::None;
 }
@@ -477,8 +612,20 @@ void ProjectileSystem::updateHomingMissile(Projectile& p, float deltaTime) {
 void ProjectileSystem::updateStraightProjectile(Projectile& p, float deltaTime) {
     p.prevX = p.x;
     p.prevZ = p.z;
+    p.prevY = p.y;
     p.x += p.vx * deltaTime;
     p.z += p.vz * deltaTime;
+
+    if (p.visualKind == ProjectileVisualKind::Laser ||
+        p.visualKind == ProjectileVisualKind::PlayerLaser) {
+        p.y += p.vy * deltaTime;
+        showSceneObject(p.obj,
+                        static_cast<int32_t>(p.x),
+                        static_cast<int32_t>(p.y),
+                        static_cast<int32_t>(p.z));
+        return;
+    }
+
     showSceneObject(p.obj,
                     static_cast<int32_t>(p.x),
                     static_cast<int32_t>(Terrain::hoverHeight(p.x, p.z)),
@@ -618,7 +765,8 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
 }
 
 bool ProjectileSystem::checkEnemyHit(float enemyX, float enemyZ, float enemyMinY,
-                                     float enemyMaxY, float enemyWidth) {
+                                     float enemyMaxY, float enemyWidth,
+                                     int* outDamage) {
     (void)enemyWidth;
 
     for (auto& p : m_projectiles) {
@@ -632,11 +780,29 @@ bool ProjectileSystem::checkEnemyHit(float enemyX, float enemyZ, float enemyMinY
             enemyX, enemyZ, p.prevX, p.prevZ, p.x, p.z);
         const float closest = (dist < segDist) ? dist : segDist;
 
-        const float missileWorldY = Terrain::hoverHeight(p.x, p.z) + p.y;
+        float projectileWorldY = 0.0f;
+        if (p.visualKind == ProjectileVisualKind::Laser ||
+        p.visualKind == ProjectileVisualKind::PlayerLaser) {
+            const float segDx = p.x - p.prevX;
+            const float segDz = p.z - p.prevZ;
+            const float segLen2 = segDx * segDx + segDz * segDz;
+            float t = 0.5f;
+            if (segLen2 > 0.01f) {
+                t = ((enemyX - p.prevX) * segDx + (enemyZ - p.prevZ) * segDz) / segLen2;
+                if (t < 0.0f) t = 0.0f;
+                else if (t > 1.0f) t = 1.0f;
+            }
+            projectileWorldY = p.prevY + t * (p.y - p.prevY);
+        } else {
+            projectileWorldY = Terrain::hoverHeight(p.x, p.z) + p.y;
+        }
         const bool yHit =
-            (missileWorldY >= enemyMinY && missileWorldY <= enemyMaxY);
+            (projectileWorldY >= enemyMinY && projectileWorldY <= enemyMaxY);
 
         if (closest < ENEMY_HIT_RADIUS && yHit) {
+            if (outDamage) {
+                *outDamage = p.playerHitDamage;
+            }
             destroyProjectile(p);
             return true;
         }

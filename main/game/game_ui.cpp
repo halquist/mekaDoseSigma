@@ -50,7 +50,14 @@ void drawUpgradeHalf(uint16_t* framebuffer, int width, int height,
     const int cy = (y0 + y1) / 2;
     Font::drawTextCentered(framebuffer, width, height, option.title,
                            cx, cy - 34, 2, textColor);
-    if (option.tierLabel[0] != '\0') {
+    if (option.subtitle[0] != '\0') {
+        Font::drawTextCentered(framebuffer, width, height, option.subtitle,
+                               cx, cy - 14, 2, textColor);
+        if (option.tierLabel[0] != '\0') {
+            Font::drawTextCentered(framebuffer, width, height, option.tierLabel,
+                                   cx, cy + 6, 2, textColor);
+        }
+    } else if (option.tierLabel[0] != '\0') {
         Font::drawTextCentered(framebuffer, width, height, option.tierLabel,
                                cx, cy - 10, 2, textColor);
     }
