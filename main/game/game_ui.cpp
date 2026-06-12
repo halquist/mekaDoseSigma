@@ -1,6 +1,7 @@
 #include "game_ui.hpp"
 #include "font.hpp"
 #include "FramebufferIO.hpp"
+#include "rng.hpp"
 #include <cmath>
 #include <cstdio>
 
@@ -135,6 +136,328 @@ void drawPortalTransitionSphere(uint16_t* framebuffer, int width, int height,
 
 void fillScreen(uint16_t* framebuffer, int width, int height, uint16_t color) {
     fillRect(framebuffer, width, height, 0, 0, width, height, color);
+}
+
+namespace {
+
+struct MenuStreak {
+    float along = 0.0f;
+    float lateral = 0.0f;
+    float speed = 50.0f;
+    float length = 24.0f;
+    uint16_t color = 0;
+    uint8_t alpha = 120;
+    int8_t thickness = 0;
+};
+
+constexpr int kMenuStreakCount = 22;
+MenuStreak s_menuStreaks[kMenuStreakCount];
+bool s_menuStreaksReady = false;
+
+constexpr uint16_t kMenuStreakColors[4] = {
+    Colors::rgb(150, 70, 220),
+    Colors::rgb(45, 95, 230),
+    Colors::rgb(255, 215, 70),
+    Colors::MECH_WHITE,
+};
+
+void rollMenuStreak(MenuStreak& streak, float minLateral, float maxLateral,
+                    float travelSpan, bool scatterAlong) {
+    streak.lateral = minLateral + Rng::nextFloat01() * (maxLateral - minLateral);
+    streak.speed = 38.0f + Rng::nextFloat01() * 62.0f;
+    streak.length = 12.0f + Rng::nextFloat01() * 38.0f;
+    streak.thickness = Rng::nextFloat01() > 0.82f ? 1 : 0;
+    streak.color = kMenuStreakColors[Rng::nextRange(4)];
+    const float brightness = Rng::nextFloat01();
+    streak.alpha = static_cast<uint8_t>(95.0f + brightness * 105.0f);
+    if (streak.color == Colors::MECH_WHITE) {
+        streak.alpha = static_cast<uint8_t>(streak.alpha * 0.72f);
+    }
+
+    streak.along = -90.0f;
+    if (scatterAlong) {
+        streak.along -= Rng::nextFloat01() * (travelSpan + 80.0f);
+    }
+}
+
+} // namespace
+
+void resetMenuStreaks() {
+    s_menuStreaksReady = false;
+}
+
+void drawMenuStreaks(uint16_t* framebuffer, int width, int height, float deltaTime) {
+    if (deltaTime < 0.0f) {
+        deltaTime = 0.0f;
+    } else if (deltaTime > 0.1f) {
+        deltaTime = 0.1f;
+    }
+
+    constexpr int kStreakCount = kMenuStreakCount;
+    constexpr float kDiagCos = 0.70710678f;
+    constexpr float kDiagSin = 0.70710678f;
+    constexpr float kPerpCos = -kDiagSin;
+    constexpr float kPerpSin = kDiagCos;
+
+    const float travelSpan = static_cast<float>(width + height) + 180.0f;
+
+    auto cornerLateral = [&](float x, float y) {
+        return x * kPerpCos + y * kPerpSin;
+    };
+
+    float minLateral = cornerLateral(0.0f, 0.0f);
+    float maxLateral = minLateral;
+    const float corners[4][2] = {
+        {0.0f, 0.0f},
+        {static_cast<float>(width), 0.0f},
+        {0.0f, static_cast<float>(height)},
+        {static_cast<float>(width), static_cast<float>(height)},
+    };
+    for (const auto& corner : corners) {
+        const float lateral = cornerLateral(corner[0], corner[1]);
+        if (lateral < minLateral) {
+            minLateral = lateral;
+        }
+        if (lateral > maxLateral) {
+            maxLateral = lateral;
+        }
+    }
+
+    auto plot = [&](int x, int y, uint16_t color, uint8_t alpha) {
+        if ((unsigned)x >= (unsigned)width || (unsigned)y >= (unsigned)height) {
+            return;
+        }
+        uint16_t* pixel = framebuffer + y * width + x;
+        const uint16_t dst = fbUnpack(*pixel);
+        if (dst != 0) {
+            return;
+        }
+        *pixel = fbPack(blendRgb565(0, color, alpha));
+    };
+
+    auto drawStreak = [&](float headX, float headY, float length, int thickness,
+                          uint16_t color, uint8_t headAlpha) {
+        const int steps = static_cast<int>(length);
+        if (steps <= 0) {
+            return;
+        }
+
+        for (int s = 0; s < steps; ++s) {
+            const float t = static_cast<float>(s);
+            const int x = static_cast<int>(headX - t * kDiagCos);
+            const int y = static_cast<int>(headY - t * kDiagSin);
+            const uint8_t alpha = static_cast<uint8_t>(
+                static_cast<float>(headAlpha) * (1.0f - t / length));
+            if (alpha < 8) {
+                continue;
+            }
+
+            for (int dy = -thickness; dy <= thickness; ++dy) {
+                for (int dx = -thickness; dx <= thickness; ++dx) {
+                    if (dx * dx + dy * dy > thickness * thickness + thickness) {
+                        continue;
+                    }
+                    plot(x + dx, y + dy, color, alpha);
+                }
+            }
+        }
+    };
+
+    if (!s_menuStreaksReady) {
+        for (int i = 0; i < kStreakCount; ++i) {
+            rollMenuStreak(s_menuStreaks[i], minLateral, maxLateral, travelSpan, true);
+        }
+        s_menuStreaksReady = true;
+    }
+
+    const float alongStepScale = travelSpan * deltaTime;
+    for (int i = 0; i < kStreakCount; ++i) {
+        MenuStreak& streak = s_menuStreaks[i];
+        streak.along += streak.speed * 0.032f * alongStepScale;
+        if ((streak.along + 90.0f) >= travelSpan) {
+            rollMenuStreak(streak, minLateral, maxLateral, travelSpan, false);
+        }
+
+        const float headX = streak.along * kDiagCos + streak.lateral * kPerpCos;
+        const float headY = streak.along * kDiagSin + streak.lateral * kPerpSin;
+
+        drawStreak(headX, headY, streak.length, streak.thickness,
+                   streak.color, streak.alpha);
+    }
+}
+
+namespace {
+
+constexpr float kMenuDoorCloseSec = 0.5f;
+constexpr float kMenuDoorPauseSec = 0.5f;
+constexpr float kMenuDoorOpenSec = 0.5f;
+
+constexpr uint16_t kDoorGrey = Colors::rgb(58, 61, 66);
+constexpr uint16_t kDoorSeam = Colors::rgb(16, 18, 20);
+constexpr uint16_t kDoorRivet = Colors::rgb(38, 40, 44);
+constexpr uint16_t kDoorRivetHi = Colors::rgb(98, 102, 110);
+constexpr uint16_t kDoorStreakLarge = Colors::rgb(88, 92, 98);
+constexpr uint16_t kDoorStreakSmall = Colors::rgb(74, 78, 84);
+
+void putPixel(uint16_t* framebuffer, int width, int height,
+              int x, int y, uint16_t color) {
+    if ((unsigned)x >= (unsigned)width || (unsigned)y >= (unsigned)height) {
+        return;
+    }
+    framebuffer[y * width + x] = fbPack(color);
+}
+
+void fillDoorRect(uint16_t* framebuffer, int width, int height,
+                  int x0, int x1, int y0, int y1, uint16_t color) {
+    if (x0 > x1) {
+        const int tmp = x0;
+        x0 = x1;
+        x1 = tmp;
+    }
+    if (y0 > y1) {
+        const int tmp = y0;
+        y0 = y1;
+        y1 = tmp;
+    }
+    if (x0 < 0) {
+        x0 = 0;
+    }
+    if (y0 < 0) {
+        y0 = 0;
+    }
+    if (x1 > width) {
+        x1 = width;
+    }
+    if (y1 > height) {
+        y1 = height;
+    }
+    if (x0 >= x1 || y0 >= y1) {
+        return;
+    }
+
+    const uint16_t packed = fbPack(color);
+    for (int y = y0; y < y1; ++y) {
+        uint16_t* row = framebuffer + y * width;
+        for (int x = x0; x < x1; ++x) {
+            row[x] = packed;
+        }
+    }
+}
+
+void fillOval(uint16_t* framebuffer, int width, int height,
+              int cx, int cy, int rx, int ry, uint16_t color) {
+    for (int dy = -ry; dy <= ry; ++dy) {
+        for (int dx = -rx; dx <= rx; ++dx) {
+            const float nx = static_cast<float>(dx) / static_cast<float>(rx);
+            const float ny = static_cast<float>(dy) / static_cast<float>(ry);
+            if (nx * nx + ny * ny <= 1.0f) {
+                putPixel(framebuffer, width, height, cx + dx, cy + dy, color);
+            }
+        }
+    }
+}
+
+void drawRivet(uint16_t* framebuffer, int width, int height, int x, int y) {
+    fillDoorRect(framebuffer, width, height, x, x + 8, y, y + 8, kDoorRivet);
+    fillOval(framebuffer, width, height, x + 2, y + 2, 3, 2, kDoorRivetHi);
+}
+
+void drawDoorDiagonalStreak(uint16_t* framebuffer, int width, int height,
+                            int x0, int x1, int yStart, int thickness,
+                            uint16_t color) {
+    const int panelW = x1 - x0;
+    if (panelW <= 2) {
+        return;
+    }
+
+    const int halfT = thickness / 2;
+    for (int i = 0; i <= panelW; ++i) {
+        const int cx = x0 + i;
+        const int cy = yStart + i;
+        for (int t = -halfT; t <= halfT; ++t) {
+            const int px = cx + t;
+            const int py = cy - t;
+            if (px >= x0 && px < x1 && py >= 0 && py < height) {
+                putPixel(framebuffer, width, height, px, py, color);
+            }
+        }
+    }
+}
+
+void drawDoorPanel(uint16_t* framebuffer, int width, int height,
+                   int x0, int x1, bool isLeftDoor) {
+    if (x1 <= x0) {
+        return;
+    }
+
+    fillDoorRect(framebuffer, width, height, x0, x1, 0, height, kDoorGrey);
+
+    drawDoorDiagonalStreak(framebuffer, width, height, x0, x1, 18, 7,
+                           kDoorStreakLarge);
+    drawDoorDiagonalStreak(framebuffer, width, height, x0, x1, 72, 3,
+                           kDoorStreakSmall);
+
+    const int seamX0 = isLeftDoor ? x1 - 3 : x0;
+    const int seamX1 = isLeftDoor ? x1 : x0 + 3;
+    fillDoorRect(framebuffer, width, height, seamX0, seamX1, 0, height, kDoorSeam);
+
+    constexpr int kRivetH = 8;
+    constexpr int kRivetSpacing = 32;
+    const int rivetX = isLeftDoor ? x1 - 14 : x0 + 10;
+    for (int y = 0; y + kRivetH <= height; y += kRivetSpacing) {
+        drawRivet(framebuffer, width, height, rivetX, y);
+    }
+}
+
+} // namespace
+
+float menuDoorTransitionDuration() {
+    return kMenuDoorCloseSec + kMenuDoorPauseSec + kMenuDoorOpenSec;
+}
+
+float menuDoorGameplayStartTime() {
+    return kMenuDoorCloseSec + kMenuDoorPauseSec;
+}
+
+MenuDoorAnim menuDoorAnimForTime(float elapsedSec) {
+    MenuDoorAnim anim;
+    const float closeEnd = kMenuDoorCloseSec;
+    const float pauseEnd = closeEnd + kMenuDoorPauseSec;
+    const float total = menuDoorTransitionDuration();
+
+    if (elapsedSec >= total) {
+        anim.showGameplay = true;
+        return anim;
+    }
+
+    if (elapsedSec < closeEnd) {
+        anim.cover = smoothStep(elapsedSec / closeEnd);
+    } else if (elapsedSec < pauseEnd) {
+        anim.cover = 1.0f;
+    } else {
+        const float openT = smoothStep((elapsedSec - pauseEnd) / kMenuDoorOpenSec);
+        anim.cover = 1.0f - openT;
+        anim.showGameplay = true;
+    }
+
+    return anim;
+}
+
+void drawMenuDoors(uint16_t* framebuffer, int width, int height,
+                   const MenuDoorAnim& anim) {
+    if (anim.cover <= 0.001f) {
+        return;
+    }
+
+    const int cx = width / 2;
+    const int halfCover =
+        static_cast<int>(lroundf(static_cast<float>(cx) * anim.cover));
+    if (halfCover <= 0) {
+        return;
+    }
+
+    drawDoorPanel(framebuffer, width, height, 0, halfCover, true);
+    drawDoorPanel(framebuffer, width, height, width - halfCover, width, false);
 }
 
 void drawMenu(uint16_t* framebuffer, int width, int height,

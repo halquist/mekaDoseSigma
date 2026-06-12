@@ -1,4 +1,5 @@
 #include "mech.hpp"
+#include "enemy_manager.hpp"
 #include "run_upgrades.hpp"
 #include "terrain.hpp"
 #include "obstacles.hpp"
@@ -215,19 +216,38 @@ bool Mech::tryStartDodge(int8_t dir) {
     return true;
 }
 
-bool Mech::tryStartFlip180() {
+bool Mech::tryStartFlip180(const EnemyManager* enemies) {
     if (m_flipRemaining > 0.0f) {
         return false;
     }
 
     m_flipStartAngle = m_angle;
-    m_flipTargetAngle = m_angle + 180.0f;
-    while (m_flipTargetAngle > 180.0f) {
-        m_flipTargetAngle -= 360.0f;
+    float targetAngle = m_angle + 180.0f;
+
+    if (enemies != nullptr && enemies->isPlayerUnderAttack(m_x, m_z, m_angle)) {
+        float threatX = 0.0f;
+        float threatZ = 0.0f;
+        if (enemies->findClosestEnemyBehind(m_x, m_z, m_angle, threatX, threatZ)) {
+            targetAngle = atan2f(threatX - m_x, threatZ - m_z) *
+                180.0f / static_cast<float>(M_PI);
+        }
     }
-    while (m_flipTargetAngle < -180.0f) {
-        m_flipTargetAngle += 360.0f;
+
+    while (targetAngle > 180.0f) {
+        targetAngle -= 360.0f;
     }
+    while (targetAngle < -180.0f) {
+        targetAngle += 360.0f;
+    }
+
+    float angleDiff = targetAngle - m_flipStartAngle;
+    while (angleDiff > 180.0f) {
+        angleDiff -= 360.0f;
+    }
+    while (angleDiff < -180.0f) {
+        angleDiff += 360.0f;
+    }
+    m_flipTargetAngle = m_flipStartAngle + angleDiff;
     m_flipRemaining = FLIP_180_DURATION;
     return true;
 }
@@ -249,7 +269,7 @@ void Mech::applyFlip180(float deltaTime) {
     }
 }
 
-void Mech::handleCenterTapRelease() {
+void Mech::handleCenterTapRelease(const EnemyManager* enemies) {
     const bool shieldActivated = m_ability.onCenterTap(m_touchClock);
     if (shieldActivated) {
         m_lastCenterTapTime = -100.0f;
@@ -258,7 +278,7 @@ void Mech::handleCenterTapRelease() {
 
     if (m_lastCenterTapTime >= 0.0f &&
         (m_touchClock - m_lastCenterTapTime) <= CENTER_DOUBLE_TAP_SEC) {
-        tryStartFlip180();
+        tryStartFlip180(enemies);
         m_lastCenterTapTime = -100.0f;
     } else {
         m_lastCenterTapTime = m_touchClock;
@@ -289,7 +309,7 @@ void Mech::applyDodge(float deltaTime, ObstacleField* obstacles) {
 }
 
 void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int screenHeight,
-                  ObstacleField* obstacles) {
+                  ObstacleField* obstacles, const EnemyManager* enemies) {
     if (!m_alive) return;
 
     m_touchClock += deltaTime;
@@ -331,7 +351,7 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int
             if (m_centerTouchSession) {
                 const float holdDuration = m_touchClock - m_touchDownTime;
                 if (holdDuration <= MAX_CENTER_TAP_HOLD_SEC) {
-                    handleCenterTapRelease();
+                    handleCenterTapRelease(enemies);
                 }
             }
             m_fingerDown = false;

@@ -178,6 +178,83 @@ void EnemyManager::update(float deltaTime, float playerX, float playerZ,
     trySpawn(deltaTime, playerX, playerZ, playerAngle, obstacles);
 }
 
+namespace {
+
+bool isEnemyThreatening(const Enemy& enemy, float playerX, float playerZ) {
+    if (!enemy.isAlive()) {
+        return false;
+    }
+
+    const float dx = enemy.getX() - playerX;
+    const float dz = enemy.getZ() - playerZ;
+    const float range = enemy.engageRange();
+    return (dx * dx + dz * dz) <= range * range;
+}
+
+bool isEnemyBehind(float enemyX, float enemyZ, float playerX, float playerZ,
+                   float playerAngle) {
+    const float radians = playerAngle * static_cast<float>(M_PI) / 180.0f;
+    const float forwardX = sinf(radians);
+    const float forwardZ = cosf(radians);
+    const float dx = enemyX - playerX;
+    const float dz = enemyZ - playerZ;
+    return (dx * forwardX + dz * forwardZ) < 0.0f;
+}
+
+} // namespace
+
+bool EnemyManager::isPlayerUnderAttack(float playerX, float playerZ,
+                                       float playerAngle) const {
+    (void)playerAngle;
+
+    for (int i = 0; i < MAX_ENEMIES; ++i) {
+        if (isEnemyThreatening(*m_enemies[static_cast<size_t>(i)], playerX, playerZ)) {
+            return true;
+        }
+    }
+
+    if (m_portalBoss && isEnemyThreatening(*m_portalBoss, playerX, playerZ)) {
+        return true;
+    }
+
+    return false;
+}
+
+bool EnemyManager::findClosestEnemyBehind(float playerX, float playerZ,
+                                          float playerAngle,
+                                          float& outX, float& outZ) const {
+    float bestDistSq = 0.0f;
+    bool found = false;
+
+    const auto consider = [&](const Enemy& enemy) {
+        if (!isEnemyThreatening(enemy, playerX, playerZ)) {
+            return;
+        }
+        if (!isEnemyBehind(enemy.getX(), enemy.getZ(), playerX, playerZ, playerAngle)) {
+            return;
+        }
+
+        const float dx = enemy.getX() - playerX;
+        const float dz = enemy.getZ() - playerZ;
+        const float distSq = dx * dx + dz * dz;
+        if (!found || distSq < bestDistSq) {
+            bestDistSq = distSq;
+            outX = enemy.getX();
+            outZ = enemy.getZ();
+            found = true;
+        }
+    };
+
+    for (int i = 0; i < MAX_ENEMIES; ++i) {
+        consider(*m_enemies[static_cast<size_t>(i)]);
+    }
+    if (m_portalBoss) {
+        consider(*m_portalBoss);
+    }
+
+    return found;
+}
+
 Enemy* EnemyManager::findClosestInArc(float fromX, float fromZ, float fromAngleDeg,
                                       float maxRange, float aimConeDeg) {
     Enemy* best = nullptr;

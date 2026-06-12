@@ -35,6 +35,10 @@ public:
     void prepareSpawnAfterTransition(float playerX, float playerZ, float playerAngle);
 
     int aliveCount() const;
+    bool isPlayerUnderAttack(float playerX, float playerZ, float playerAngle) const;
+    bool findClosestEnemyBehind(float playerX, float playerZ, float playerAngle,
+                                float& outX, float& outZ) const;
+
     Enemy* findClosestInArc(float fromX, float fromZ, float fromAngleDeg,
                               float maxRange, float aimConeDeg);
     bool findBestStrikeTarget(float fromX, float fromZ, float fromAngleDeg,

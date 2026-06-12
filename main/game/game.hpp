@@ -50,6 +50,10 @@ private:
     void skipUpgradePick();
     void resumeAfterUpgradePick();
     void startNewRun();
+    void beginMenuTransition();
+    void prepareNewRun();
+    void updateMenuTransition(float deltaTime, const TouchInput& touch);
+    void updateGameplay(float deltaTime, const TouchInput& touch);
     void returnToMenu();
     void applyWorldTier();
     void applyWorldTransition();
@@ -94,6 +98,7 @@ private:
     int m_highScores[HighScores::kTopCount] = {};
     bool m_newHighScore = false;
     float m_uiPulseSec = 0.0f;
+    float m_lastDeltaTime = 0.016f;
     float m_uiTouchLockSec = 0.0f;
     float m_upgradePickConfirmSec = 0.0f;
     int m_upgradePickChoice = -1;
@@ -115,6 +120,8 @@ private:
     float m_cameraPivotZ = 0.0f;
     bool m_cameraInitialized = false;
 
+    float m_menuTransitionSec = 0.0f;
+    bool m_menuTransitionGameReady = false;
     float m_portalTransitionSec = 0.0f;
     bool m_portalWorldSwapped = false;
     int m_objectivesAtLastPortal = 0;

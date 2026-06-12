@@ -40,6 +40,7 @@ public:
 
     int takeDamage(int damage = 1, bool* outHitShield = nullptr);
     bool isAlive() const { return m_active && m_health > 0; }
+    float engageRange() const { return m_engageRange; }
 
 private:
     enum class AIState { PATROL, CHASE, ATTACK };

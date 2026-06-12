@@ -13,6 +13,7 @@ namespace Game {
 
 class ObstacleField;
 class ProjectileSystem;
+class EnemyManager;
 
 class Mech {
 public:
@@ -20,7 +21,8 @@ public:
          const MechLoadoutPreset& preset = MechCatalog::LOADOUT_STRIKER_HOVER);
 
     void update(const TouchInput& input, float deltaTime, int screenWidth, int screenHeight,
-                ObstacleField* obstacles = nullptr);
+                ObstacleField* obstacles = nullptr,
+                const EnemyManager* enemies = nullptr);
     void reset();
 
     MechLoadout& loadout() { return m_loadout; }
@@ -71,9 +73,9 @@ private:
     void syncRenderPivot();
     bool tryStartDodge(int8_t dir);
     void applyDodge(float deltaTime, ObstacleField* obstacles);
-    bool tryStartFlip180();
+    bool tryStartFlip180(const EnemyManager* enemies);
     void applyFlip180(float deltaTime);
-    void handleCenterTapRelease();
+    void handleCenterTapRelease(const EnemyManager* enemies);
 
     Renderer::Scene& m_scene;
     MechLoadout m_loadout;

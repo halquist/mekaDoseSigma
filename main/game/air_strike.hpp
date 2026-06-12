@@ -70,7 +70,7 @@ private:
 
     static constexpr float AIM_DURATION_SEC = 1.0f;
     static constexpr float EXPLODE_DURATION_SEC = 0.45f;
-    static constexpr float MISSILE_GRAVITY = 220.0f;
+    static constexpr float MISSILE_GRAVITY = 1320.0f;
     static constexpr int32_t AIM_LASER_W = 2;
     static constexpr int32_t AIM_LASER_H = 2;
     static constexpr int32_t AIM_LASER_LEN = 260;

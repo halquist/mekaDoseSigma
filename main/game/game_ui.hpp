@@ -12,6 +12,20 @@ namespace GameUi {
 
 void fillScreen(uint16_t* framebuffer, int width, int height, uint16_t color);
 
+void resetMenuStreaks();
+void drawMenuStreaks(uint16_t* framebuffer, int width, int height, float deltaTime);
+
+struct MenuDoorAnim {
+    float cover = 0.0f;
+    bool showGameplay = false;
+};
+
+float menuDoorTransitionDuration();
+float menuDoorGameplayStartTime();
+MenuDoorAnim menuDoorAnimForTime(float elapsedSec);
+void drawMenuDoors(uint16_t* framebuffer, int width, int height,
+                   const MenuDoorAnim& anim);
+
 void drawMenu(uint16_t* framebuffer, int width, int height,
               const int highScores[HighScores::kTopCount], float pulseSec);
 void drawDefeat(uint16_t* framebuffer, int width, int height,

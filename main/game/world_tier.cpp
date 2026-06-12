@@ -37,6 +37,9 @@ MapTheme WorldTier::nextTheme(MapTheme previous) const {
 }
 
 int WorldTier::maxEnemies() const {
+    if (index < 2) {
+        return 2;
+    }
     if (index < 4) {
         return 3;
     }
@@ -47,19 +50,23 @@ int WorldTier::maxEnemies() const {
 }
 
 float WorldTier::spawnIntervalMin() const {
-    return std::max(3.0f, 6.5f - static_cast<float>(index) * 0.45f);
+    const float base = std::max(3.0f, 6.5f - static_cast<float>(index) * 0.45f);
+    return index < 2 ? base * 2.0f : base;
 }
 
 float WorldTier::spawnIntervalJitter() const {
-    return std::max(2.0f, 5.5f - static_cast<float>(index) * 0.35f);
+    const float base = std::max(2.0f, 5.5f - static_cast<float>(index) * 0.35f);
+    return index < 2 ? base * 2.0f : base;
 }
 
 float WorldTier::initialSpawnDelay() const {
-    return std::max(2.5f, 4.5f - static_cast<float>(index) * 0.25f);
+    const float base = std::max(2.5f, 4.5f - static_cast<float>(index) * 0.25f);
+    return index < 2 ? base * 2.0f : base;
 }
 
 float WorldTier::refillSpawnDelay() const {
-    return std::max(3.0f, 5.0f - static_cast<float>(index) * 0.3f);
+    const float base = std::max(3.0f, 5.0f - static_cast<float>(index) * 0.3f);
+    return index < 2 ? base * 2.0f : base;
 }
 
 float WorldTier::enemySpeedScale() const {

@@ -494,10 +494,9 @@ void MekaGame::skipUpgradePick() {
     resumeAfterUpgradePick();
 }
 
-void MekaGame::startNewRun() {
+void MekaGame::prepareNewRun() {
     randomizeSession();
     applyWorldTier();
-    m_state = GameState::PLAYING;
     m_score.reset();
     m_score.setPointValues(m_worldTier.killPointValue(),
                            m_worldTier.objectivePointValue());
@@ -523,6 +522,124 @@ void MekaGame::startNewRun() {
     m_menuShowcase->suspend();
     updateCamera();
     applyEnvironment();
+    m_menuTransitionGameReady = true;
+}
+
+void MekaGame::beginMenuTransition() {
+    m_menuTransitionSec = 0.0f;
+    m_menuTransitionGameReady = false;
+    m_state = GameState::MENU_TRANSITION;
+    resetUiTouchLock();
+}
+
+void MekaGame::startNewRun() {
+    prepareNewRun();
+    m_state = GameState::PLAYING;
+    m_menuTransitionGameReady = false;
+}
+
+void MekaGame::updateMenuTransition(float deltaTime, const TouchInput& touch) {
+    (void)touch;
+    m_menuTransitionSec += deltaTime;
+
+    if (!m_menuTransitionGameReady &&
+        m_menuTransitionSec >= GameUi::menuDoorGameplayStartTime()) {
+        prepareNewRun();
+    }
+
+    if (m_menuTransitionSec >= GameUi::menuDoorGameplayStartTime()) {
+        updateGameplay(deltaTime, touch);
+    } else if (m_menuShowcase->isActive()) {
+        m_menuShowcase->update(deltaTime);
+    }
+
+    if (m_menuTransitionSec >= GameUi::menuDoorTransitionDuration()) {
+        m_state = GameState::PLAYING;
+        m_menuTransitionSec = 0.0f;
+        m_menuTransitionGameReady = false;
+    }
+}
+
+void MekaGame::updateGameplay(float deltaTime, const TouchInput& touch) {
+    updateDayNightCycle(deltaTime);
+
+    m_mech->update(touch, deltaTime, m_width, m_height, m_obstacles, m_enemies);
+    m_drone->update(deltaTime, m_mech->getX(), m_mech->getZ(), m_mech->getBaseY(),
+                    m_mech->loadout().bonuses().droneTier > 0 && m_mech->isAlive());
+    handleAutoFire();
+    const float airStrikeSkyY = m_mech->getBaseY() + m_cameraRigOffsetY +
+                                m_cameraHeightAboveMech + 220.0f;
+    m_airStrike->update(deltaTime,
+                        m_mech->loadout().bonuses().airStrikeTier,
+                        m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
+                        airStrikeSkyY, *m_enemies, *m_particles, m_score, m_portal);
+
+    m_enemies->update(deltaTime,
+                      m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
+                      m_mech->getBaseY(), m_obstacles);
+    m_objective->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    m_portal->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    if (m_portalBossPending && m_portal->isVisible() &&
+        !m_enemies->isPortalBossAlive()) {
+        m_enemies->spawnPortalBoss(m_portal->getX(), m_portal->getZ(),
+                                   m_mech->getAngle(),
+                                   m_mech->getX(), m_mech->getZ());
+        m_portalBossPending = false;
+    }
+    handlePortalTransition();
+    m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
+                    deltaTime, m_mech->getTurnActivity());
+    m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
+    updateCamera(deltaTime);
+
+    m_projectiles->update(deltaTime);
+
+    handleEnemyCombat();
+    handleObjectiveCombat();
+
+    float impactX = 0.0f;
+    float impactZ = 0.0f;
+    float impactY = 0.0f;
+    if (m_projectiles->checkMissileTargetImpact(&impactX, &impactZ, &impactY)) {
+        m_particles->spawnHitEffect(impactX, impactY, impactZ);
+    }
+
+    float hitX = 0.0f;
+    float hitY = 0.0f;
+    float hitZ = 0.0f;
+    const int rawDamage = m_projectiles->checkPlayerHit(m_mech->getX(),
+                                                        m_mech->getZ(),
+                                                        m_mech->getBaseY(),
+                                                        m_mech->getWidth(),
+                                                        &hitX, &hitZ, &hitY);
+    if (rawDamage > 0) {
+        const ShieldDamageResult absorbed = m_mech->absorbDamage(rawDamage);
+        if (absorbed.healthDamage > 0) {
+            m_health -= absorbed.healthDamage;
+            if (m_health < 0) {
+                m_health = 0;
+            }
+            m_damageFlash = 0.35f;
+            m_particles->spawnHitEffect(
+                m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
+                Colors::SPARK_ORANGE);
+        } else if (absorbed.hitShield) {
+            float fx = hitX;
+            float fy = hitY;
+            float fz = hitZ;
+            MechAbility::shieldHitPosition(
+                m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
+                hitX, hitY, hitZ, fx, fy, fz);
+            m_particles->spawnHitEffect(fx, fy, fz, Colors::SHIELD_BLUE);
+        }
+    }
+
+    if (m_health <= 0) {
+        m_mech->explode();
+        m_particles->spawnDeathEffect(
+            m_mech->getX(), m_mech->getBaseY(), m_mech->getZ());
+        onPlayerDefeat();
+    }
 }
 
 void MekaGame::returnToMenu() {
@@ -549,6 +666,7 @@ void MekaGame::returnToMenu() {
     m_projectiles->reset();
     m_particles->reset();
     m_menuShowcase->resume();
+    GameUi::resetMenuStreaks();
     updateCamera();
     applyEnvironment();
     resetUiTouchLock();
@@ -579,6 +697,7 @@ void MekaGame::drawEdgeFlash(uint16_t color, int thickness) {
 
 void MekaGame::update(float deltaTime) {
     TouchInput touch = m_input->read();
+    m_lastDeltaTime = deltaTime;
     m_uiPulseSec += deltaTime;
 
     if (m_uiTouchLockSec > 0.0f) {
@@ -601,8 +720,13 @@ void MekaGame::update(float deltaTime) {
             m_menuShowcase->update(deltaTime);
         }
         if (uiTouchAllowed && touch.touched) {
-            startNewRun();
+            beginMenuTransition();
         }
+        return;
+    }
+
+    if (m_state == GameState::MENU_TRANSITION) {
+        updateMenuTransition(deltaTime, touch);
         return;
     }
 
@@ -649,85 +773,7 @@ void MekaGame::update(float deltaTime) {
     }
 
     if (m_state == GameState::PLAYING) {
-        updateDayNightCycle(deltaTime);
-
-        m_mech->update(touch, deltaTime, m_width, m_height, m_obstacles);
-        m_drone->update(deltaTime, m_mech->getX(), m_mech->getZ(), m_mech->getBaseY(),
-                         m_mech->loadout().bonuses().droneTier > 0 && m_mech->isAlive());
-        handleAutoFire();
-        const float airStrikeSkyY = m_mech->getBaseY() + m_cameraRigOffsetY +
-                                    m_cameraHeightAboveMech + 220.0f;
-        m_airStrike->update(deltaTime,
-                            m_mech->loadout().bonuses().airStrikeTier,
-                            m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
-                            airStrikeSkyY, *m_enemies, *m_particles, m_score, m_portal);
-
-        m_enemies->update(deltaTime,
-                          m_mech->getX(), m_mech->getZ(), m_mech->getAngle(),
-                          m_mech->getBaseY(), m_obstacles);
-        m_objective->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
-        m_portal->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
-        if (m_portalBossPending && m_portal->isVisible() &&
-            !m_enemies->isPortalBossAlive()) {
-            m_enemies->spawnPortalBoss(m_portal->getX(), m_portal->getZ(),
-                                       m_mech->getAngle(),
-                                       m_mech->getX(), m_mech->getZ());
-            m_portalBossPending = false;
-        }
-        handlePortalTransition();
-        m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
-                        deltaTime, m_mech->getTurnActivity());
-        m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
-        updateCamera(deltaTime);
-
-        m_projectiles->update(deltaTime);
-
-        handleEnemyCombat();
-        handleObjectiveCombat();
-
-        float impactX = 0.0f;
-        float impactZ = 0.0f;
-        float impactY = 0.0f;
-        if (m_projectiles->checkMissileTargetImpact(&impactX, &impactZ, &impactY)) {
-            m_particles->spawnHitEffect(impactX, impactY, impactZ);
-        }
-
-        float hitX = 0.0f;
-        float hitY = 0.0f;
-        float hitZ = 0.0f;
-        const int rawDamage = m_projectiles->checkPlayerHit(m_mech->getX(),
-                                                         m_mech->getZ(),
-                                                         m_mech->getBaseY(),
-                                                         m_mech->getWidth(),
-                                                         &hitX, &hitZ, &hitY);
-        if (rawDamage > 0) {
-            const ShieldDamageResult absorbed = m_mech->absorbDamage(rawDamage);
-            if (absorbed.healthDamage > 0) {
-                m_health -= absorbed.healthDamage;
-                if (m_health < 0) {
-                    m_health = 0;
-                }
-                m_damageFlash = 0.35f;
-                m_particles->spawnHitEffect(
-                    m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
-                    Colors::SPARK_ORANGE);
-            } else if (absorbed.hitShield) {
-                float fx = hitX;
-                float fy = hitY;
-                float fz = hitZ;
-                MechAbility::shieldHitPosition(
-                    m_mech->getX(), m_mech->getBaseY(), m_mech->getZ(),
-                    hitX, hitY, hitZ, fx, fy, fz);
-                m_particles->spawnHitEffect(fx, fy, fz, Colors::SHIELD_BLUE);
-            }
-        }
-
-        if (m_health <= 0) {
-            m_mech->explode();
-            m_particles->spawnDeathEffect(
-                m_mech->getX(), m_mech->getBaseY(), m_mech->getZ());
-            onPlayerDefeat();
-        }
+        updateGameplay(deltaTime, touch);
     }
 }
 
@@ -771,6 +817,8 @@ void MekaGame::renderMenuScene() {
     m_menuShowcase->applyCamera(*m_camera);
     m_parallelRenderer.render(*m_scene, m_height);
 
+    GameUi::drawMenuStreaks(m_framebuffer, m_width, m_height, m_lastDeltaTime);
+
     for (int i = 0; i < savedCount; ++i) {
         saved[i].obj->enabled = saved[i].enabled;
     }
@@ -801,6 +849,21 @@ void MekaGame::drawHudArcs() {
 }
 
 void MekaGame::render() {
+    if (m_state == GameState::MENU_TRANSITION) {
+        const GameUi::MenuDoorAnim doorAnim =
+            GameUi::menuDoorAnimForTime(m_menuTransitionSec);
+        if (!doorAnim.showGameplay) {
+            renderMenuScene();
+            GameUi::drawMenu(m_framebuffer, m_width, m_height, m_highScores,
+                             m_uiPulseSec);
+        } else {
+            m_parallelRenderer.render(*m_scene, m_height);
+            drawHudArcs();
+        }
+        GameUi::drawMenuDoors(m_framebuffer, m_width, m_height, doorAnim);
+        return;
+    }
+
     const bool fullScreenUi =
         m_state == GameState::MENU ||
         m_state == GameState::UPGRADE_PICK ||
