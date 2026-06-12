@@ -37,12 +37,14 @@ void EnemyManager::applyWorldTier(const WorldTier& tier) {
     for (int i = 0; i < MAX_ENEMIES; ++i) {
         m_enemies[static_cast<size_t>(i)]->setWorldScaling(
             tier.enemySpeedScale(), tier.enemyShieldUseChance(),
-            tier.enemyHpScale(), tier.enemyFireRateScale(), tier.index);
+            tier.enemyHpScale(), tier.enemyFireRateScale(),
+            tier.enemyEngageRange(), tier.enemyAirStrikeRange(), tier.index);
     }
     if (m_portalBoss) {
         m_portalBoss->setWorldScaling(
             tier.enemySpeedScale(), tier.enemyShieldUseChance(),
-            tier.enemyHpScale(), tier.enemyFireRateScale(), tier.index);
+            tier.enemyHpScale(), tier.enemyFireRateScale(),
+            tier.enemyEngageRange(), tier.enemyAirStrikeRange(), tier.index);
     }
 }
 

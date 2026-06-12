@@ -427,11 +427,14 @@ bool Enemy::isBehindPlayer(float playerX, float playerZ, float playerAngle) cons
 }
 
 void Enemy::setWorldScaling(float speedScale, float shieldUseChance,
-                            float hpScale, float fireRateScale, int worldIndex) {
+                            float hpScale, float fireRateScale,
+                            float engageRange, float airStrikeRange, int worldIndex) {
     m_speedScale = speedScale;
     m_shieldUseChance = shieldUseChance;
     m_hpScale = hpScale;
     m_fireRateScale = fireRateScale;
+    m_engageRange = engageRange;
+    m_airStrikeRange = airStrikeRange;
     m_worldIndex = worldIndex;
 }
 
@@ -518,7 +521,7 @@ void Enemy::updateAirAI(float deltaTime, float playerX, float playerZ, float pla
         case AirPhase::Approach:
             targetAngle = m_runAngle;
             moveSpeed = AIR_RUN_SPEED;
-            if (distToPlayer < AIR_STRIKE_RANGE) {
+            if (distToPlayer < m_airStrikeRange) {
                 m_airPhase = AirPhase::Strike;
             }
             break;
@@ -600,7 +603,7 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
         }
     }
 
-    if (distToPlayer < ENGAGE_RANGE) {
+    if (distToPlayer < m_engageRange) {
         m_state = AIState::ATTACK;
     }
 
@@ -637,7 +640,7 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
                 }
             }
 
-            if (m_fireTimer >= m_fireInterval && distToPlayer < ENGAGE_RANGE) {
+            if (m_fireTimer >= m_fireInterval && distToPlayer < m_engageRange) {
                 m_fireTimer = 0;
                 if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
                     float mx, my, mz;

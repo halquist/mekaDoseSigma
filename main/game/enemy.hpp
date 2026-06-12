@@ -26,7 +26,8 @@ public:
                            float playerX, float playerZ);
     void deactivate();
     void setWorldScaling(float speedScale, float shieldUseChance,
-                         float hpScale, float fireRateScale, int worldIndex);
+                         float hpScale, float fireRateScale,
+                         float engageRange, float airStrikeRange, int worldIndex);
 
     bool isActive() const { return m_active; }
     bool isPortalBoss() const { return m_kind == EnemyKind::BossMech; }
@@ -132,13 +133,14 @@ private:
     int m_worldIndex = 0;
     bool m_mechUsesLaser = false;
     float m_behindDespawnGrace = 0.0f;
+    float m_engageRange = 420.0f;
+    float m_airStrikeRange = 190.0f;
 
-    static constexpr float ENGAGE_RANGE = 420.0f;
     static constexpr float PREFERRED_DIST_MIN = 180.0f;
     static constexpr float PREFERRED_DIST_MAX = 280.0f;
-    static constexpr float DESPAWN_BEHIND_DIST = 350.0f;
+    static constexpr float DESPAWN_BEHIND_DIST = 700.0f;
     static constexpr float DESPAWN_FAR_DIST = 820.0f;
-    static constexpr float SPAWN_BEHIND_DESPAWN_GRACE = 2.0f;
+    static constexpr float SPAWN_BEHIND_DESPAWN_GRACE = 4.0f;
     static constexpr float MECH_LASER_MUZZLE_X = 0.0f;
     static constexpr float MECH_LASER_MUZZLE_Y = 30.0f;
     static constexpr float MECH_LASER_MUZZLE_Z = 10.0f;
@@ -166,7 +168,6 @@ private:
     static constexpr int AIR_BOMBS_PER_RUN = 2;
     static constexpr float AIR_RUN_SPEED = 310.0f;
     static constexpr float AIR_TURN_SPEED = 230.0f;
-    static constexpr float AIR_STRIKE_RANGE = 190.0f;
     static constexpr float AIR_BOMB_INTERVAL = 0.38f;
     static constexpr int AIR_JET_NOSE_PITCH = -12;
     static constexpr float MECH_BODY_CENTER_Y = 32.0f;

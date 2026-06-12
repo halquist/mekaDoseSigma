@@ -22,6 +22,8 @@ struct WorldTier {
     float enemyHpScale() const;
     float enemyFireRateScale() const;
     float enemyShieldUseChance() const;
+    float enemyEngageRange() const;
+    float enemyAirStrikeRange() const;
 
     int killPointValue() const;
     int objectivePointValue() const;

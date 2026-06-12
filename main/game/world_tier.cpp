@@ -1,4 +1,5 @@
 #include "world_tier.hpp"
+#include "run_upgrades.hpp"
 #include <algorithm>
 
 namespace Game {
@@ -79,6 +80,18 @@ float WorldTier::enemyFireRateScale() const {
 
 float WorldTier::enemyShieldUseChance() const {
     return std::min(0.85f, 0.28f + static_cast<float>(index) * 0.09f);
+}
+
+float WorldTier::enemyEngageRange() const {
+    constexpr float kGrowthPerWorld = 12.5f;
+    const float baseRange = laserRangeForTier(1);
+    const float maxRange = missileRangeForTier(6);
+    return std::min(maxRange, baseRange + static_cast<float>(index) * kGrowthPerWorld);
+}
+
+float WorldTier::enemyAirStrikeRange() const {
+    constexpr float kLegacyAirRatio = 190.0f / 420.0f;
+    return enemyEngageRange() * kLegacyAirRatio;
 }
 
 int WorldTier::killPointValue() const {
