@@ -515,11 +515,36 @@ void drawUpgradePanel(uint16_t* framebuffer, int width, int height,
     }
 }
 
+void circleRowBounds(int y, int width, int height, int& outMin, int& outMax) {
+    const int cx = width / 2;
+    const int cy = height / 2;
+    const int radius = cx < cy ? cx : cy;
+    const int dy = y - cy;
+    const int dyAbs = dy < 0 ? -dy : dy;
+    if (dyAbs >= radius) {
+        outMin = cx;
+        outMax = cx;
+        return;
+    }
+    const int halfW = static_cast<int>(lroundf(sqrtf(
+        static_cast<float>(radius * radius - dyAbs * dyAbs))));
+    outMin = cx - halfW;
+    outMax = cx + halfW;
+}
+
 void drawTabShape(uint16_t* framebuffer, int width, int height,
                   int tabY, int tabH, bool isTopTab,
                   uint16_t fillColor, uint16_t edgeColor) {
     const int y0 = tabY;
     const int y1 = tabY + tabH;
+
+    // Chamfers anchor to the round-screen edge at the tab's free edge row.
+    int freeVisMin = 0;
+    int freeVisMax = width;
+    const int freeY = isTopTab ? y1 - 1 : y0;
+    if (freeY >= 0 && freeY < height) {
+        circleRowBounds(freeY, width, height, freeVisMin, freeVisMax);
+    }
 
     for (int y = y0; y < y1; ++y) {
         if (y < 0 || y >= height) {
@@ -530,21 +555,20 @@ void drawTabShape(uint16_t* framebuffer, int width, int height,
         int xMax = width;
 
         if (isTopTab) {
-            // SKIP tab: free edge at bottom, corners chamfer inward
-            // d = 0 at bottom-most row, increases going up
-            const int d = y1 - 1 - y;
-            if (d < kTabCutSize) {
-                xMin = kTabCutSize - d;
-                xMax = width - kTabCutSize + d;
+            // SKIP: chamfer outside→inside, top of cut zone to free bottom edge
+            const int d = (y1 - 1) - y;
+            if (d >= 0 && d < kTabCutSize) {
+                const int inset = kTabCutSize - 1 - d;
+                xMin = freeVisMin + inset;
+                xMax = freeVisMax - inset;
             }
         } else {
-            // Score tab: free edge at top, reversed — wide at free edge
-            // corners cut outward going down from free edge
-            // d = 0 at top row (free edge), increases going down
+            // Score: chamfer outside→inside, bottom of cut zone to free top edge
             const int d = y - y0;
-            if (d < kTabCutSize) {
-                xMin = d;
-                xMax = width - d;
+            if (d >= 0 && d < kTabCutSize) {
+                const int inset = kTabCutSize - 1 - d;
+                xMin = freeVisMin + inset;
+                xMax = freeVisMax - inset;
             }
         }
 
@@ -716,10 +740,10 @@ void drawUpgradePick(uint16_t* framebuffer, int width, int height,
     const int cx        = width / 2;
     const int skipTabH  = kUpgradeSkipTabH;
     const int scoreTabH = kUpgradeScoreTabH;
-    const int panelY0   = skipTabH;
-    const int panelY1   = height - scoreTabH;
+    constexpr int panelY0 = 0;
+    const int panelY1     = height;
 
-    // Side panels — rigid slide in/out (text anchored to panel center)
+    // Side panels — full height; top/bottom tabs draw on top
     if (anim.sideCover > 0.001f) {
         const int halfW = cx;
         const int slideOffset = static_cast<int>(lroundf(
@@ -769,7 +793,7 @@ void drawUpgradePick(uint16_t* framebuffer, int width, int height,
                      tabY, scoreTabH, false, kScoreFill, kScoreEdge);
 
         const int labelCy = tabY + 8;
-        const int numCy   = tabY + 24;
+        const int numCy   = tabY + 20;
         drawEmbossText(framebuffer, width, height, "SCORE",
                        cx, labelCy, 1, kScoreFill);
         drawEmbossNumber(framebuffer, width, height, score,
@@ -778,10 +802,13 @@ void drawUpgradePick(uint16_t* framebuffer, int width, int height,
 }
 
 int upgradePickFromTouch(int touchX, int touchY, int width, int height) {
-    if (touchY < kUpgradeSkipTabH) {
+    // Touch Y is flipped vs framebuffer (see input.cpp: y = 239 - raw).
+    const int y = height - 1 - touchY;
+
+    if (y < kUpgradeSkipTabH) {
         return 2;
     }
-    if (touchY >= height - kUpgradeScoreTabH) {
+    if (y >= height - kUpgradeScoreTabH) {
         return -1;
     }
 
