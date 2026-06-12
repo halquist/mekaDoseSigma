@@ -57,6 +57,9 @@ public:
     /// Absorbs damage with the shield when active. No overflow on shield break.
     ShieldDamageResult absorbDamage(int damage);
 
+    /// Resets the out-of-combat shield recharge timer (player hits only).
+    void onDamageTaken();
+
     bool isReady() const { return m_state == State::Ready; }
     bool isActive() const { return m_state == State::Active; }
     bool isSpent() const { return m_state == State::Spent; }
@@ -110,6 +113,7 @@ private:
     void breakShield();
     void beginCooldown();
     void deployShield();
+    void updateShieldRecharge(float deltaTime);
 
     Renderer::Scene& m_scene;
     AbilityDef m_def{};
@@ -128,9 +132,12 @@ private:
     float m_cooldownRemaining = 0.0f;
     float m_lastCenterTapTime = -100.0f;
     float m_animTimer = 0.0f;
+    float m_timeSinceLastDamage = 0.0f;
+    float m_rechargeAccumulator = 0.0f;
     bool m_singleUse = false;
 
     static constexpr float DOUBLE_TAP_SEC = 0.35f;
+    static constexpr float SHIELD_RECHARGE_DELAY_SEC = 10.0f;
     static constexpr int32_t SHIELD_RADIUS = 40;
     static constexpr int SHIELD_SPHERE_SEGMENTS = 6;
     static constexpr float SHIELD_CENTER_Y = 30.0f;

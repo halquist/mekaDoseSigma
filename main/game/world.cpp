@@ -12,11 +12,11 @@ World::World(Renderer::Scene& scene)
     , m_cityRoadMat(Colors::CITY_ROAD)
     , m_industrialGroundMat(Colors::INDUSTRIAL_GROUND)
 {
-    m_grassMats[0].shadingMode = Renderer::ShadingMode::FLAT;
-    m_grassMats[1].shadingMode = Renderer::ShadingMode::FLAT;
-    m_cityGroundMat.shadingMode = Renderer::ShadingMode::FLAT;
-    m_cityRoadMat.shadingMode = Renderer::ShadingMode::FLAT;
-    m_industrialGroundMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_grassMats[0].shadingMode = Renderer::ShadingMode::GOURAUD;
+    m_grassMats[1].shadingMode = Renderer::ShadingMode::GOURAUD;
+    m_cityGroundMat.shadingMode = Renderer::ShadingMode::GOURAUD;
+    m_cityRoadMat.shadingMode = Renderer::ShadingMode::GOURAUD;
+    m_industrialGroundMat.shadingMode = Renderer::ShadingMode::GOURAUD;
     createTerrain();
     rebuildTerrain(0.0f, 0.0f);
 }
@@ -116,7 +116,7 @@ void World::rebuildTerrain(float originX, float originZ) {
         }
     }
 
-    m_terrain->computeFlatNormals();
+    computeTerrainSmoothNormals(snappedOriginX, snappedOriginZ);
     m_terrain->calculateBoundingBox();
     m_terrain->setPosition(snappedOriginX, 0, snappedOriginZ);
 
@@ -158,6 +158,80 @@ void World::update(float centerX, float centerZ, float lookAheadDist,
 
     if (shouldRecentreTerrain(centerX, centerZ, lookAheadDist)) {
         rebuildTerrain(centerX, centerZ);
+    }
+}
+
+void World::computeTerrainSmoothNormals(int snappedOriginX, int snappedOriginZ) {
+    const int nx = Terrain::MESH_WIDTH_CELLS;
+    const int nz = Terrain::MESH_DEPTH_CELLS;
+    const int step = Terrain::MESH_CELL_SIZE;
+    const int halfW = Terrain::meshHalfWidth();
+    const int halfD = Terrain::meshHalfDepth();
+
+    for (int iz = 0; iz <= nz; iz++) {
+        for (int ix = 0; ix <= nx; ix++) {
+            const int vi = iz * (nx + 1) + ix;
+
+            // Fetch heights of the 4 cardinal neighbors; reuse already-computed
+            // vertex Y values for in-mesh neighbors, sample outside the mesh
+            // for boundary vertices (only ~60 boundary verts per rebuild).
+            float hL, hR, hB, hF;
+
+            if (ix > 0) {
+                hL = static_cast<float>(
+                    m_terrain->vertices[iz * (nx + 1) + (ix - 1)].position.y);
+            } else {
+                const float lx = static_cast<float>((ix - 1) * step - halfW);
+                const float lz = static_cast<float>(iz * step - halfD);
+                hL = Terrain::heightAt(static_cast<float>(snappedOriginX) + lx,
+                                       static_cast<float>(snappedOriginZ) + lz);
+            }
+
+            if (ix < nx) {
+                hR = static_cast<float>(
+                    m_terrain->vertices[iz * (nx + 1) + (ix + 1)].position.y);
+            } else {
+                const float lx = static_cast<float>((ix + 1) * step - halfW);
+                const float lz = static_cast<float>(iz * step - halfD);
+                hR = Terrain::heightAt(static_cast<float>(snappedOriginX) + lx,
+                                       static_cast<float>(snappedOriginZ) + lz);
+            }
+
+            if (iz > 0) {
+                hB = static_cast<float>(
+                    m_terrain->vertices[(iz - 1) * (nx + 1) + ix].position.y);
+            } else {
+                const float lx = static_cast<float>(ix * step - halfW);
+                const float lz = static_cast<float>((iz - 1) * step - halfD);
+                hB = Terrain::heightAt(static_cast<float>(snappedOriginX) + lx,
+                                       static_cast<float>(snappedOriginZ) + lz);
+            }
+
+            if (iz < nz) {
+                hF = static_cast<float>(
+                    m_terrain->vertices[(iz + 1) * (nx + 1) + ix].position.y);
+            } else {
+                const float lx = static_cast<float>(ix * step - halfW);
+                const float lz = static_cast<float>((iz + 1) * step - halfD);
+                hF = Terrain::heightAt(static_cast<float>(snappedOriginX) + lx,
+                                       static_cast<float>(snappedOriginZ) + lz);
+            }
+
+            // Central-difference height-map normal:
+            //   right tangent = (2*step, hR-hL, 0)
+            //   forward tangent = (0, hF-hB, 2*step)
+            //   N = forward × right (gives upward-facing normal)
+            const float fnx = -(hR - hL);
+            const float fny = static_cast<float>(2 * step);
+            const float fnz = -(hF - hB);
+
+            const float len = sqrtf(fnx * fnx + fny * fny + fnz * fnz);
+            const float scale = static_cast<float>(FIXED_POINT_SCALE) / len;
+
+            m_terrain->vertices[vi].normal.x = static_cast<int32_t>(fnx * scale);
+            m_terrain->vertices[vi].normal.y = static_cast<int32_t>(fny * scale);
+            m_terrain->vertices[vi].normal.z = static_cast<int32_t>(fnz * scale);
+        }
     }
 }
 

@@ -59,6 +59,8 @@ void MechAbility::reset() {
     m_cooldownRemaining = 0.0f;
     m_lastCenterTapTime = -100.0f;
     m_animTimer = 0.0f;
+    m_timeSinceLastDamage = 0.0f;
+    m_rechargeAccumulator = 0.0f;
     m_pendingAutoDeploy = false;
     showShieldMesh(false);
 }
@@ -296,6 +298,8 @@ void MechAbility::update(float deltaTime, const MechRig& rig,
     if (m_state == State::Active || m_visualPhase == VisualPhase::BreakAnim) {
         updateShieldVisual(deltaTime, x, z, baseY);
     }
+
+    updateShieldRecharge(deltaTime);
 }
 
 bool MechAbility::onCenterTap(float nowSec) {
@@ -347,6 +351,34 @@ void MechAbility::rearmAfterShieldBreak() {
 void MechAbility::beginCooldown() {
     m_state = State::Cooldown;
     m_cooldownRemaining = m_def.cooldownSec;
+}
+
+void MechAbility::onDamageTaken() {
+    m_timeSinceLastDamage = 0.0f;
+    m_rechargeAccumulator = 0.0f;
+}
+
+void MechAbility::updateShieldRecharge(float deltaTime) {
+    if (!m_autoDeploy || m_def.kind != AbilityKind::Shield || m_maxShieldHp <= 0) {
+        return;
+    }
+    if (m_state != State::Active || m_shieldHp <= 0 || m_shieldHp >= m_maxShieldHp) {
+        return;
+    }
+    if (m_visualPhase != VisualPhase::Off) {
+        return;
+    }
+
+    m_timeSinceLastDamage += deltaTime;
+    if (m_timeSinceLastDamage < SHIELD_RECHARGE_DELAY_SEC) {
+        return;
+    }
+
+    m_rechargeAccumulator += deltaTime;
+    while (m_rechargeAccumulator >= 1.0f && m_shieldHp < m_maxShieldHp) {
+        m_shieldHp++;
+        m_rechargeAccumulator -= 1.0f;
+    }
 }
 
 ShieldDamageResult MechAbility::absorbDamage(int damage) {

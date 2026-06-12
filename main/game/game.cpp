@@ -618,6 +618,7 @@ void MekaGame::updateGameplay(float deltaTime, const TouchInput& touch) {
                                                         m_mech->getWidth(),
                                                         &hitX, &hitZ, &hitY);
     if (rawDamage > 0) {
+        m_mech->ability().onDamageTaken();
         const ShieldDamageResult absorbed = m_mech->absorbDamage(rawDamage);
         if (absorbed.healthDamage > 0) {
             m_health -= absorbed.healthDamage;

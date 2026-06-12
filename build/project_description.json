@@ -1,7 +1,7 @@
 {
     "version":            "1.1",
     "project_name":       "mekadose_sigma",
-    "project_version":    "51c00ee-dirty",
+    "project_version":    "9127e52-dirty",
     "project_path":       "/home/jon/esp32_testing/mekaDoseSigma",
     "idf_path":           "/home/jon/esp/esp-idf",
     "build_dir":          "/home/jon/esp32_testing/mekaDoseSigma/build",

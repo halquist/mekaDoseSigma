@@ -20,6 +20,7 @@ public:
 private:
     void createTerrain();
     void rebuildTerrain(float originX, float originZ);
+    void computeTerrainSmoothNormals(int snappedOriginX, int snappedOriginZ);
     bool shouldRecentreTerrain(float centerX, float centerZ,
                                float lookAheadDist) const;
     Renderer::Material* terrainMaterialFor(float worldX, float worldZ,
