@@ -65,8 +65,8 @@ struct MechComponentDef {
 struct MechFrameDef {
     const char* id = nullptr;
     const char* displayName = nullptr;
-    float baseSpeed = 120.0f;
-    float baseTurnRate = 90.0f;
+    float baseSpeed = 144.0f;
+    float baseTurnRate = 108.0f;
     float hitWidth = 28.0f;
     int baseMaxHp = 15;
     int8_t visualPitch = -8;

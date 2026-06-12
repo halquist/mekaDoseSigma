@@ -77,7 +77,7 @@ void MechLoadout::setActiveWeaponSlot(int slotIndex) {
 }
 
 float MechLoadout::moveSpeed() const {
-    float speed = m_frame ? m_frame->baseSpeed : 120.0f;
+    float speed = m_frame ? m_frame->baseSpeed : 144.0f;
     for (const MechComponentDef* partDef : m_parts) {
         if (partDef) speed += partDef->stats.speed;
     }
@@ -90,7 +90,7 @@ float MechLoadout::moveSpeed() const {
 }
 
 float MechLoadout::turnRate() const {
-    float turn = m_frame ? m_frame->baseTurnRate : 90.0f;
+    float turn = m_frame ? m_frame->baseTurnRate : 108.0f;
     for (const MechComponentDef* partDef : m_parts) {
         if (partDef) turn += partDef->stats.turnRate;
     }

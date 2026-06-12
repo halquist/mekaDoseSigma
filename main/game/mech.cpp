@@ -137,9 +137,16 @@ void Mech::reset() {
     m_dodgeRemaining = 0;
     m_dodgeCooldown = 0;
     m_dodgeDir = 0;
-    m_touchActive = false;
+    m_fingerDown = false;
+    m_centerTouchSession = false;
     m_dodgeTriggeredThisTouch = false;
+    m_steerLatch = false;
+    m_lastSteerSign = 0.0f;
     m_touchClock = 0.0f;
+    m_touchDownTime = 0.0f;
+    m_touchUpDebounce = 0.0f;
+    m_lastCenterTapTime = -100.0f;
+    m_flipRemaining = 0.0f;
     m_alive = true;
     m_ability.reset();
     m_rig.setHidden(false);
@@ -208,6 +215,56 @@ bool Mech::tryStartDodge(int8_t dir) {
     return true;
 }
 
+bool Mech::tryStartFlip180() {
+    if (m_flipRemaining > 0.0f) {
+        return false;
+    }
+
+    m_flipStartAngle = m_angle;
+    m_flipTargetAngle = m_angle + 180.0f;
+    while (m_flipTargetAngle > 180.0f) {
+        m_flipTargetAngle -= 360.0f;
+    }
+    while (m_flipTargetAngle < -180.0f) {
+        m_flipTargetAngle += 360.0f;
+    }
+    m_flipRemaining = FLIP_180_DURATION;
+    return true;
+}
+
+void Mech::applyFlip180(float deltaTime) {
+    if (m_flipRemaining <= 0.0f) {
+        return;
+    }
+
+    m_flipRemaining -= deltaTime;
+    const float t = 1.0f - fmaxf(0.0f, m_flipRemaining) / FLIP_180_DURATION;
+    const float eased = t * t * (3.0f - 2.0f * t);
+    m_angle = m_flipStartAngle + (m_flipTargetAngle - m_flipStartAngle) * eased;
+    m_turnActivity = 1.0f;
+
+    if (m_flipRemaining <= 0.0f) {
+        m_flipRemaining = 0.0f;
+        m_angle = m_flipTargetAngle;
+    }
+}
+
+void Mech::handleCenterTapRelease() {
+    const bool shieldActivated = m_ability.onCenterTap(m_touchClock);
+    if (shieldActivated) {
+        m_lastCenterTapTime = -100.0f;
+        return;
+    }
+
+    if (m_lastCenterTapTime >= 0.0f &&
+        (m_touchClock - m_lastCenterTapTime) <= CENTER_DOUBLE_TAP_SEC) {
+        tryStartFlip180();
+        m_lastCenterTapTime = -100.0f;
+    } else {
+        m_lastCenterTapTime = m_touchClock;
+    }
+}
+
 void Mech::applyDodge(float deltaTime, ObstacleField* obstacles) {
     if (m_dodgeRemaining <= 0.0f) return;
 
@@ -253,18 +310,43 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int
     bool moveReverse = false;
 
     if (input.touched) {
-        if (!m_touchActive) {
-            m_touchActive = true;
-            m_dodgeTriggeredThisTouch = false;
+        m_lastTouchX = input.x;
+        m_lastTouchY = input.y;
+        m_touchUpDebounce = 0.0f;
 
-            if (TouchZones::isForward(input.x, screenWidth)
-                && !TouchZones::isReverse(input.y, screenHeight)) {
-                m_ability.onCenterTap(m_touchClock);
-            }
+        if (!m_fingerDown) {
+            m_fingerDown = true;
+            m_touchDownTime = m_touchClock;
+            m_dodgeTriggeredThisTouch = false;
+            m_centerTouchSession = false;
         }
 
-        const bool dodgeLeft = TouchZones::isDodgeLeft(input.x, screenWidth);
-        const bool dodgeRight = TouchZones::isDodgeRight(input.x, screenWidth);
+        if (TouchZones::isForward(input.x, screenWidth)
+            && !TouchZones::isReverse(input.y, screenHeight)) {
+            m_centerTouchSession = true;
+        }
+    } else if (m_fingerDown) {
+        m_touchUpDebounce += deltaTime;
+        if (m_touchUpDebounce >= TOUCH_UP_DEBOUNCE_SEC) {
+            if (m_centerTouchSession) {
+                const float holdDuration = m_touchClock - m_touchDownTime;
+                if (holdDuration <= MAX_CENTER_TAP_HOLD_SEC) {
+                    handleCenterTapRelease();
+                }
+            }
+            m_fingerDown = false;
+            m_centerTouchSession = false;
+            m_dodgeTriggeredThisTouch = false;
+            m_steerLatch = false;
+        }
+    }
+
+    if (m_fingerDown) {
+        const int touchX = input.touched ? input.x : m_lastTouchX;
+        const int touchY = input.touched ? input.y : m_lastTouchY;
+
+        const bool dodgeLeft = TouchZones::isDodgeLeft(touchX, screenWidth);
+        const bool dodgeRight = TouchZones::isDodgeRight(touchX, screenWidth);
 
         if (dodgeLeft || dodgeRight) {
             if (!m_dodgeTriggeredThisTouch) {
@@ -274,28 +356,46 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int
                 }
             }
         } else if (m_dodgeRemaining <= 0.0f) {
-            if (TouchZones::isReverse(input.y, screenHeight)) {
-                moveReverse = true;
-            } else if (TouchZones::isSteerLeft(input.x, screenWidth)) {
-                turnInput = -1.0f;
-            } else if (TouchZones::isSteerRight(input.x, screenWidth)) {
-                turnInput = 1.0f;
-            } else if (TouchZones::isForward(input.x, screenWidth)) {
-                moveForward = true;
+            const float rawSteer = TouchZones::steerInput(touchX, screenWidth);
+            const int distFromCenter = TouchZones::distFromCenterX(touchX, screenWidth);
+
+            if (rawSteer != 0.0f) {
+                m_steerLatch = true;
+            }
+            if (distFromCenter <
+                TouchZones::FORWARD_HALF_WIDTH - TouchZones::STEER_LATCH_RELEASE_PX) {
+                m_steerLatch = false;
+            }
+
+            if (m_steerLatch || rawSteer != 0.0f) {
+                turnInput = (rawSteer != 0.0f) ? rawSteer : m_lastSteerSign;
+            }
+
+            if (turnInput == 0.0f && !m_steerLatch) {
+                if (TouchZones::isReverse(touchY, screenHeight)) {
+                    moveReverse = true;
+                } else if (TouchZones::isForward(touchX, screenWidth)) {
+                    moveForward = true;
+                }
             }
         }
-    } else {
-        m_touchActive = false;
-        m_dodgeTriggeredThisTouch = false;
     }
 
-    if (m_dodgeRemaining > 0.0f) {
+    if (turnInput != 0.0f) {
+        m_lastSteerSign = turnInput > 0.0f ? 1.0f : -1.0f;
+    }
+
+    if (m_dodgeRemaining > 0.0f || m_flipRemaining > 0.0f) {
         turnInput = 0.0f;
     }
 
-    const float turnRate = m_loadout.turnRate();
-    m_angle += turnInput * turnRate * deltaTime;
-    m_turnActivity = fabsf(turnInput);
+    if (m_flipRemaining > 0.0f) {
+        applyFlip180(deltaTime);
+    } else {
+        const float turnRate = m_loadout.turnRate();
+        m_angle += turnInput * turnRate * deltaTime;
+        m_turnActivity = fabsf(turnInput);
+    }
 
     const float speed = m_loadout.moveSpeed();
     const float radians = m_angle * M_PI / 180.0f;

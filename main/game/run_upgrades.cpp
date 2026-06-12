@@ -50,7 +50,7 @@ constexpr int kMissileDamageByTier[] = {0, 6, 7, 8, 9, 10, 12};
 constexpr float kMissileCooldownByTier[] = {0.0f, 0.50f, 0.42f, 0.36f, 0.31f, 0.28f, 0.24f};
 constexpr float kMissileRangeByTier[] = {0.0f, 340.0f, 355.0f, 370.0f, 385.0f, 400.0f, 420.0f};
 
-constexpr int kAirStrikeDamageByTier[] = {0, 12, 14, 16, 18, 21, 25};
+constexpr int kAirStrikeDamageByTier[] = {0, 20, 30, 45, 70, 95, 120};
 constexpr float kAirStrikeCooldownByTier[] = {0.0f, 30.0f, 26.0f, 22.0f, 18.0f, 15.0f, 12.0f};
 constexpr float kAirStrikeRadiusByTier[] = {0.0f, 55.0f, 62.0f, 69.0f, 76.0f, 84.0f, 92.0f};
 constexpr float kAirStrikeRangeByTier[] = {0.0f, 450.0f, 480.0f, 510.0f, 540.0f, 570.0f, 600.0f};

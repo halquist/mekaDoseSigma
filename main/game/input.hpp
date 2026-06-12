@@ -17,8 +17,21 @@ namespace Game {
 struct TouchZones {
     static constexpr int FORWARD_HALF_WIDTH = 28;
     static constexpr int DODGE_EDGE_WIDTH = 36;
+    static constexpr int STEER_LATCH_RELEASE_PX = 10;
 
     static int centerX(int screenWidth) { return screenWidth / 2; }
+
+    /// Full-rate steer: -1 left zone, +1 right zone, 0 elsewhere.
+    static float steerInput(int x, int screenWidth) {
+        if (isSteerLeft(x, screenWidth)) return -1.0f;
+        if (isSteerRight(x, screenWidth)) return 1.0f;
+        return 0.0f;
+    }
+
+    static int distFromCenterX(int x, int screenWidth) {
+        const int c = centerX(screenWidth);
+        return x >= c ? x - c : c - x;
+    }
 
     static bool isReverse(int y, int screenHeight) {
         return y >= (screenHeight * 2) / 3;

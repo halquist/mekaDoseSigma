@@ -187,23 +187,38 @@ void MekaGame::updateDayNightCycle(float deltaTime) {
     applyEnvironment();
 }
 
-void MekaGame::updateCamera() {
-    const int32_t pivotX = m_mech->getRenderPivotX();
-    const int32_t pivotZ = m_mech->getRenderPivotZ();
-    const int32_t pivotAngle = m_mech->getRenderPivotAngle();
+void MekaGame::updateCamera(float deltaTime) {
+    const float targetYaw = m_mech->getAngle();
+    const float targetX = m_mech->getX();
+    const float targetZ = m_mech->getZ();
 
-    const float radians = static_cast<float>(pivotAngle) * M_PI / 180.0f;
+    if (!m_cameraInitialized || deltaTime <= 0.0f) {
+        m_cameraYaw = targetYaw;
+        m_cameraPivotX = targetX;
+        m_cameraPivotZ = targetZ;
+        m_cameraInitialized = true;
+    } else {
+        const float blend = fminf(1.0f, kCameraYawSmoothRate * deltaTime);
+        float yawDiff = targetYaw - m_cameraYaw;
+        while (yawDiff > 180.0f) yawDiff -= 360.0f;
+        while (yawDiff < -180.0f) yawDiff += 360.0f;
+        m_cameraYaw += yawDiff * blend;
+        m_cameraPivotX += (targetX - m_cameraPivotX) * blend;
+        m_cameraPivotZ += (targetZ - m_cameraPivotZ) * blend;
+    }
+
+    const float radians = m_cameraYaw * static_cast<float>(M_PI) / 180.0f;
     const float sinR = sinf(radians);
     const float cosR = cosf(radians);
 
     const float rigY = m_mech->getBaseY() + m_cameraRigOffsetY;
 
-    const float camX = static_cast<float>(pivotX) - sinR * m_cameraDistance;
-    const float camZ = static_cast<float>(pivotZ) - cosR * m_cameraDistance;
+    const float camX = m_cameraPivotX - sinR * m_cameraDistance;
+    const float camZ = m_cameraPivotZ - cosR * m_cameraDistance;
     const float camY = rigY + m_cameraHeightAboveMech;
 
-    const float lookX = static_cast<float>(pivotX) + sinR * m_cameraLookAhead;
-    const float lookZ = static_cast<float>(pivotZ) + cosR * m_cameraLookAhead;
+    const float lookX = m_cameraPivotX + sinR * m_cameraLookAhead;
+    const float lookZ = m_cameraPivotZ + cosR * m_cameraLookAhead;
     const float lookY = rigY - m_cameraLookDown;
 
     m_camera->setPosition(static_cast<int32_t>(lroundf(camX)),
@@ -663,7 +678,7 @@ void MekaGame::update(float deltaTime) {
         m_world->update(m_mech->getX(), m_mech->getZ(), m_cameraLookAhead,
                         deltaTime, m_mech->getTurnActivity());
         m_obstacles->update(m_mech->getX(), m_mech->getZ(), m_mech->getAngle());
-        updateCamera();
+        updateCamera(deltaTime);
 
         m_projectiles->update(deltaTime);
 

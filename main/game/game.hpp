@@ -40,7 +40,7 @@ private:
     void setupLighting();
     void applyEnvironment();
     void updateDayNightCycle(float deltaTime);
-    void updateCamera();
+    void updateCamera(float deltaTime = 0.0f);
     bool findAutoFireTarget(float& targetX, float& targetZ, float& targetAimY);
     void handleAutoFire();
     void handleEnemyCombat();
@@ -110,6 +110,10 @@ private:
     float m_cameraLookAhead = 520.0f;
     float m_cameraLookDown = 90.0f;
     float m_cameraRigOffsetY = 55.0f;
+    float m_cameraYaw = 0.0f;
+    float m_cameraPivotX = 0.0f;
+    float m_cameraPivotZ = 0.0f;
+    bool m_cameraInitialized = false;
 
     float m_portalTransitionSec = 0.0f;
     bool m_portalWorldSwapped = false;
@@ -119,6 +123,7 @@ private:
     static constexpr float kPortalGrowSec = 0.55f;
     static constexpr float kPortalFadeSec = 0.55f;
     static constexpr int kPortalHealAmount = 100;
+    static constexpr float kCameraYawSmoothRate = 20.0f;
 };
 
 } // namespace Game

@@ -152,7 +152,6 @@ Renderer::Object* MechRig::createPartMesh(const MechComponentDef& def,
         obj = Primitives::createPyramid(def.dimA, def.dimB, mat);
         break;
     case MechPrimitiveKind::Sphere: {
-        // Jet spheres need >=6 segments to read round; 3 looks like a bipyramid.
         int32_t segs = def.dimB >= 3 ? def.dimB : 6;
         if (segs > 12) segs = 12;
         obj = Primitives::createSphere(def.dimA, segs, mat);
@@ -246,6 +245,7 @@ void MechRig::rebuild(const MechLoadout& loadout, MechPalette palette) {
         return;
     }
 
+    body->computeFlatNormals();
     body->calculateBoundingBox();
     m_scene.addObject(body);
     m_bodyObj = body;

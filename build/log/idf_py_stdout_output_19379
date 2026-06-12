@@ -1,0 +1,52 @@
+[1/22] Performing build step for 'bootloader'
+[1/1] cd /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 bootloader 0x0 /home/jon/esp32_testing/mekaDoseSigma/build/bootloader/bootloader.bin
+Bootloader binary size 0x5800 bytes. 0x2800 bytes (31%) free.
+[2/22] No install step for 'bootloader'
+[3/22] Completed 'bootloader'
+[4/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_catalog.cpp.obj
+[5/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_loadout.cpp.obj
+[6/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/game_ui.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/main/game/game_ui.cpp:81:7: warning: 'float Game::GameUi::{anonymous}::smoothStep(float)' defined but not used [-Wunused-function]
+   81 | float smoothStep(float t) {
+      |       ^~~~~~~~~~
+[7/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/companion_drone.cpp.obj
+[8/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/main.cpp.obj
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp: In function 'void init_display()':
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::data4_io_num' [-Wmissing-field-initializers]
+   82 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::data5_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::data6_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::data7_io_num' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::isr_cpu_id' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:82:5: warning: missing initializer for member 'spi_bus_config_t::intr_flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:103:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_high_on_cmd' [-Wmissing-field-initializers]
+  103 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:103:5: warning: missing initializer for member 'esp_lcd_panel_io_spi_config_t::<unnamed struct>::dc_low_on_param' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:110:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::data_endian' [-Wmissing-field-initializers]
+  110 |     };
+      |     ^
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:110:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::flags' [-Wmissing-field-initializers]
+/home/jon/esp32_testing/mekaDoseSigma/main/main.cpp:110:5: warning: missing initializer for member 'esp_lcd_panel_dev_config_t::vendor_config' [-Wmissing-field-initializers]
+[9/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/run_upgrades.cpp.obj
+[10/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/enemy_manager.cpp.obj
+[11/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/menu_showcase.cpp.obj
+[12/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech.cpp.obj
+[13/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/air_strike.cpp.obj
+[14/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/mech_rig.cpp.obj
+[15/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/ability.cpp.obj
+[16/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/enemy.cpp.obj
+[17/22] Building CXX object esp-idf/main/CMakeFiles/__idf_main.dir/game/game.cpp.obj
+[18/22] Linking C static library esp-idf/main/libmain.a
+[19/22] Generating ld/sections.ld
+[20/22] Linking CXX executable mekadose_sigma.elf
+[21/22] Generating binary image from built executable
+esptool.py v4.11.0
+Creating esp32s3 image...
+Merged 2 ELF sections
+Successfully created esp32s3 image.
+Generated /home/jon/esp32_testing/mekaDoseSigma/build/mekadose_sigma.bin
+[22/22] cd /home/jon/esp32_testing/mekaDoseSigma/build/esp-idf/esptool_py && /home/jon/.espressif/python_env/idf5.2_py3.10_env/bin/python /home/jon/esp/esp-idf/components/partition_table/check_sizes.py --offset 0x8000 partition --type app /home/jon/esp32_testing/mekaDoseSigma/build/partition_table/partition-table.bin /home/jon/esp32_testing/mekaDoseSigma/build/mekadose_sigma.bin
+mekadose_sigma.bin binary size 0x6f8e0 bytes. Smallest app partition is 0x100000 bytes. 0x90720 bytes (56%) free.

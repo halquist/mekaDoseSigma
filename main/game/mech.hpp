@@ -71,6 +71,9 @@ private:
     void syncRenderPivot();
     bool tryStartDodge(int8_t dir);
     void applyDodge(float deltaTime, ObstacleField* obstacles);
+    bool tryStartFlip180();
+    void applyFlip180(float deltaTime);
+    void handleCenterTapRelease();
 
     Renderer::Scene& m_scene;
     MechLoadout m_loadout;
@@ -92,10 +95,25 @@ private:
     float m_dodgeCooldown = 0.0f;
     int8_t m_dodgeDir = 0;
     bool m_alive = true;
-    bool m_touchActive = false;
+    bool m_fingerDown = false;
+    bool m_centerTouchSession = false;
     bool m_dodgeTriggeredThisTouch = false;
+    bool m_steerLatch = false;
+    float m_lastSteerSign = 0.0f;
     float m_touchClock = 0.0f;
+    float m_touchDownTime = 0.0f;
+    float m_touchUpDebounce = 0.0f;
+    int m_lastTouchX = 0;
+    int m_lastTouchY = 0;
+    float m_lastCenterTapTime = -100.0f;
+    float m_flipRemaining = 0.0f;
+    float m_flipStartAngle = 0.0f;
+    float m_flipTargetAngle = 0.0f;
 
+    static constexpr float CENTER_DOUBLE_TAP_SEC = 0.35f;
+    static constexpr float MAX_CENTER_TAP_HOLD_SEC = 0.28f;
+    static constexpr float TOUCH_UP_DEBOUNCE_SEC = 0.06f;
+    static constexpr float FLIP_180_DURATION = 0.2f;
     static constexpr float DODGE_DURATION = 0.22f;
     static constexpr float DODGE_SPEED = 420.0f;
     static constexpr float DODGE_COOLDOWN = 0.48f;

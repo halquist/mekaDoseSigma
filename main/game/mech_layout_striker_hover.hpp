@@ -6,7 +6,7 @@
 namespace Game {
 namespace MechCatalog {
 
-MECH_FRAME(striker, "Striker Frame", 118.0f, 88.0f, 24.0f, 100, -10);
+MECH_FRAME(striker, "Striker Frame", 141.6f, 105.6f, 24.0f, 100, -10);
 
 // ---- parts: id / slot / shape / w h d / color / x y z / rx ry rz / stats ----
 // y positions are mesh centers (pyramids: old_base_y + height/2)
