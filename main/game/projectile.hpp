@@ -32,7 +32,8 @@ public:
                                  float targetAimY, float damageScale = 1.0f);
     void fireEnemyLaserAtTarget(float x, float y, float z, float targetX, float targetZ,
                                 float targetAimY, float damageScale = 1.0f);
-    void fireEnemyAtTarget(float x, float z, float targetX, float targetZ);
+    void fireEnemyAtTarget(float x, float z, float targetX, float targetZ,
+                           float damageScale = 1.0f);
     void fireEnemyBomb(float x, float y, float z, float targetX, float targetZ);
 
     void update(float deltaTime);

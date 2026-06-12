@@ -163,6 +163,9 @@ void Enemy::configureForKind() {
             m_speed = 110.0f * m_speedScale;
             m_fireInterval = scaleFireInterval(1.4f);
             m_tankBodyMat.color = Colors::TANK_BODY;
+            if (m_worldIndex <= EARLY_BOSS_MAX_WORLD_INDEX) {
+                m_damageScale = EARLY_TANK_DAMAGE_SCALE;
+            }
             break;
         case EnemyKind::Mech:
             m_health = scaleHp(MECH_MAX_HEALTH);
@@ -651,7 +654,7 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
                     float mx, my, mz;
                     getTankMuzzleWorld(mx, my, mz);
                     (void)my;
-                    m_projectiles.fireEnemyAtTarget(mx, mz, playerX, playerZ);
+                    m_projectiles.fireEnemyAtTarget(mx, mz, playerX, playerZ, m_damageScale);
                 }
             }
             break;

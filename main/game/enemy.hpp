@@ -160,6 +160,7 @@ private:
     static constexpr float BOSS_DAMAGE_SCALE = 1.75f;
     static constexpr int EARLY_BOSS_MAX_WORLD_INDEX = 1;
     static constexpr float EARLY_BOSS_HP_SCALE = 0.7f;
+    static constexpr float EARLY_TANK_DAMAGE_SCALE = 0.7f;
     static constexpr int AIR_MAX_HEALTH = 24;
     static constexpr float ENEMY_SHIELD_USE_CHANCE = 0.45f;
     static constexpr int AIR_BOMBS_PER_RUN = 2;

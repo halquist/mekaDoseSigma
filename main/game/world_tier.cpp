@@ -6,10 +6,9 @@ namespace Game {
 namespace {
 
 constexpr MapTheme kWorldThemeOrder[] = {
-    MapTheme::CITY,
     MapTheme::RURAL,
     MapTheme::DESERT,
-    MapTheme::INDUSTRIAL,
+    MapTheme::CITY,
 };
 
 MapTheme themeAtIndex(int worldIndex) {

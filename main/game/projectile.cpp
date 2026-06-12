@@ -376,7 +376,8 @@ void ProjectileSystem::firePlayerLaser(float x, float y, float z, float targetX,
                     static_cast<int32_t>(slot->z));
 }
 
-void ProjectileSystem::fireEnemyAtTarget(float x, float z, float targetX, float targetZ) {
+void ProjectileSystem::fireEnemyAtTarget(float x, float z, float targetX, float targetZ,
+                                       float damageScale) {
     Projectile* slot = nullptr;
     for (auto& p : m_projectiles) {
         if (!p.active) {
@@ -407,6 +408,7 @@ void ProjectileSystem::fireEnemyAtTarget(float x, float z, float targetX, float 
     slot->active = true;
     slot->isPlayerProjectile = false;
     slot->isHomingMissile = false;
+    slot->damageScale = damageScale;
     slot->obj->setPosition((int16_t)slot->x,
                            (int16_t)Terrain::hoverHeight(slot->x, slot->z),
                            (int16_t)slot->z);

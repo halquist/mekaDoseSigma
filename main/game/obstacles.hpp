@@ -87,9 +87,9 @@ private:
     }
     static constexpr int TREE_BASE = 24;
     static constexpr int TREE_HEIGHT = 38;
-    static constexpr int BUILDING_WIDTH = 36;
-    static constexpr int BUILDING_HEIGHT = 48;
-    static constexpr int BUILDING_DEPTH = 36;
+    static constexpr int BUILDING_WIDTH = 54;
+    static constexpr int BUILDING_HEIGHT = 144;
+    static constexpr int BUILDING_DEPTH = 54;
 };
 
 } // namespace Game

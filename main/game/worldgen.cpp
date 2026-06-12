@@ -96,7 +96,7 @@ ObstacleSpec sampleObstacle(int cellX, int cellZ, const MapConfig& cfg) {
         spec.present = true;
         spec.kind = ObstacleKind::Building;
         spec.scale = 1.2f + static_cast<float>((h >> 8) & 0xFF) / 255.0f * 0.8f;
-        spec.collisionRadius = 22.0f * spec.scale;
+        spec.collisionRadius = 33.0f * spec.scale;
         return spec;
     }
 
