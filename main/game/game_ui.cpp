@@ -63,6 +63,19 @@ float smoothStep(float t) {
     return t * t * (3.0f - 2.0f * t);
 }
 
+// Integer square root (Babylonian), no floats.
+// Accurate enough for scanline half-width lookups (r <= ~200 px).
+static int isqrtI(int n) {
+    if (n <= 0) return 0;
+    int x = n;
+    int y = (x + 1) >> 1;
+    while (y < x) {
+        x = y;
+        y = (x + n / x) >> 1;
+    }
+    return x;
+}
+
 } // namespace
 
 void drawPortalTransitionSphere(uint16_t* framebuffer, int width, int height,
@@ -94,7 +107,7 @@ void drawPortalTransitionSphere(uint16_t* framebuffer, int width, int height,
             continue;
         }
 
-        const int dxMax = static_cast<int>(sqrtf(static_cast<float>(rSq - dySq)));
+        const int dxMax = isqrtI(rSq - dySq);
         const int x0 = cx - dxMax;
         const int x1 = cx + dxMax;
         const int clipX0 = x0 < 0 ? 0 : x0;
@@ -320,11 +333,12 @@ void fillDoorRect(uint16_t* framebuffer, int width, int height,
 
 void fillOval(uint16_t* framebuffer, int width, int height,
               int cx, int cy, int rx, int ry, uint16_t color) {
+    const int rx2 = rx * rx;
+    const int ry2 = ry * ry;
+    const int threshold = rx2 * ry2;
     for (int dy = -ry; dy <= ry; ++dy) {
         for (int dx = -rx; dx <= rx; ++dx) {
-            const float nx = static_cast<float>(dx) / static_cast<float>(rx);
-            const float ny = static_cast<float>(dy) / static_cast<float>(ry);
-            if (nx * nx + ny * ny <= 1.0f) {
+            if (dx * dx * ry2 + dy * dy * rx2 <= threshold) {
                 putPixel(framebuffer, width, height, cx + dx, cy + dy, color);
             }
         }
@@ -526,8 +540,7 @@ void circleRowBounds(int y, int width, int height, int& outMin, int& outMax) {
         outMax = cx;
         return;
     }
-    const int halfW = static_cast<int>(lroundf(sqrtf(
-        static_cast<float>(radius * radius - dyAbs * dyAbs))));
+    const int halfW = isqrtI(radius * radius - dyAbs * dyAbs);
     outMin = cx - halfW;
     outMax = cx + halfW;
 }

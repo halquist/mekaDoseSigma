@@ -13,24 +13,25 @@ namespace Game {
 
 namespace {
 
-float distPointToSegment(float px, float pz,
-                         float ax, float az, float bx, float bz) {
-    float segDx = bx - ax;
-    float segDz = bz - az;
-    float segLen2 = segDx * segDx + segDz * segDz;
+float distPointToSegmentSq(float px, float pz,
+                           float ax, float az, float bx, float bz) {
+    const float segDx = bx - ax;
+    const float segDz = bz - az;
+    const float segLen2 = segDx * segDx + segDz * segDz;
+    float cx, cz;
     if (segLen2 < 0.01f) {
-        float dx = px - ax;
-        float dz = pz - az;
-        return sqrtf(dx * dx + dz * dz);
+        cx = ax;
+        cz = az;
+    } else {
+        float t = ((px - ax) * segDx + (pz - az) * segDz) / segLen2;
+        if (t < 0.0f) t = 0.0f;
+        else if (t > 1.0f) t = 1.0f;
+        cx = ax + t * segDx;
+        cz = az + t * segDz;
     }
-    float t = ((px - ax) * segDx + (pz - az) * segDz) / segLen2;
-    if (t < 0.0f) t = 0.0f;
-    else if (t > 1.0f) t = 1.0f;
-    float cx = ax + t * segDx;
-    float cz = az + t * segDz;
-    float dx = px - cx;
-    float dz = pz - cz;
-    return sqrtf(dx * dx + dz * dz);
+    const float dx = px - cx;
+    const float dz = pz - cz;
+    return dx * dx + dz * dz;
 }
 
 float wrapAngleDeg(float angle) {
@@ -57,8 +58,33 @@ ProjectileSystem::ProjectileSystem(Renderer::Scene& scene)
     m_playerLaserMat.shadingMode = Renderer::ShadingMode::UNLIT;
     m_playerLaserMat.emissive = true;
 
+    // Pre-allocate all visual objects upfront so first-fire never triggers a heap
+    // allocation mid-frame (was previously lazy per-slot, per-type).
     for (auto& p : m_projectiles) {
-        p.obj = nullptr;
+        p.missileObj = Primitives::createCube(MISSILE_VIS_W, MISSILE_VIS_H, MISSILE_VIS_LEN,
+                                              &m_missileMat);
+        p.missileObj->cullingMode = Renderer::CullingMode::NO_CULLING;
+        m_scene.addObject(p.missileObj);
+        stashSceneObject(p.missileObj);
+
+        p.boltObj = Primitives::createSphere(6, 4, &m_enemyProjMat);
+        m_scene.addObject(p.boltObj);
+        stashSceneObject(p.boltObj);
+
+        p.bombObj = Primitives::createCube(BOMB_VIS_SIZE, BOMB_VIS_SIZE, BOMB_VIS_SIZE,
+                                           &m_bombMat);
+        p.bombObj->cullingMode = Renderer::CullingMode::NO_CULLING;
+        m_scene.addObject(p.bombObj);
+        stashSceneObject(p.bombObj);
+
+        // laser / player-laser share the same geometry; material is set via triangle
+        // loop in applyProjectileVisual on every use, so the initial material is moot.
+        p.laserObj = Primitives::createCube(LASER_VIS_W, LASER_VIS_H, LASER_VIS_LEN,
+                                            &m_laserMat);
+        p.laserObj->cullingMode = Renderer::CullingMode::NO_CULLING;
+        m_scene.addObject(p.laserObj);
+        stashSceneObject(p.laserObj);
+
         p.active = false;
     }
 
@@ -83,63 +109,30 @@ void ProjectileSystem::applyProjectileVisual(Projectile& p, ProjectileVisualKind
     Renderer::Material* mat = nullptr;
 
     if (kind == ProjectileVisualKind::PlayerMissile) {
-        if (!p.missileObj) {
-            p.missileObj = Primitives::createCube(MISSILE_VIS_W, MISSILE_VIS_H, MISSILE_VIS_LEN,
-                                                    &m_missileMat);
-            p.missileObj->cullingMode = Renderer::CullingMode::NO_CULLING;
-            m_scene.addObject(p.missileObj);
-            stashSceneObject(p.missileObj);
-        }
         stashSceneObject(p.boltObj);
         stashSceneObject(p.bombObj);
         stashSceneObject(p.laserObj);
         p.obj = p.missileObj;
         mat = &m_missileMat;
     } else if (kind == ProjectileVisualKind::Bolt) {
-        if (!p.boltObj) {
-            p.boltObj = Primitives::createSphere(6, 4, &m_enemyProjMat);
-            m_scene.addObject(p.boltObj);
-            stashSceneObject(p.boltObj);
-        }
         stashSceneObject(p.missileObj);
         stashSceneObject(p.bombObj);
         stashSceneObject(p.laserObj);
         p.obj = p.boltObj;
         mat = &m_enemyProjMat;
     } else if (kind == ProjectileVisualKind::Bomb) {
-        if (!p.bombObj) {
-            p.bombObj = Primitives::createCube(BOMB_VIS_SIZE, BOMB_VIS_SIZE, BOMB_VIS_SIZE,
-                                               &m_bombMat);
-            p.bombObj->cullingMode = Renderer::CullingMode::NO_CULLING;
-            m_scene.addObject(p.bombObj);
-            stashSceneObject(p.bombObj);
-        }
         stashSceneObject(p.missileObj);
         stashSceneObject(p.boltObj);
         stashSceneObject(p.laserObj);
         p.obj = p.bombObj;
         mat = &m_bombMat;
     } else if (kind == ProjectileVisualKind::Laser) {
-        if (!p.laserObj) {
-            p.laserObj = Primitives::createCube(LASER_VIS_W, LASER_VIS_H, LASER_VIS_LEN,
-                                                  &m_laserMat);
-            p.laserObj->cullingMode = Renderer::CullingMode::NO_CULLING;
-            m_scene.addObject(p.laserObj);
-            stashSceneObject(p.laserObj);
-        }
         stashSceneObject(p.missileObj);
         stashSceneObject(p.boltObj);
         stashSceneObject(p.bombObj);
         p.obj = p.laserObj;
         mat = &m_laserMat;
     } else if (kind == ProjectileVisualKind::PlayerLaser) {
-        if (!p.laserObj) {
-            p.laserObj = Primitives::createCube(LASER_VIS_W, LASER_VIS_H, LASER_VIS_LEN,
-                                                  &m_playerLaserMat);
-            p.laserObj->cullingMode = Renderer::CullingMode::NO_CULLING;
-            m_scene.addObject(p.laserObj);
-            stashSceneObject(p.laserObj);
-        }
         stashSceneObject(p.missileObj);
         stashSceneObject(p.boltObj);
         stashSceneObject(p.bombObj);
@@ -572,7 +565,7 @@ void ProjectileSystem::destroyProjectile(Projectile& p) {
 }
 
 float ProjectileSystem::missileWorldY(const Projectile& p) const {
-    return Terrain::hoverHeight(p.x, p.z) + p.y;
+    return Terrain::hoverHeightFast(p.x, p.z) + p.y;
 }
 
 float ProjectileSystem::computeMissileDesiredYOffset(const Projectile& p,
@@ -592,7 +585,7 @@ float ProjectileSystem::computeMissileDesiredYOffset(const Projectile& p,
         p.launchWorldY + (p.targetAimY - p.launchWorldY) * progress;
     const float desiredWorldY = baseWorldY + p.peakArcY * arcFactor;
 
-    const float localHover = Terrain::hoverHeight(p.x, p.z);
+    const float localHover = Terrain::hoverHeightFast(p.x, p.z);
     float refHover = localHover;
     if (progress > 0.78f) {
         const float t = (progress - 0.78f) / 0.22f;
@@ -606,7 +599,6 @@ float ProjectileSystem::computeMissileDesiredYOffset(const Projectile& p,
 void ProjectileSystem::updateHomingMissile(Projectile& p, float deltaTime) {
     const float dx = p.targetX - p.x;
     const float dz = p.targetZ - p.z;
-    const float horizDist = sqrtf(dx * dx + dz * dz);
     const float desiredAngle = atan2f(dx, dz);
     const float currentAngle = atan2f(p.vx, p.vz);
     float angleDiff = wrapAngleDeg(
@@ -679,7 +671,7 @@ void ProjectileSystem::updateStraightProjectile(Projectile& p, float deltaTime) 
 
     showSceneObject(p.obj,
                     static_cast<int32_t>(p.x),
-                    static_cast<int32_t>(Terrain::hoverHeight(p.x, p.z)),
+                    static_cast<int32_t>(Terrain::hoverHeightFast(p.x, p.z)),
                     static_cast<int32_t>(p.z));
 }
 
@@ -691,7 +683,7 @@ void ProjectileSystem::updateFallingBomb(Projectile& p, float deltaTime) {
     p.z += p.vz * deltaTime;
     p.y += p.vy * deltaTime;
 
-    const float groundY = Terrain::hoverHeight(p.x, p.z);
+    const float groundY = Terrain::hoverHeightFast(p.x, p.z);
     if (p.y <= groundY + 3.0f) {
         p.y = groundY + 3.0f;
         destroyProjectile(p);
@@ -764,12 +756,12 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
         if (!p.active || p.isPlayerProjectile) continue;
 
         if (p.visualKind == ProjectileVisualKind::Laser) {
-            const float segDist = distPointToSegment(
+            const float segDistSq = distPointToSegmentSq(
                 playerX, playerZ, p.prevX, p.prevZ, p.x, p.z);
             const float dx = p.x - playerX;
             const float dz = p.z - playerZ;
-            const float dist = sqrtf(dx * dx + dz * dz);
-            const float closest = (dist < segDist) ? dist : segDist;
+            const float distSq = dx * dx + dz * dz;
+            const float closestSq = (distSq < segDistSq) ? distSq : segDistSq;
 
             const float segDx = p.x - p.prevX;
             const float segDz = p.z - p.prevZ;
@@ -783,7 +775,7 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
             const float projectileWorldY = p.prevY + t * (p.y - p.prevY);
             const float yDist = fabsf(projectileWorldY - playerAimY);
 
-            if (closest < hitDist && yDist < ENEMY_HIT_Y_TOLERANCE) {
+            if (closestSq < hitDist * hitDist && yDist < ENEMY_HIT_Y_TOLERANCE) {
                 recordHit(p.x, projectileWorldY, p.z);
                 destroyProjectile(p);
                 return scaledDamage(PLAYER_DAMAGE_ENEMY_LASER, p.damageScale);
@@ -794,16 +786,15 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
         if (p.isHomingMissile) {
             const float dx = p.x - playerX;
             const float dz = p.z - playerZ;
-            const float dist = sqrtf(dx * dx + dz * dz);
-
-            const float segDist = distPointToSegment(
+            const float distSq = dx * dx + dz * dz;
+            const float segDistSq = distPointToSegmentSq(
                 playerX, playerZ, p.prevX, p.prevZ, p.x, p.z);
-            const float closest = (dist < segDist) ? dist : segDist;
+            const float closestSq = (distSq < segDistSq) ? distSq : segDistSq;
 
-            const float missileWorldY = Terrain::hoverHeight(p.x, p.z) + p.y;
+            const float missileWorldY = Terrain::hoverHeightFast(p.x, p.z) + p.y;
             const float yDist = fabsf(missileWorldY - playerAimY);
 
-            if (closest < ENEMY_HIT_RADIUS && yDist < ENEMY_HIT_Y_TOLERANCE) {
+            if (closestSq < ENEMY_HIT_RADIUS * ENEMY_HIT_RADIUS && yDist < ENEMY_HIT_Y_TOLERANCE) {
                 recordHit(p.x, missileWorldY, p.z);
                 detonateMissile(p);
                 return scaledDamage(PLAYER_DAMAGE_ENEMY_MISSILE, p.damageScale);
@@ -812,17 +803,17 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
         }
 
         if (p.isFallingBomb) {
-            const float groundY = Terrain::hoverHeight(p.x, p.z);
+            const float groundY = Terrain::hoverHeightFast(p.x, p.z);
             if (p.y > groundY + 18.0f) continue;
 
             const float dx = p.x - playerX;
             const float dz = p.z - playerZ;
-            const float dist = sqrtf(dx * dx + dz * dz);
-            const float segDist = distPointToSegment(
+            const float distSq = dx * dx + dz * dz;
+            const float segDistSq = distPointToSegmentSq(
                 playerX, playerZ, p.prevX, p.prevZ, p.x, p.z);
-            const float closest = (dist < segDist) ? dist : segDist;
+            const float closestSq = (distSq < segDistSq) ? distSq : segDistSq;
 
-            if (closest < BOMB_SPLASH_RADIUS) {
+            if (closestSq < BOMB_SPLASH_RADIUS * BOMB_SPLASH_RADIUS) {
                 recordHit(p.x, p.y, p.z);
                 destroyProjectile(p);
                 return scaledDamage(PLAYER_DAMAGE_BOMB, p.damageScale);
@@ -832,10 +823,10 @@ int ProjectileSystem::checkPlayerHit(float playerX, float playerZ, float playerA
 
         const float dx = p.x - playerX;
         const float dz = p.z - playerZ;
-        const float dist = sqrtf(dx * dx + dz * dz);
+        const float distSq = dx * dx + dz * dz;
 
-        if (dist < hitDist) {
-            recordHit(p.x, Terrain::hoverHeight(p.x, p.z), p.z);
+        if (distSq < hitDist * hitDist) {
+            recordHit(p.x, Terrain::hoverHeightFast(p.x, p.z), p.z);
             destroyProjectile(p);
             return scaledDamage(PLAYER_DAMAGE_TANK_BOLT, p.damageScale);
         }
@@ -853,11 +844,10 @@ bool ProjectileSystem::checkEnemyHit(float enemyX, float enemyZ, float enemyMinY
 
         const float dx = p.x - enemyX;
         const float dz = p.z - enemyZ;
-        const float dist = sqrtf(dx * dx + dz * dz);
-
-        const float segDist = distPointToSegment(
+        const float distSq = dx * dx + dz * dz;
+        const float segDistSq = distPointToSegmentSq(
             enemyX, enemyZ, p.prevX, p.prevZ, p.x, p.z);
-        const float closest = (dist < segDist) ? dist : segDist;
+        const float closestSq = (distSq < segDistSq) ? distSq : segDistSq;
 
         float projectileWorldY = 0.0f;
         if (p.visualKind == ProjectileVisualKind::Laser ||
@@ -873,12 +863,12 @@ bool ProjectileSystem::checkEnemyHit(float enemyX, float enemyZ, float enemyMinY
             }
             projectileWorldY = p.prevY + t * (p.y - p.prevY);
         } else {
-            projectileWorldY = Terrain::hoverHeight(p.x, p.z) + p.y;
+            projectileWorldY = Terrain::hoverHeightFast(p.x, p.z) + p.y;
         }
         const bool yHit =
             (projectileWorldY >= enemyMinY && projectileWorldY <= enemyMaxY);
 
-        if (closest < ENEMY_HIT_RADIUS && yHit) {
+        if (closestSq < ENEMY_HIT_RADIUS * ENEMY_HIT_RADIUS && yHit) {
             if (outDamage) {
                 *outDamage = p.playerHitDamage;
             }
@@ -897,16 +887,15 @@ bool ProjectileSystem::checkMissileTargetImpact(float* outX, float* outZ, float*
 
         const float dx = p.targetX - p.x;
         const float dz = p.targetZ - p.z;
-        const float horizDist = sqrtf(dx * dx + dz * dz);
-
-        const float segDist = distPointToSegment(
+        const float horizDistSq = dx * dx + dz * dz;
+        const float segDistSq = distPointToSegmentSq(
             p.targetX, p.targetZ, p.prevX, p.prevZ, p.x, p.z);
-        const float closest = (horizDist < segDist) ? horizDist : segDist;
+        const float closestSq = (horizDistSq < segDistSq) ? horizDistSq : segDistSq;
 
-        const float missileWorldY = Terrain::hoverHeight(p.x, p.z) + p.y;
+        const float missileWorldY = Terrain::hoverHeightFast(p.x, p.z) + p.y;
         const float yDist = fabsf(missileWorldY - p.targetAimY);
 
-        if (closest < ENEMY_HIT_RADIUS && yDist < ENEMY_HIT_Y_TOLERANCE) {
+        if (closestSq < ENEMY_HIT_RADIUS * ENEMY_HIT_RADIUS && yDist < ENEMY_HIT_Y_TOLERANCE) {
             if (outX) *outX = p.targetX;
             if (outZ) *outZ = p.targetZ;
             if (outY) *outY = p.targetAimY;

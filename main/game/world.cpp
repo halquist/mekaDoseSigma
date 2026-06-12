@@ -94,8 +94,9 @@ void World::rebuildTerrain(float originX, float originZ) {
             const int32_t lz = iz * step - halfD;
             const float wx = static_cast<float>(snappedOriginX) + static_cast<float>(lx);
             const float wz = static_cast<float>(snappedOriginZ) + static_cast<float>(lz);
-            m_terrain->vertices[vi].position.y =
-                static_cast<int32_t>(Terrain::heightAt(wx, wz));
+            const int32_t yVal = static_cast<int32_t>(Terrain::heightAt(wx, wz));
+            m_terrain->vertices[vi].position.y = yVal;
+            m_terrainVertexY[vi] = yVal;
             vi++;
         }
     }
@@ -122,6 +123,7 @@ void World::rebuildTerrain(float originX, float originZ) {
 
     Terrain::setChunkOrigin(static_cast<float>(snappedOriginX),
                             static_cast<float>(snappedOriginZ));
+    Terrain::setMeshCache(m_terrainVertexY, snappedOriginX, snappedOriginZ);
 
     m_chunkOriginX = snappedOriginX;
     m_chunkOriginZ = snappedOriginZ;

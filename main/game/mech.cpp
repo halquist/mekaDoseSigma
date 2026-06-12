@@ -22,12 +22,12 @@ static float smoothToward(float current, float target, float rate, float deltaTi
 }
 
 static float averagedHoverHeight(float worldX, float worldZ) {
-    const float center = Terrain::hoverHeight(worldX, worldZ);
+    const float center = Terrain::hoverHeightFast(worldX, worldZ);
     const float r = HOVER_SAMPLE_RADIUS;
-    const float left = Terrain::hoverHeight(worldX - r, worldZ);
-    const float right = Terrain::hoverHeight(worldX + r, worldZ);
-    const float front = Terrain::hoverHeight(worldX, worldZ + r);
-    const float back = Terrain::hoverHeight(worldX, worldZ - r);
+    const float left = Terrain::hoverHeightFast(worldX - r, worldZ);
+    const float right = Terrain::hoverHeightFast(worldX + r, worldZ);
+    const float front = Terrain::hoverHeightFast(worldX, worldZ + r);
+    const float back = Terrain::hoverHeightFast(worldX, worldZ - r);
     return (center + left + right + front + back) * 0.2f;
 }
 

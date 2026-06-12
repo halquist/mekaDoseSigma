@@ -110,6 +110,7 @@ private:
 
     float m_damageFlash = 0;
     float m_dayNightPhase = 0.0f;
+    float m_lastEnvApplyPhase = -1.0f;
 
     float m_cameraDistance = 118.0f;
     float m_cameraHeightAboveMech = 34.0f;

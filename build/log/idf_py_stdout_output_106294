@@ -1,0 +1,259 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)
+Saved PC:0x40056f64
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce3820,len:0x1918
+load:0x403c9700,len:0x4
+load:0x403c9704,len:0xe5c
+load:0x403cc700,len:0x3028
+entry 0x403c993c
+[0;32mI (26) boot: ESP-IDF v5.2.2 2nd stage bootloader[0m
+[0;32mI (27) boot: compile time Jun  9 2026 13:10:47[0m
+[0;32mI (27) boot: Multicore bootloader[0m
+[0;32mI (30) boot: chip revision: v0.2[0m
+[0;32mI (34) qio_mode: Enabling default flash chip QIO[0m
+[0;32mI (39) boot.esp32s3: Boot SPI Speed : 80MHz[0m
+[0;32mI (44) boot.esp32s3: SPI Mode       : QIO[0m
+[0;32mI (48) boot.esp32s3: SPI Flash Size : 8MB[0m
+[0;32mI (53) boot: Enabling RNG early entropy source...[0m
+[0;32mI (59) boot: Partition Table:[0m
+[0;32mI (62) boot: ## Label            Usage          Type ST Offset   Length[0m
+[0;32mI (69) boot:  0 nvs              WiFi data        01 02 00009000 00006000[0m
+[0;32mI (77) boot:  1 phy_init         RF data          01 01 0000f000 00001000[0m
+[0;32mI (84) boot:  2 factory          factory app      00 00 00010000 00100000[0m
+[0;32mI (92) boot: End of partition table[0m
+[0;32mI (96) esp_image: segment 0: paddr=00010020 vaddr=3c050020 size=167dch ( 92124) map[0m
+[0;32mI (118) esp_image: segment 1: paddr=00026804 vaddr=3fc98700 size=030a0h ( 12448) load[0m
+[0;32mI (121) esp_image: segment 2: paddr=000298ac vaddr=40374000 size=0676ch ( 26476) load[0m
+[0;32mI (129) esp_image: segment 3: paddr=00030020 vaddr=42000020 size=43630h (276016) map[0m
+[0;32mI (175) esp_image: segment 4: paddr=00073658 vaddr=4037a76c size=0df38h ( 57144) load[0m
+[0;32mI (194) boot: Loaded app from partition at offset 0x10000[0m
+[0;32mI (194) boot: Disabling RNG early entropy source...[0m
+[0;32mI (206) cpu_start: Multicore app[0m
+[0;32mI (206) octal_psram: vendor id    : 0x0d (AP)[0m
+[0;32mI (206) octal_psram: dev id       : 0x02 (generation 3)[0m
+[0;32mI (209) octal_psram: density      : 0x03 (64 Mbit)[0m
+[0;32mI (215) octal_psram: good-die     : 0x01 (Pass)[0m
+[0;32mI (220) octal_psram: Latency      : 0x01 (Fixed)[0m
+[0;32mI (225) octal_psram: VCC          : 0x01 (3V)[0m
+[0;32mI (230) octal_psram: SRF          : 0x01 (Fast Refresh)[0m
+[0;32mI (236) octal_psram: BurstType    : 0x01 (Hybrid Wrap)[0m
+[0;32mI (242) octal_psram: BurstLen     : 0x01 (32 Byte)[0m
+[0;32mI (247) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)[0m
+[0;32mI (253) octal_psram: DriveStrength: 0x00 (1/1)[0m
+[0;32mI (259) MSPI Timing: PSRAM timing tuning index: 4[0m
+[0;32mI (264) esp_psram: Found 8MB PSRAM device[0m
+[0;32mI (269) esp_psram: Speed: 80MHz[0m
+[0;32mI (679) esp_psram: SPI SRAM memory test OK[0m
+[0;32mI (688) cpu_start: Pro cpu start user code[0m
+[0;32mI (688) cpu_start: cpu freq: 240000000 Hz[0m
+[0;32mI (688) cpu_start: Application information:[0m
+[0;32mI (691) cpu_start: Project name:     mekadose_sigma[0m
+[0;32mI (696) cpu_start: App version:      620aed7-dirty[0m
+[0;32mI (702) cpu_start: Compile time:     Jun 12 2026 16:39:02[0m
+[0;32mI (708) cpu_start: ELF file SHA256:  49adf5b8d...[0m
+[0;32mI (713) cpu_start: ESP-IDF:          v5.2.2[0m
+[0;32mI (718) cpu_start: Min chip rev:     v0.0[0m
+[0;32mI (723) cpu_start: Max chip rev:     v0.99 [0m
+[0;32mI (728) cpu_start: Chip rev:         v0.2[0m
+[0;32mI (733) heap_init: Initializing. RAM available for dynamic allocation:[0m
+[0;32mI (740) heap_init: At 3FCA0608 len 00049108 (292 KiB): RAM[0m
+[0;32mI (746) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM[0m
+[0;32mI (752) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM[0m
+[0;32mI (758) heap_init: At 600FE010 len 00001FD8 (7 KiB): RTCRAM[0m
+[0;32mI (764) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator[0m
+[0;32mI (772) spi_flash: detected chip: gd[0m
+[0;32mI (776) spi_flash: flash io: qio[0m
+[0;33mW (780) i2c: This driver is an old driver, please migrate your application code to adapt `driver/i2c_master.h`[0m
+[0;32mI (791) sleep: Configure to isolate all GPIO pins in sleep state[0m
+[0;32mI (798) sleep: Enable automatic switching of GPIO sleep configuration[0m
+[0;32mI (805) main_task: Started on CPU0[0m
+[0;32mI (809) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations[0m
+[0;32mI (818) main_task: Calling app_main()[0m
+[0;32mI (822) mekadose: === mekaDoseSigma M0 ===[0m
+[0;32mI (827) mekadose: Initializing display...[0m
+[0;32mI (832) gpio: GPIO[43]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (841) gpio: GPIO[4]| InputEn: 0| OutputEn: 1| OpenDrain: 0| Pullup: 0| Pulldown: 0| Intr:0 [0m
+[0;32mI (850) gc9a01: LCD panel create success, version: 2.0.4[0m
+[0;32mI (977) mekadose: Display initialized[0m
+[0;32mI (1047) gpio: GPIO[44]| InputEn: 1| OutputEn: 0| OpenDrain: 0| Pullup: 1| Pulldown: 0| Intr:0 [0m
+[0;32mI (1047) touch: CHSC6X touch input initialized[0m
+[0;32mI (1112) mekadose: M2 combat loop — menu tap to start, destroy objectives to upgrade[0m
+[0;32mI (1113) mekadose: Ping-pong framebuffers enabled (render overlaps SPI blit)[0m
+[0;32mI (3135) mekadose: FPS: 85.8[0m
+[0;32mI (5180) mekadose: FPS: 25.8[0m
+[0;32mI (7210) mekadose: FPS: 26.1[0m
+[0;32mI (9217) mekadose: FPS: 25.9[0m
+[0;32mI (11241) mekadose: FPS: 25.7[0m
+[0;32mI (13257) mekadose: FPS: 25.3[0m
+[0;32mI (15268) mekadose: FPS: 25.4[0m
+[0;32mI (17289) mekadose: FPS: 25.3[0m
+[0;32mI (19315) mekadose: FPS: 24.7[0m
+[0;32mI (21349) mekadose: FPS: 24.6[0m
+[0;32mI (23383) mekadose: FPS: 24.5[0m
+[0;32mI (25420) mekadose: FPS: 25.5[0m
+[0;32mI (27453) mekadose: FPS: 24.1[0m
+[0;32mI (29478) mekadose: FPS: 24.2[0m
+[0;32mI (31479) mekadose: FPS: 24.0[0m
+[0;32mI (33487) mekadose: FPS: 24.4[0m
+[0;32mI (35515) mekadose: FPS: 24.6[0m
+[0;32mI (37526) mekadose: FPS: 25.8[0m
+[0;32mI (39536) mekadose: FPS: 25.9[0m
+[0;32mI (41551) mekadose: FPS: 25.8[0m
+[0;32mI (43555) mekadose: FPS: 25.9[0m
+[0;32mI (45584) mekadose: FPS: 25.7[0m
+[0;32mI (47605) mekadose: FPS: 23.8[0m
+[0;32mI (49630) mekadose: FPS: 22.7[0m
+[0;32mI (51654) mekadose: FPS: 22.7[0m
+[0;32mI (53673) mekadose: FPS: 25.7[0m
+[0;32mI (55677) mekadose: FPS: 25.9[0m
+[0;32mI (57707) mekadose: FPS: 25.6[0m
+[0;32mI (59717) mekadose: FPS: 24.9[0m
+[0;32mI (61750) mekadose: FPS: 25.1[0m
+[0;32mI (63760) mekadose: FPS: 24.4[0m
+[0;32mI (65787) mekadose: FPS: 24.7[0m
+[0;32mI (67793) mekadose: FPS: 25.4[0m
+[0;32mI (69794) mekadose: FPS: 26.5[0m
+[0;32mI (71824) mekadose: FPS: 26.1[0m
+[0;32mI (73863) mekadose: FPS: 26.0[0m
+[0;32mI (75898) mekadose: FPS: 25.1[0m
+[0;32mI (77928) mekadose: FPS: 25.6[0m
+[0;32mI (79953) mekadose: FPS: 25.7[0m
+[0;32mI (81959) mekadose: FPS: 25.0[0m
+[0;32mI (83984) mekadose: FPS: 24.7[0m
+[0;32mI (85993) mekadose: FPS: 23.9[0m
+[0;32mI (88023) mekadose: FPS: 25.1[0m
+[0;32mI (90030) mekadose: FPS: 24.4[0m
+[0;32mI (92069) mekadose: FPS: 24.5[0m
+[0;32mI (94091) mekadose: FPS: 24.7[0m
+[0;32mI (96135) mekadose: FPS: 24.0[0m
+[0;32mI (98134) mekadose: FPS: 24.4[0m
+[0;32mI (100145) mekadose: FPS: 25.4[0m
+[0;32mI (102175) mekadose: FPS: 25.6[0m
+[0;32mI (104208) mekadose: FPS: 24.6[0m
+[0;32mI (106247) mekadose: FPS: 22.1[0m
+[0;32mI (108287) mekadose: FPS: 20.6[0m
+[0;32mI (110314) mekadose: FPS: 21.2[0m
+[0;32mI (112322) mekadose: FPS: 20.9[0m
+[0;32mI (114338) mekadose: FPS: 20.8[0m
+[0;32mI (116383) mekadose: FPS: 21.0[0m
+[0;32mI (118433) mekadose: FPS: 20.1[0m
+[0;32mI (120417) mekadose: FPS: 23.0[0m
+[0;32mI (122434) mekadose: FPS: 24.3[0m
+[0;32mI (124490) mekadose: FPS: 23.4[0m
+[0;32mI (126483) mekadose: FPS: 25.0[0m
+[0;32mI (128491) mekadose: FPS: 25.9[0m
+[0;32mI (130494) mekadose: FPS: 25.9[0m
+[0;32mI (132527) mekadose: FPS: 26.1[0m
+[0;32mI (134541) mekadose: FPS: 24.9[0m
+[0;32mI (136553) mekadose: FPS: 21.9[0m
+[0;32mI (138590) mekadose: FPS: 24.0[0m
+[0;32mI (140613) mekadose: FPS: 24.7[0m
+[0;32mI (142641) mekadose: FPS: 25.1[0m
+[0;32mI (144668) mekadose: FPS: 25.6[0m
+[0;32mI (146698) mekadose: FPS: 25.6[0m
+[0;32mI (148703) mekadose: FPS: 25.9[0m
+[0;32mI (150710) mekadose: FPS: 25.4[0m
+[0;32mI (152740) mekadose: FPS: 23.2[0m
+[0;32mI (154777) mekadose: FPS: 21.6[0m
+[0;32mI (156793) mekadose: FPS: 22.3[0m
+[0;32mI (158827) mekadose: FPS: 22.1[0m
+[0;32mI (160837) mekadose: FPS: 24.8[0m
+[0;32mI (162842) mekadose: FPS: 25.9[0m
+[0;32mI (164853) mekadose: FPS: 25.4[0m
+[0;32mI (166856) mekadose: FPS: 24.9[0m
+[0;32mI (168897) mekadose: FPS: 24.0[0m
+[0;32mI (170916) mekadose: FPS: 24.2[0m
+[0;32mI (172946) mekadose: FPS: 25.6[0m
+[0;32mI (174952) mekadose: FPS: 25.9[0m
+[0;32mI (176961) mekadose: FPS: 25.9[0m
+[0;32mI (178969) mekadose: FPS: 25.9[0m
+[0;32mI (180988) mekadose: FPS: 23.9[0m
+[0;32mI (183012) mekadose: FPS: 21.2[0m
+[0;32mI (185057) mekadose: FPS: 20.6[0m
+[0;32mI (187103) mekadose: FPS: 19.6[0m
+[0;32mI (189098) mekadose: FPS: 22.5[0m
+[0;32mI (191104) mekadose: FPS: 22.4[0m
+[0;32mI (193131) mekadose: FPS: 24.2[0m
+[0;32mI (195162) mekadose: FPS: 24.3[0m
+[0;32mI (197165) mekadose: FPS: 21.4[0m
+[0;32mI (199195) mekadose: FPS: 22.2[0m
+[0;32mI (201233) mekadose: FPS: 19.7[0m
+[0;32mI (203286) mekadose: FPS: 19.0[0m
+[0;32mI (205279) mekadose: FPS: 19.4[0m
+[0;32mI (207343) mekadose: FPS: 23.4[0m
+[0;32mI (209342) mekadose: FPS: 21.9[0m
+[0;32mI (211367) mekadose: FPS: 22.3[0m
+[0;32mI (213396) mekadose: FPS: 21.7[0m
+[0;32mI (215399) mekadose: FPS: 22.0[0m
+[0;32mI (217420) mekadose: FPS: 21.3[0m
+[0;32mI (219429) mekadose: FPS: 20.9[0m
+[0;32mI (221439) mekadose: FPS: 22.9[0m
+[0;32mI (223445) mekadose: FPS: 22.0[0m
+[0;32mI (225472) mekadose: FPS: 23.6[0m
+[0;32mI (227487) mekadose: FPS: 24.4[0m
+[0;32mI (229523) mekadose: FPS: 21.6[0m
+[0;32mI (231541) mekadose: FPS: 22.3[0m
+[0;32mI (233552) mekadose: FPS: 22.4[0m
+[0;32mI (235575) mekadose: FPS: 20.7[0m
+[0;32mI (237576) mekadose: FPS: 24.5[0m
+[0;32mI (239612) mekadose: FPS: 21.7[0m
+[0;32mI (241652) mekadose: FPS: 21.6[0m
+[0;32mI (243662) mekadose: FPS: 24.3[0m
+[0;32mI (245705) mekadose: FPS: 23.6[0m
+[0;32mI (247703) mekadose: FPS: 23.5[0m
+[0;32mI (249715) mekadose: FPS: 24.4[0m
+[0;32mI (251719) mekadose: FPS: 24.5[0m
+[0;32mI (253721) mekadose: FPS: 22.5[0m
+[0;32mI (255756) mekadose: FPS: 21.7[0m
+[0;32mI (257774) mekadose: FPS: 25.7[0m
+[0;32mI (259805) mekadose: FPS: 24.1[0m
+[0;32mI (261809) mekadose: FPS: 23.5[0m
+[0;32mI (263818) mekadose: FPS: 21.0[0m
+[0;32mI (265825) mekadose: FPS: 20.5[0m
+[0;32mI (267847) mekadose: FPS: 20.2[0m
+[0;32mI (269859) mekadose: FPS: 21.8[0m
+[0;32mI (271864) mekadose: FPS: 25.0[0m
+[0;32mI (273887) mekadose: FPS: 23.7[0m
+[0;32mI (275924) mekadose: FPS: 25.0[0m
+[0;32mI (277932) mekadose: FPS: 24.9[0m
+[0;32mI (279936) mekadose: FPS: 24.9[0m
+[0;32mI (281954) mekadose: FPS: 23.4[0m
+[0;32mI (283973) mekadose: FPS: 23.2[0m
+[0;32mI (286004) mekadose: FPS: 25.6[0m
+[0;32mI (288020) mekadose: FPS: 25.3[0m
+[0;32mI (290032) mekadose: FPS: 24.4[0m
+[0;32mI (292029) mekadose: FPS: 22.5[0m
+[0;32mI (294047) mekadose: FPS: 23.8[0m
+[0;32mI (296079) mekadose: FPS: 25.1[0m
+[0;32mI (298133) mekadose: FPS: 23.9[0m
+[0;32mI (300148) mekadose: FPS: 24.7[0m
+[0;32mI (302159) mekadose: FPS: 20.9[0m
+[0;32mI (304201) mekadose: FPS: 23.0[0m
+[0;32mI (306216) mekadose: FPS: 23.3[0m
+[0;32mI (308258) mekadose: FPS: 23.5[0m
+[0;32mI (310274) mekadose: FPS: 24.3[0m
+[0;32mI (312297) mekadose: FPS: 24.7[0m
+[0;32mI (314318) mekadose: FPS: 25.7[0m
+[0;32mI (316326) mekadose: FPS: 24.9[0m
+[0;32mI (318347) mekadose: FPS: 25.2[0m
+[0;32mI (320395) mekadose: FPS: 22.0[0m
+[0;32mI (322418) mekadose: FPS: 22.7[0m
+[0;32mI (324447) mekadose: FPS: 23.7[0m
+[0;32mI (326455) mekadose: FPS: 23.4[0m
+[0;32mI (328489) mekadose: FPS: 24.6[0m
+[0;32mI (330523) mekadose: FPS: 24.7[0m
+[0;32mI (332536) mekadose: FPS: 20.9[0m
+[0;32mI (334538) mekadose: FPS: 22.4[0m
+[0;32mI (336560) mekadose: FPS: 21.7[0m
+[0;32mI (338588) mekadose: FPS: 25.6[0m
+[0;32mI (340599) mekadose: FPS: 25.9[0m
+[0;32mI (342598) mekadose: FPS: 25.5[0m
+[0;32mI (344639) mekadose: FPS: 23.1[0m
+[0;32mI (346675) mekadose: FPS: 23.5[0m
+[0;32mI (348678) mekadose: FPS: 23.9[0m
+[0;32mI (350653) mekadose: FPS: 40.4[0m
+[0;32mI (352662) mekadose: FPS: 85.6[0m
+[0;32mI (354668) mekadose: FPS: 85.7[0m

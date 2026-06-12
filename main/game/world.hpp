@@ -3,6 +3,7 @@
 #include "Jet.hpp"
 #include "environment.hpp"
 #include "map_config.hpp"
+#include "terrain.hpp"
 #include "types.hpp"
 #include <cstdint>
 
@@ -34,6 +35,12 @@ private:
     Renderer::Material m_industrialGroundMat;
 
     Renderer::Object* m_terrain = nullptr;
+
+    // Flat cache of mesh vertex Y values (int32_t) updated every rebuildTerrain.
+    // Layout: row-major [iz * (NX+1) + ix], same order as m_terrain->vertices.
+    static constexpr int kCacheSize =
+        (Terrain::MESH_DEPTH_CELLS + 1) * (Terrain::MESH_WIDTH_CELLS + 1);
+    int32_t m_terrainVertexY[kCacheSize] = {};
 
     int m_chunkOriginX = INT32_MIN;
     int m_chunkOriginZ = INT32_MIN;

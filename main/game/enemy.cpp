@@ -245,11 +245,11 @@ void Enemy::setupAirRun(float playerX, float playerZ, float playerAngle) {
 }
 
 float Enemy::hoverBaseY() const {
-    return Terrain::hoverHeight(m_x, m_z) + HOVER_OFFSET;
+    return Terrain::hoverHeightFast(m_x, m_z) + HOVER_OFFSET;
 }
 
 float Enemy::groundBaseY() const {
-    return Terrain::groundHeight(m_x, m_z);
+    return Terrain::groundHeightFast(m_x, m_z);
 }
 
 float Enemy::getWidth() const {

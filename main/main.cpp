@@ -188,6 +188,5 @@ extern "C" void app_main(void)
             fpsTimer = now;
         }
 
-        vTaskDelay(1);
     }
 }

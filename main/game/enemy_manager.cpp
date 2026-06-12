@@ -56,9 +56,10 @@ void EnemyManager::reset(float playerX, float playerZ, float playerAngle,
         m_enemies[static_cast<size_t>(i)]->deactivate();
     }
     dismissPortalBoss();
+    m_aliveCount = 0;
     spawnOne(playerX, playerZ, playerAngle, obstacles);
     m_spawnTimer = m_initialSpawnDelay;
-    m_lastAliveCount = aliveCount();
+    m_lastAliveCount = m_aliveCount;
 }
 
 void EnemyManager::spawnPortalBoss(float portalX, float portalZ, float portalAngle,
@@ -81,6 +82,7 @@ void EnemyManager::clearAllEnemies() {
     }
     dismissPortalBoss();
     m_lastAliveCount = 0;
+    m_aliveCount = 0;
 }
 
 void EnemyManager::setSpawnPaused(bool paused) {
@@ -126,6 +128,7 @@ bool EnemyManager::spawnOne(float playerX, float playerZ, float playerAngle,
     }
     m_enemies[static_cast<size_t>(slot)]->reset(
         playerX, playerZ, playerAngle, obstacles, m_spawnIndex++);
+    ++m_aliveCount;
     return true;
 }
 
@@ -140,14 +143,15 @@ int EnemyManager::aliveCount() const {
 }
 
 void EnemyManager::trySpawn(float deltaTime, float playerX, float playerZ,
-                            float playerAngle, const ObstacleField* obstacles) {
+                            float playerAngle, const ObstacleField* obstacles,
+                            int currentAliveCount) {
     if (m_spawnPaused || !m_levelSpawnsEnabled) {
         return;
     }
 
     m_spawnTimer -= deltaTime;
 
-    if (aliveCount() >= m_maxEnemies || findFreeSlot() < 0) {
+    if (currentAliveCount >= m_maxEnemies || findFreeSlot() < 0) {
         return;
     }
 
@@ -173,7 +177,9 @@ void EnemyManager::update(float deltaTime, float playerX, float playerZ,
                              obstacles);
     }
 
+    // Compute alive count once per frame; keep incremental counter in sync.
     const int alive = aliveCount();
+    m_aliveCount = alive;
     if (m_levelSpawnsEnabled && alive < m_lastAliveCount && alive < m_maxEnemies) {
         if (m_spawnTimer > m_refillSpawnDelay) {
             m_spawnTimer = m_refillSpawnDelay;
@@ -181,7 +187,7 @@ void EnemyManager::update(float deltaTime, float playerX, float playerZ,
     }
     m_lastAliveCount = alive;
 
-    trySpawn(deltaTime, playerX, playerZ, playerAngle, obstacles);
+    trySpawn(deltaTime, playerX, playerZ, playerAngle, obstacles, alive);
 }
 
 namespace {

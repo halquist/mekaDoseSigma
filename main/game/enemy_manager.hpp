@@ -36,6 +36,7 @@ public:
     void prepareSpawnAfterTransition(float playerX, float playerZ, float playerAngle);
 
     int aliveCount() const;
+    int cachedAliveCount() const { return m_aliveCount; }
     bool isPlayerUnderAttack(float playerX, float playerZ, float playerAngle) const;
     bool findClosestEnemyBehind(float playerX, float playerZ, float playerAngle,
                                 float& outX, float& outZ) const;
@@ -54,13 +55,14 @@ private:
     bool spawnOne(float playerX, float playerZ, float playerAngle,
                   const ObstacleField* obstacles);
     void trySpawn(float deltaTime, float playerX, float playerZ, float playerAngle,
-                  const ObstacleField* obstacles);
+                  const ObstacleField* obstacles, int currentAliveCount);
 
     std::array<Enemy*, MAX_ENEMIES> m_enemies = {};
     Enemy* m_portalBoss = nullptr;
     uint32_t m_spawnIndex = 0;
     float m_spawnTimer = 0.0f;
     int m_lastAliveCount = 0;
+    int m_aliveCount = 0;  // incremental counter; synced on reset/clear
 
     static constexpr float SPAWN_INTERVAL_MIN = 4.5f;
     static constexpr float SPAWN_INTERVAL_JITTER = 4.0f;

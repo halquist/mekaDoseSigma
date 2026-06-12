@@ -132,7 +132,7 @@ bool AirStrikeSystem::refreshStrikeTarget(uint8_t tier, float mechX, float mechZ
     m_strikeX = targetX;
     m_strikeZ = targetZ;
     m_strikeAimY = targetAimY;
-    const float groundY = Terrain::hoverHeight(m_strikeX, m_strikeZ);
+    const float groundY = Terrain::hoverHeightFast(m_strikeX, m_strikeZ);
     m_skyY = skyBaseY;
     if (m_skyY < groundY + 120.0f) {
         m_skyY = groundY + 120.0f;
@@ -212,7 +212,7 @@ void AirStrikeSystem::update(float deltaTime, uint8_t tier, float mechX, float m
         }
 
         {
-            const float groundY = Terrain::hoverHeight(m_strikeX, m_strikeZ);
+            const float groundY = Terrain::hoverHeightFast(m_strikeX, m_strikeZ);
             showAimLaser(m_strikeX, m_strikeZ, m_skyY, groundY);
             m_phaseTimer = AIM_DURATION_SEC;
             m_state = State::Aiming;
@@ -227,7 +227,7 @@ void AirStrikeSystem::update(float deltaTime, uint8_t tier, float mechX, float m
         }
 
         {
-            const float groundY = Terrain::hoverHeight(m_strikeX, m_strikeZ);
+            const float groundY = Terrain::hoverHeightFast(m_strikeX, m_strikeZ);
             showAimLaser(m_strikeX, m_strikeZ, m_skyY, groundY);
         }
 
@@ -253,7 +253,7 @@ void AirStrikeSystem::update(float deltaTime, uint8_t tier, float mechX, float m
         m_missileY += m_missileVy * deltaTime;
 
         {
-            const float groundY = Terrain::hoverHeight(m_strikeX, m_strikeZ);
+            const float groundY = Terrain::hoverHeightFast(m_strikeX, m_strikeZ);
             if (m_missileY <= groundY + 3.0f) {
                 stashSceneObject(m_missile);
                 m_explodeRadius = airStrikeRadiusForTier(m_activeTier);
@@ -286,7 +286,7 @@ void AirStrikeSystem::update(float deltaTime, uint8_t tier, float mechX, float m
             m_explosionMat.alpha =
                 static_cast<uint8_t>(EXPLOSION_PEAK_ALPHA * (1.0f - t));
 
-            const float groundY = Terrain::hoverHeight(m_strikeX, m_strikeZ);
+            const float groundY = Terrain::hoverHeightFast(m_strikeX, m_strikeZ);
             showSceneObject(m_explosion,
                             static_cast<int32_t>(lroundf(m_strikeX)),
                             static_cast<int32_t>(lroundf(groundY + 2.0f)),

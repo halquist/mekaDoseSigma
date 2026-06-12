@@ -14,10 +14,12 @@ ParticleSystem::ParticleSystem(Renderer::Scene& scene)
     : m_scene(scene)
 {
     for (auto& p : m_particles) {
-        p.obj = nullptr;
         p.active = false;
         p.mat = Renderer::Material(Colors::SPARK_ORANGE);
         p.mat.shadingMode = Renderer::ShadingMode::UNLIT;
+        p.obj = Primitives::createCube(5, 5, 5, &p.mat);
+        m_scene.addObject(p.obj);
+        stashSceneObject(p.obj);
     }
 }
 
@@ -33,14 +35,8 @@ void ParticleSystem::spawnParticle(float x, float y, float z, float speed, float
     if (!slot) return;
 
     slot->mat.color = color;
-
-    if (!slot->obj) {
-        slot->obj = Primitives::createCube(5, 5, 5, &slot->mat);
-        m_scene.addObject(slot->obj);
-    } else {
-        for (auto& tri : slot->obj->triangles) {
-            tri.material = &slot->mat;
-        }
+    for (auto& tri : slot->obj->triangles) {
+        tri.material = &slot->mat;
     }
 
     float angle = Rng::nextRange(360) * M_PI / 180.0f;

@@ -10,6 +10,7 @@
 #include "parallel_scene_render.hpp"
 #include "run_upgrades.hpp"
 #include <cmath>
+#include <vector>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -184,7 +185,14 @@ void MekaGame::applyEnvironment() {
 void MekaGame::updateDayNightCycle(float deltaTime) {
     m_dayNightPhase += deltaTime / kDayNightCycleSec;
     m_dayNightPhase -= floorf(m_dayNightPhase);
-    applyEnvironment();
+
+    // Only recompute palettes and push to scene/materials when the phase has
+    // changed enough to be visually meaningful (~1.5 s at the 300 s cycle).
+    static constexpr float kEnvApplyThreshold = 0.005f;
+    if (fabsf(m_dayNightPhase - m_lastEnvApplyPhase) >= kEnvApplyThreshold) {
+        m_lastEnvApplyPhase = m_dayNightPhase;
+        applyEnvironment();
+    }
 }
 
 void MekaGame::updateCamera(float deltaTime) {
@@ -802,13 +810,12 @@ void MekaGame::renderMenuScene() {
     const int activeCount = m_menuShowcase->activeObjects(activeList, 8);
     auto& objects = m_scene->getObjects();
 
-    SavedState saved[160];
-    int savedCount = 0;
+    // Save and filter every scene object — no cap. Pre-allocated projectile
+    // meshes pushed the object count well past the old 160 limit, which left
+    // gameplay mech parts enabled during menu rendering.
+    std::vector<SavedState> saved;
+    saved.reserve(objects.size());
     for (Renderer::Object* obj : objects) {
-        if (savedCount >= 160) {
-            break;
-        }
-
         bool keep = false;
         for (int i = 0; i < activeCount; ++i) {
             if (obj == activeList[i]) {
@@ -817,10 +824,8 @@ void MekaGame::renderMenuScene() {
             }
         }
 
-        saved[savedCount].obj = obj;
-        saved[savedCount].enabled = obj->enabled;
+        saved.push_back({obj, obj->enabled});
         obj->enabled = keep;
-        ++savedCount;
     }
 
     m_scene->setBackcolor(Colors::BLACK);
@@ -829,8 +834,8 @@ void MekaGame::renderMenuScene() {
 
     GameUi::drawMenuStreaks(m_framebuffer, m_width, m_height, m_lastDeltaTime);
 
-    for (int i = 0; i < savedCount; ++i) {
-        saved[i].obj->enabled = saved[i].enabled;
+    for (const SavedState& entry : saved) {
+        entry.obj->enabled = entry.enabled;
     }
 }
 
