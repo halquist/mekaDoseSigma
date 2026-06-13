@@ -8,6 +8,7 @@ namespace Game {
 
 class Mech;
 
+constexpr int kUpgradePickBonusPoints = 100;
 constexpr uint8_t kMaxUpgradeTier = 6;
 constexpr int kBaseMaxHp = 100;
 constexpr int kHpCapMk6 = 250;
@@ -64,12 +65,14 @@ class UpgradePicker {
 public:
     void roll(const MechLoadout& loadout);
     const UpgradeOption& option(int index) const { return m_options[index]; }
+    bool isAllMaxed() const { return m_allMaxed; }
 
     static bool canApply(UpgradeId id, const RunBonuses& bonuses);
     static void apply(const UpgradeOption& choice, Mech& mech, int& health, int& maxHealth);
 
 private:
     UpgradeOption m_options[2] = {};
+    bool m_allMaxed = false;
     static void buildOption(UpgradeOption& out, UpgradeId id, uint8_t tier);
     static uint8_t currentTier(UpgradeId id, const RunBonuses& bonuses);
     static uint16_t colorFor(UpgradeId id);

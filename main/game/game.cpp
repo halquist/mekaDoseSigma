@@ -196,24 +196,11 @@ void MekaGame::updateDayNightCycle(float deltaTime) {
 }
 
 void MekaGame::updateCamera(float deltaTime) {
-    const float targetYaw = m_mech->getAngle();
-    const float targetX = m_mech->getX();
-    const float targetZ = m_mech->getZ();
-
-    if (!m_cameraInitialized || deltaTime <= 0.0f) {
-        m_cameraYaw = targetYaw;
-        m_cameraPivotX = targetX;
-        m_cameraPivotZ = targetZ;
-        m_cameraInitialized = true;
-    } else {
-        const float blend = fminf(1.0f, kCameraYawSmoothRate * deltaTime);
-        float yawDiff = targetYaw - m_cameraYaw;
-        while (yawDiff > 180.0f) yawDiff -= 360.0f;
-        while (yawDiff < -180.0f) yawDiff += 360.0f;
-        m_cameraYaw += yawDiff * blend;
-        m_cameraPivotX += (targetX - m_cameraPivotX) * blend;
-        m_cameraPivotZ += (targetZ - m_cameraPivotZ) * blend;
-    }
+    (void)deltaTime;
+    m_cameraPivotX = static_cast<float>(m_mech->getRenderPivotX());
+    m_cameraPivotZ = static_cast<float>(m_mech->getRenderPivotZ());
+    m_cameraYaw    = static_cast<float>(m_mech->getRenderPivotAngle());
+    m_cameraInitialized = true;
 
     const float radians = m_cameraYaw * static_cast<float>(M_PI) / 180.0f;
     const float sinR = sinf(radians);
@@ -490,6 +477,10 @@ void MekaGame::applyUpgradePick(int choiceIndex) {
         return;
     }
 
+    if (m_upgradePicker.isAllMaxed()) {
+        m_score.addBonus(kUpgradePickBonusPoints);
+    }
+
     const UpgradeOption& choice = m_upgradePicker.option(choiceIndex);
     const uint8_t oldAirStrikeTier = m_mech->loadout().bonuses().airStrikeTier;
     UpgradePicker::apply(choice, *m_mech, m_health, m_maxHealth);
@@ -503,6 +494,7 @@ void MekaGame::applyUpgradePick(int choiceIndex) {
 }
 
 void MekaGame::skipUpgradePick() {
+    m_score.addBonus(kUpgradePickBonusPoints);
     m_upgradePickChoice = 2;
     m_upgradePickConfirmSec = 1.0f;
 }

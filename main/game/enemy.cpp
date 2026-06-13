@@ -97,10 +97,10 @@ Enemy::Enemy(Renderer::Scene& scene, ProjectileSystem& projectiles,
 {
     m_loadout.applyPreset(MechCatalog::LOADOUT_STRIKER_HOVER);
 
-    m_tankBodyMat.shadingMode = Renderer::ShadingMode::GOURAUD;
-    m_tankTurretMat.shadingMode = Renderer::ShadingMode::GOURAUD;
-    m_tankBarrelMat.shadingMode = Renderer::ShadingMode::GOURAUD;
-    m_airJetMat.shadingMode = Renderer::ShadingMode::GOURAUD;
+    m_tankBodyMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_tankTurretMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_tankBarrelMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_airJetMat.shadingMode = Renderer::ShadingMode::FLAT;
 
     m_tankBody = Primitives::createCube(36, 14, 28, &m_tankBodyMat);
     m_tankTurret = Primitives::createCube(18, 10, 18, &m_tankTurretMat);

@@ -39,6 +39,7 @@ namespace Colors {
     constexpr uint16_t ROCK            = rgb(95, 90, 85);
     constexpr uint16_t MISSILE_GREY    = rgb(180, 185, 190);
     constexpr uint16_t MISSILE_TRAIL   = rgb(255, 30, 220);
+    constexpr uint16_t ENEMY_MISSILE_TRAIL = rgb(40, 255, 90);
     constexpr uint16_t MECH_WHITE      = rgb(235, 235, 245);
     constexpr uint16_t MECH_BLUE       = rgb(40, 70, 180);
     constexpr uint16_t SHIELD_BLUE     = rgb(50, 110, 220);

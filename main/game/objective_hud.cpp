@@ -48,33 +48,53 @@ void setPixel(uint16_t* framebuffer, int screenWidth, int screenHeight,
     framebuffer[y * screenWidth + x] = fbPack(color);
 }
 
+float edgeFunction(float ax, float ay, float bx, float by, float px, float py) {
+    return (px - ax) * (by - ay) - (py - ay) * (bx - ax);
+}
+
 void fillTriangle(uint16_t* framebuffer, int screenWidth, int screenHeight,
                   float x0, float y0, float x1, float y1, float x2, float y2,
                   uint16_t color, float cx, float cy) {
-    if (y0 > y1) { float t; t=x0; x0=x1; x1=t; t=y0; y0=y1; y1=t; }
-    if (y0 > y2) { float t; t=x0; x0=x2; x2=t; t=y0; y0=y2; y2=t; }
-    if (y1 > y2) { float t; t=x1; x1=x2; x2=t; t=y1; y1=y2; y2=t; }
+    const float area = edgeFunction(x0, y0, x1, y1, x2, y2);
+    if (fabsf(area) < 0.001f) {
+        return;
+    }
 
-    const int yStart = static_cast<int>(y0);
-    const int yEnd = static_cast<int>(y2);
-    if (yEnd < 0 || yStart >= screenHeight) return;
+    const float minXf = fminf(x0, fminf(x1, x2));
+    const float maxXf = fmaxf(x0, fmaxf(x1, x2));
+    const float minYf = fminf(y0, fminf(y1, y2));
+    const float maxYf = fmaxf(y0, fmaxf(y1, y2));
 
-    for (int y = yStart; y <= yEnd; ++y) {
-        if (y < 0) continue;
-        float t = (y2 - y0) > 0.01f ? (static_cast<float>(y) - y0) / (y2 - y0) : 0.0f;
-        float lx = x0 + (x2 - x0) * t;
-        float rx = (y1 - y0) > 0.01f
-            ? x0 + (x1 - x0) * (static_cast<float>(y) - y0) / (y1 - y0)
-            : x1;
-        if (y > y1) {
-            t = (y2 - y1) > 0.01f ? (static_cast<float>(y) - y1) / (y2 - y1) : 0.0f;
-            rx = x1 + (x2 - x1) * t;
+    const int minX = static_cast<int>(floorf(minXf));
+    const int maxX = static_cast<int>(ceilf(maxXf));
+    const int minY = static_cast<int>(floorf(minYf));
+    const int maxY = static_cast<int>(ceilf(maxYf));
+
+    if (maxX < 0 || minX >= screenWidth || maxY < 0 || minY >= screenHeight) {
+        return;
+    }
+
+    const bool positiveArea = area > 0.0f;
+
+    for (int y = minY; y <= maxY; ++y) {
+        if (y < 0 || y >= screenHeight) {
+            continue;
         }
-        if (lx > rx) { float s = lx; lx = rx; rx = s; }
-        const int xMin = static_cast<int>(lx);
-        const int xMax = static_cast<int>(rx);
-        for (int x = xMin; x <= xMax; ++x) {
-            setPixel(framebuffer, screenWidth, screenHeight, x, y, color, cx, cy);
+        const float py = static_cast<float>(y) + 0.5f;
+        for (int x = minX; x <= maxX; ++x) {
+            if (x < 0 || x >= screenWidth) {
+                continue;
+            }
+            const float px = static_cast<float>(x) + 0.5f;
+            const float w0 = edgeFunction(x1, y1, x2, y2, px, py);
+            const float w1 = edgeFunction(x2, y2, x0, y0, px, py);
+            const float w2 = edgeFunction(x0, y0, x1, y1, px, py);
+            const bool inside = positiveArea
+                ? (w0 >= 0.0f && w1 >= 0.0f && w2 >= 0.0f)
+                : (w0 <= 0.0f && w1 <= 0.0f && w2 <= 0.0f);
+            if (inside) {
+                setPixel(framebuffer, screenWidth, screenHeight, x, y, color, cx, cy);
+            }
         }
     }
 }

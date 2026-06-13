@@ -164,11 +164,14 @@ void ProjectileSystem::updateMissileVisual(Projectile& p) {
     p.obj->setRotation((int16_t)pitch, (int16_t)yaw, 0);
 }
 
-void ProjectileSystem::spawnTrailPuff(float x, float y, float z) {
+void ProjectileSystem::spawnTrailPuff(float x, float y, float z, bool isPlayerProjectile) {
     for (size_t i = 0; i < m_trailPuffs.size(); ++i) {
         auto& t = m_trailPuffs[i];
         if (t.active) continue;
 
+        m_trailMats[i].color = isPlayerProjectile
+            ? Colors::MISSILE_TRAIL
+            : Colors::ENEMY_MISSILE_TRAIL;
         t.active = true;
         t.life = MISSILE_TRAIL_LIFE;
         t.maxLife = MISSILE_TRAIL_LIFE;
@@ -545,8 +548,8 @@ void ProjectileSystem::fireEnemyHomingAtTarget(float x, float y, float z, float 
 
 void ProjectileSystem::detonateMissile(Projectile& p) {
     const float worldY = missileWorldY(p);
-    spawnTrailPuff(p.x, worldY, p.z);
-    spawnTrailPuff(p.x + 4.0f, worldY + 2.0f, p.z - 2.0f);
+    spawnTrailPuff(p.x, worldY, p.z, p.isPlayerProjectile);
+    spawnTrailPuff(p.x + 4.0f, worldY + 2.0f, p.z - 2.0f, p.isPlayerProjectile);
     destroyProjectile(p);
 }
 
@@ -645,7 +648,7 @@ void ProjectileSystem::updateHomingMissile(Projectile& p, float deltaTime) {
     p.trailTimer -= deltaTime;
     if (p.trailTimer <= 0.0f) {
         const float worldY = missileWorldY(p);
-        spawnTrailPuff(p.x, worldY, p.z);
+        spawnTrailPuff(p.x, worldY, p.z, p.isPlayerProjectile);
         p.trailTimer = MISSILE_TRAIL_INTERVAL;
     }
 

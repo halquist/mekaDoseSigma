@@ -99,7 +99,7 @@ private:
     void updateStraightProjectile(Projectile& p, float deltaTime);
     void updateFallingBomb(Projectile& p, float deltaTime);
     void updateMissileVisual(Projectile& p);
-    void spawnTrailPuff(float x, float y, float z);
+    void spawnTrailPuff(float x, float y, float z, bool isPlayerProjectile);
     float missileWorldY(const Projectile& p) const;
     float computeMissileDesiredYOffset(const Projectile& p, float progress) const;
 

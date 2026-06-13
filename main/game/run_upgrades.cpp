@@ -315,6 +315,7 @@ void UpgradePicker::roll(const MechLoadout& loadout) {
     }
 
     if (poolCount == 0) {
+        m_allMaxed = true;
         buildOption(m_options[0], UpgradeId::Armor, kMaxUpgradeTier);
         buildOption(m_options[1], UpgradeId::Shield, kMaxUpgradeTier);
         snprintf(m_options[0].title, sizeof(m_options[0].title), "MAX");
@@ -324,6 +325,7 @@ void UpgradePicker::roll(const MechLoadout& loadout) {
         return;
     }
 
+    m_allMaxed = false;
     const uint8_t firstIdx = static_cast<uint8_t>(Rng::nextRange(poolCount));
     const UpgradeId firstId = static_cast<UpgradeId>(pool[firstIdx]);
     buildOption(m_options[0], firstId, static_cast<uint8_t>(currentTier(firstId, bonuses) + 1));
