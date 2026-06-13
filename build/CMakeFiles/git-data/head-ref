@@ -1,1 +1,22 @@
-326d442233f88ee6398a263699dec3873393dd4f
+0000000000000000000000000000000000000000 a99e9c3ccfce2c2e9582e0c4f24348910b214a07 jon <jon.halquist@gmail.com> 1781036018 -0400	commit (initial): initial
+a99e9c3ccfce2c2e9582e0c4f24348910b214a07 b5559792d945ca96ca683ba084b2bc69e68a4951 jon <jon.halquist@gmail.com> 1781071537 -0400	commit: mech player and enemy
+b5559792d945ca96ca683ba084b2bc69e68a4951 b308bec16037c3cc664b8d2b811782c340469add jon <jon.halquist@gmail.com> 1781118673 -0400	commit: added abilities (shield)
+b308bec16037c3cc664b8d2b811782c340469add 9448820523feb9abf6e2a01b0e9dbab6cf0f7bf7 jon <jon.halquist@gmail.com> 1781127995 -0400	commit: pre roguelike overhaul
+9448820523feb9abf6e2a01b0e9dbab6cf0f7bf7 71d342caa4e2644f92e9ea743ccc69e1d95c9ba9 jon <jon.halquist@gmail.com> 1781129165 -0400	commit: roguelike mk1
+71d342caa4e2644f92e9ea743ccc69e1d95c9ba9 cfc660c96d51b7e5059d712c46b509253940e0be jon <jon.halquist@gmail.com> 1781200295 -0400	commit: dual frame buffer opt
+cfc660c96d51b7e5059d712c46b509253940e0be d500885a8de9b52f17f698ab845258faeda155c2 jon <jon.halquist@gmail.com> 1781200560 -0400	commit: dual core rendering
+d500885a8de9b52f17f698ab845258faeda155c2 2d52a313d0d56c35de9060edbad20d44b65153c6 jon <jon.halquist@gmail.com> 1781206133 -0400	commit: day night cycle and upgrade meny
+2d52a313d0d56c35de9060edbad20d44b65153c6 7f4345ba5f70bc8671d1f6995decd6970744893a jon <jon.halquist@gmail.com> 1781207796 -0400	commit: environment blending mk1
+7f4345ba5f70bc8671d1f6995decd6970744893a 79769c93da915f3bb4ee3569890b98906afe7b82 jon <jon.halquist@gmail.com> 1781220650 -0400	commit: Restore portal worlds, boss mech, and single-biome per world
+79769c93da915f3bb4ee3569890b98906afe7b82 19d61173e5036721c6f916c164c57c2d1c2d599a jon <jon.halquist@gmail.com> 1781221355 -0400	commit: portal transition
+19d61173e5036721c6f916c164c57c2d1c2d599a d51a0734b11a2ad94e024b16d453ad4a41886425 jon <jon.halquist@gmail.com> 1781224175 -0400	commit: weapon upgrades
+d51a0734b11a2ad94e024b16d453ad4a41886425 c7b220efca0d09bbc6d1a98c84d0779dff4c3ab0 jon <jon.halquist@gmail.com> 1781235707 -0400	commit: city biome
+c7b220efca0d09bbc6d1a98c84d0779dff4c3ab0 a3b02bb9b2b6cd9e8d6b882bfacf8fd9a55952a8 jon <jon.halquist@gmail.com> 1781236409 -0400	commit: damage adjustments
+a3b02bb9b2b6cd9e8d6b882bfacf8fd9a55952a8 37721316a35b7a4fa0888ccef60301257685327f jon <jon.halquist@gmail.com> 1781280305 -0400	commit: gameplay tweaks
+37721316a35b7a4fa0888ccef60301257685327f a1bc1da971f79fa5f3bba279d4599773b416a4f0 jon <jon.halquist@gmail.com> 1781281028 -0400	commit: enemy range tweaks
+a1bc1da971f79fa5f3bba279d4599773b416a4f0 547b392a49d3efe0d58519c2367e26bd72cda29e jon <jon.halquist@gmail.com> 1781290209 -0400	commit: menu transition effect
+547b392a49d3efe0d58519c2367e26bd72cda29e 51c00eee0b6d8392eb3642d9b8a18524795eb7cb jon <jon.halquist@gmail.com> 1781292607 -0400	commit: upgrade menu tweaks
+51c00eee0b6d8392eb3642d9b8a18524795eb7cb 9127e524099b433eae8865913ab738de93112ffb jon <jon.halquist@gmail.com> 1781294110 -0400	commit: upgrade menu polish
+9127e524099b433eae8865913ab738de93112ffb 620aed7b10c5fb8e34220ae3fcb4415d2096393f jon <jon.halquist@gmail.com> 1781295703 -0400	commit: terrain render update
+620aed7b10c5fb8e34220ae3fcb4415d2096393f 326d442233f88ee6398a263699dec3873393dd4f jon <jon.halquist@gmail.com> 1781297994 -0400	commit: performance opt
+326d442233f88ee6398a263699dec3873393dd4f 1d16da8c01132368b2737084e232468f51c47e79 jon <jon.halquist@gmail.com> 1781367704 -0400	commit: color updates

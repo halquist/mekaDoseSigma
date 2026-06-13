@@ -144,7 +144,7 @@ const EnvPalette kCityTwilight = {
 
 const EnvPalette kCityNight = {
     Colors::rgb(18, 22, 36),
-    Colors::rgb(30, 32, 36),
+    Colors::rgb(52, 54, 58),
     Colors::rgb(40, 44, 52),
     Colors::rgb(20, 22, 26),
     Colors::rgb(20, 22, 26),

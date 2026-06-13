@@ -36,6 +36,7 @@ private:
         MapTheme theme = MapTheme::RURAL;
         WorldGen::ObstacleKind kind = WorldGen::ObstacleKind::Tree;
         Renderer::Object* tree = nullptr;
+        Renderer::Object* cactus = nullptr;
         Renderer::Object* building = nullptr;
     };
 
@@ -64,9 +65,11 @@ private:
     Renderer::Scene& m_scene;
     const MapConfig& m_mapConfig;
     Renderer::Material m_treeMats[2];
+    Renderer::Material m_cactusMat;
     Renderer::Material m_buildingMat;
 
     std::vector<Renderer::Object::Vertex> m_treeProto;
+    std::vector<Renderer::Object::Vertex> m_cactusProto;
     std::vector<Renderer::Object::Vertex> m_buildingProto;
 
     static constexpr int MAX_SLOTS = 48;

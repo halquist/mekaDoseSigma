@@ -6,20 +6,85 @@
 
 namespace Game {
 
+namespace {
+
+void translateObject(Renderer::Object* obj, int32_t tx, int32_t ty, int32_t tz) {
+    if (!obj) {
+        return;
+    }
+    for (auto& v : obj->vertices) {
+        v.position.x += tx;
+        v.position.y += ty;
+        v.position.z += tz;
+    }
+}
+
+void mergeObject(Renderer::Object& dst, const Renderer::Object& src) {
+    const uint16_t baseIdx = static_cast<uint16_t>(dst.vertices.size());
+    for (const auto& v : src.vertices) {
+        dst.addVertex(v);
+    }
+    for (const auto& tri : src.triangles) {
+        dst.addTriangle(static_cast<uint16_t>(baseIdx + tri.v1),
+                        static_cast<uint16_t>(baseIdx + tri.v2),
+                        static_cast<uint16_t>(baseIdx + tri.v3),
+                        tri.material);
+    }
+}
+
+Renderer::Object* createCactus(Renderer::Material* mat) {
+    constexpr int TRUNK_W = 12;
+    constexpr int TRUNK_H = 40;
+    constexpr int TRUNK_D = 12;
+    constexpr int ARM_W = 14;
+    constexpr int ARM_H = 8;
+    constexpr int ARM_D = 8;
+
+    auto* trunk = Primitives::createCube(TRUNK_W, TRUNK_H, TRUNK_D, mat);
+    translateObject(trunk, 0, TRUNK_H / 2, 0);
+
+    auto* leftArm = Primitives::createCube(ARM_W, ARM_H, ARM_D, mat);
+    translateObject(leftArm, -(TRUNK_W / 2 + ARM_W / 2), 14 + ARM_H / 2, 0);
+
+    auto* rightArm = Primitives::createCube(ARM_W - 2, ARM_H, ARM_D, mat);
+    translateObject(rightArm, TRUNK_W / 2 + (ARM_W - 2) / 2, 22 + ARM_H / 2, 0);
+
+    auto* cactus = new Renderer::Object();
+    mergeObject(*cactus, *trunk);
+    mergeObject(*cactus, *leftArm);
+    mergeObject(*cactus, *rightArm);
+
+    delete trunk;
+    delete leftArm;
+    delete rightArm;
+
+    cactus->computeFlatNormals();
+    cactus->calculateBoundingBox();
+    return cactus;
+}
+
+} // namespace
+
 ObstacleField::ObstacleField(Renderer::Scene& scene, const MapConfig& mapConfig)
     : m_scene(scene)
     , m_mapConfig(mapConfig)
     , m_treeMats{Renderer::Material(Colors::TREE_FOLIAGE),
                  Renderer::Material(Colors::TREE_FOLIAGE)}
+    , m_cactusMat(Colors::rgb(60, 150, 70))
     , m_buildingMat(Colors::CITY_BUILDING)
 {
     m_treeMats[0].shadingMode = Renderer::ShadingMode::FLAT;
     m_treeMats[1].shadingMode = Renderer::ShadingMode::FLAT;
+    m_cactusMat.shadingMode = Renderer::ShadingMode::FLAT;
     m_buildingMat.shadingMode = Renderer::ShadingMode::FLAT;
 
     auto* treeProtoObj = Primitives::createPyramid(TREE_BASE, TREE_HEIGHT, &m_treeMats[0]);
     m_treeProto = treeProtoObj->vertices;
     delete treeProtoObj;
+
+    auto* cactusProtoObj = createCactus(&m_cactusMat);
+    m_cactusProto = cactusProtoObj->vertices;
+    delete cactusProtoObj;
 
     auto* buildingProtoObj = Primitives::createCube(
         BUILDING_WIDTH, BUILDING_HEIGHT, BUILDING_DEPTH, &m_buildingMat);
@@ -31,6 +96,11 @@ ObstacleField::ObstacleField(Renderer::Scene& scene, const MapConfig& mapConfig)
         slot.tree->cullingMode = Renderer::CullingMode::NO_CULLING;
         m_scene.addObject(slot.tree);
         stashSceneObject(slot.tree);
+
+        slot.cactus = createCactus(&m_cactusMat);
+        slot.cactus->cullingMode = Renderer::CullingMode::NO_CULLING;
+        m_scene.addObject(slot.cactus);
+        stashSceneObject(slot.cactus);
 
         slot.building = Primitives::createCube(
             BUILDING_WIDTH, BUILDING_HEIGHT, BUILDING_DEPTH, &m_buildingMat);
@@ -67,6 +137,7 @@ void ObstacleField::hideSlot(Slot& slot) {
     slot.inUse = false;
     slot.styleHash = 0;
     stashSceneObject(slot.tree);
+    stashSceneObject(slot.cactus);
     stashSceneObject(slot.building);
 }
 
@@ -97,20 +168,36 @@ void ObstacleField::placeSlot(Slot& slot, const WorldGen::ObstacleSpec& spec,
             }
         }
         stashSceneObject(slot.tree);
+        stashSceneObject(slot.cactus);
         activeObj = slot.building;
     } else {
-        if (meshDirty || kindChanged) {
-            applyMeshScale(slot.tree, m_treeProto, spec.scale);
-        }
-        if (meshDirty || themeChanged || kindChanged) {
-            Renderer::Material* mat =
-                theme == MapTheme::DESERT ? &m_treeMats[1] : &m_treeMats[0];
-            for (auto& tri : slot.tree->triangles) {
-                tri.material = mat;
+        // Use cactus in desert, tree elsewhere
+        const bool useDesertCactus = (theme == MapTheme::DESERT);
+        
+        if (useDesertCactus) {
+            if (meshDirty || kindChanged || themeChanged) {
+                applyMeshScale(slot.cactus, m_cactusProto, spec.scale);
+                for (auto& tri : slot.cactus->triangles) {
+                    tri.material = &m_cactusMat;
+                }
             }
+            stashSceneObject(slot.tree);
+            stashSceneObject(slot.building);
+            activeObj = slot.cactus;
+        } else {
+            if (meshDirty || kindChanged) {
+                applyMeshScale(slot.tree, m_treeProto, spec.scale);
+            }
+            if (meshDirty || themeChanged || kindChanged) {
+                Renderer::Material* mat = &m_treeMats[0];
+                for (auto& tri : slot.tree->triangles) {
+                    tri.material = mat;
+                }
+            }
+            stashSceneObject(slot.cactus);
+            stashSceneObject(slot.building);
+            activeObj = slot.tree;
         }
-        stashSceneObject(slot.building);
-        activeObj = slot.tree;
     }
 
     showSceneObject(activeObj,
@@ -141,8 +228,12 @@ void ObstacleField::updateSlotVisibility(Slot& slot, float playerX, float player
     const float dz = slot.z - playerZ;
     const float along = dx * forwardX + dz * forwardZ;
 
-    Renderer::Object* activeObj =
-        slot.kind == WorldGen::ObstacleKind::Building ? slot.building : slot.tree;
+    Renderer::Object* activeObj = nullptr;
+    if (slot.kind == WorldGen::ObstacleKind::Building) {
+        activeObj = slot.building;
+    } else {
+        activeObj = (slot.theme == MapTheme::DESERT) ? slot.cactus : slot.tree;
+    }
 
     if (along < -BEHIND_RENDER_CULL) {
         stashSceneObject(activeObj);

@@ -147,6 +147,7 @@ void Mech::reset() {
     m_touchDownTime = 0.0f;
     m_touchUpDebounce = 0.0f;
     m_lastCenterTapTime = -100.0f;
+    m_centerTapArmed = false;
     m_flipRemaining = 0.0f;
     m_alive = true;
     m_ability.reset();
@@ -269,20 +270,50 @@ void Mech::applyFlip180(float deltaTime) {
     }
 }
 
-void Mech::handleCenterTapRelease(const EnemyManager* enemies) {
+void Mech::clearCenterTapChain() {
+    m_centerTapArmed = false;
+    m_lastCenterTapTime = -100.0f;
+}
+
+bool Mech::tryFlipOnArmedCenterTap(const EnemyManager* enemies) {
+    if (!m_centerTapArmed || m_lastCenterTapTime < 0.0f) {
+        return false;
+    }
+
+    const float gap = m_touchClock - m_lastCenterTapTime;
+    if (gap < MIN_CENTER_TAP_GAP_SEC || gap > CENTER_DOUBLE_TAP_SEC) {
+        return false;
+    }
+
     const bool shieldActivated = m_ability.onCenterTap(m_touchClock);
     if (shieldActivated) {
-        m_lastCenterTapTime = -100.0f;
+        clearCenterTapChain();
+        return true;
+    }
+
+    tryStartFlip180(enemies);
+    clearCenterTapChain();
+    return true;
+}
+
+void Mech::registerShortCenterTap(const EnemyManager* enemies) {
+    if (m_lastCenterTapTime >= 0.0f &&
+        (m_touchClock - m_lastCenterTapTime) > CENTER_DOUBLE_TAP_SEC) {
+        clearCenterTapChain();
+    }
+
+    if (tryFlipOnArmedCenterTap(enemies)) {
         return;
     }
 
-    if (m_lastCenterTapTime >= 0.0f &&
-        (m_touchClock - m_lastCenterTapTime) <= CENTER_DOUBLE_TAP_SEC) {
-        tryStartFlip180(enemies);
-        m_lastCenterTapTime = -100.0f;
-    } else {
-        m_lastCenterTapTime = m_touchClock;
+    const bool shieldActivated = m_ability.onCenterTap(m_touchClock);
+    if (shieldActivated) {
+        clearCenterTapChain();
+        return;
     }
+
+    m_centerTapArmed = true;
+    m_lastCenterTapTime = m_touchClock;
 }
 
 void Mech::applyDodge(float deltaTime, ObstacleField* obstacles) {
@@ -332,13 +363,38 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int
     if (input.touched) {
         m_lastTouchX = input.x;
         m_lastTouchY = input.y;
-        m_touchUpDebounce = 0.0f;
+
+        if (m_fingerDown && m_touchUpDebounce > 0.0f) {
+            // Retouch before release debounce finished — finalize the prior tap now
+            // so fast double-taps are not dropped.
+            const float priorHold = m_touchClock - m_touchDownTime;
+            if (m_centerTouchSession && priorHold <= MAX_CENTER_TAP_HOLD_SEC) {
+                registerShortCenterTap(enemies);
+            } else if (priorHold > MAX_CENTER_TAP_HOLD_SEC) {
+                clearCenterTapChain();
+            }
+            m_touchUpDebounce = 0.0f;
+            m_touchDownTime = m_touchClock;
+        } else {
+            m_touchUpDebounce = 0.0f;
+        }
 
         if (!m_fingerDown) {
             m_fingerDown = true;
             m_touchDownTime = m_touchClock;
             m_dodgeTriggeredThisTouch = false;
             m_centerTouchSession = false;
+
+            if (TouchZones::isForward(input.x, screenWidth)
+                && !TouchZones::isReverse(input.y, screenHeight)
+                && m_centerTapArmed
+                && m_lastCenterTapTime >= 0.0f) {
+                const float gap = m_touchClock - m_lastCenterTapTime;
+                if (gap >= MIN_CENTER_TAP_GAP_SEC &&
+                    gap <= FAST_DOUBLE_TAP_DOWN_SEC) {
+                    tryFlipOnArmedCenterTap(enemies);
+                }
+            }
         }
 
         if (TouchZones::isForward(input.x, screenWidth)
@@ -351,7 +407,9 @@ void Mech::update(const TouchInput& input, float deltaTime, int screenWidth, int
             if (m_centerTouchSession) {
                 const float holdDuration = m_touchClock - m_touchDownTime;
                 if (holdDuration <= MAX_CENTER_TAP_HOLD_SEC) {
-                    handleCenterTapRelease(enemies);
+                    registerShortCenterTap(enemies);
+                } else {
+                    clearCenterTapChain();
                 }
             }
             m_fingerDown = false;
