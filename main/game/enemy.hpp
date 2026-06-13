@@ -31,6 +31,7 @@ public:
 
     bool isActive() const { return m_active; }
     bool isPortalBoss() const { return m_kind == EnemyKind::BossMech; }
+    bool isAirborne() const;
     float getX() const { return m_x; }
     float getZ() const { return m_z; }
     float getWidth() const;
@@ -44,7 +45,7 @@ public:
 
 private:
     enum class AIState { PATROL, CHASE, ATTACK };
-    enum class EnemyKind { Tank, Mech, AirJet, BossMech };
+    enum class EnemyKind { Tank, Mech, AirJet, Blimp, BossMech };
     enum class AirPhase { Reposition, Approach, Strike, Exit };
 
     void spawnInRing(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex,
@@ -52,6 +53,7 @@ private:
     void hide();
     void hideTankParts();
     void hideAirJet();
+    void hideBlimp();
     bool isBehindPlayer(float playerX, float playerZ, float playerAngle) const;
     void updateAI(float deltaTime, float playerX, float playerZ, float playerAimY,
                   const ObstacleField* obstacles);
@@ -65,6 +67,7 @@ private:
     void getLaserMuzzleWorld(float& wx, float& wy, float& wz) const;
     void getMissileMuzzleWorld(float& wx, float& wy, float& wz) const;
     void getTankMuzzleWorld(float& wx, float& wy, float& wz) const;
+    void getBlimpMuzzleWorld(float& wx, float& wy, float& wz) const;
     void syncRenderPivot();
     float hoverBaseY() const;
     float groundBaseY() const;
@@ -88,6 +91,10 @@ private:
 
     Renderer::Object* m_airJet = nullptr;
     Renderer::Material m_airJetMat;
+
+    Renderer::Object* m_blimp = nullptr;
+    Renderer::Material m_blimpBodyMat;
+    Renderer::Material m_blimpCockpitMat;
 
     EnemyKind m_kind = EnemyKind::Tank;
 
@@ -152,8 +159,10 @@ private:
     static constexpr float MECH_LASER_FIRE_INTERVAL = 1.15f;
     static constexpr float HOVER_OFFSET = 10.0f;
     static constexpr float FLIGHT_ALTITUDE = 92.0f;
+    static constexpr float BLIMP_ALTITUDE = 148.0f;
     static constexpr float TANK_WIDTH = 28.0f;
     static constexpr float AIR_JET_WIDTH = 26.0f;
+    static constexpr float BLIMP_WIDTH = 76.0f;
     static constexpr float TANK_TURRET_Y = 12.0f;
     static constexpr float TANK_BARREL_OFFSET = 16.0f;
     static constexpr float TANK_MUZZLE_OFFSET = 28.0f;
@@ -165,6 +174,11 @@ private:
     static constexpr float EARLY_BOSS_HP_SCALE = 0.7f;
     static constexpr float EARLY_TANK_DAMAGE_SCALE = 0.7f;
     static constexpr int AIR_MAX_HEALTH = 24;
+    static constexpr int BLIMP_MAX_HEALTH = 90;
+    static constexpr float BLIMP_SPEED = 95.0f;
+    static constexpr float BLIMP_LASER_FIRE_INTERVAL = 1.15f;
+    static constexpr float BLIMP_MUZZLE_FORWARD = 38.0f;
+    static constexpr float BLIMP_MUZZLE_DROP = 12.0f;
     static constexpr float ENEMY_SHIELD_USE_CHANCE = 0.45f;
     static constexpr int AIR_BOMBS_PER_RUN = 2;
     static constexpr float AIR_RUN_SPEED = 310.0f;

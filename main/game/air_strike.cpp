@@ -147,7 +147,7 @@ void AirStrikeSystem::applySplash(float strikeX, float strikeZ, float strikeAimY
     const float radiusSq = radius * radius;
 
     const auto tryHit = [&](Enemy& enemy) {
-        if (!enemy.isAlive()) {
+        if (!enemy.isAlive() || enemy.isAirborne()) {
             return;
         }
         const float dx = enemy.getX() - strikeX;

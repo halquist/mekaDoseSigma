@@ -67,6 +67,67 @@ Renderer::Object* createStealthBomber(Renderer::Material* mat) {
     return jet;
 }
 
+void mergeMeshPart(Renderer::Object& dst, Renderer::Object& src) {
+    const uint16_t baseIdx = static_cast<uint16_t>(dst.vertices.size());
+    for (const auto& v : src.vertices) {
+        dst.addVertex(v);
+    }
+    for (const auto& tri : src.triangles) {
+        dst.addTriangle(static_cast<uint16_t>(baseIdx + tri.v1),
+                        static_cast<uint16_t>(baseIdx + tri.v2),
+                        static_cast<uint16_t>(baseIdx + tri.v3),
+                        tri.material);
+    }
+}
+
+void translateMesh(Renderer::Object& obj, int32_t tx, int32_t ty, int32_t tz) {
+    for (auto& v : obj.vertices) {
+        v.position.x += tx;
+        v.position.y += ty;
+        v.position.z += tz;
+    }
+}
+
+void rotateMeshYToZ(Renderer::Object& obj) {
+    for (auto& v : obj.vertices) {
+        const int32_t x = v.position.x;
+        const int32_t y = v.position.y;
+        const int32_t z = v.position.z;
+        v.position.x = x;
+        v.position.y = -z;
+        v.position.z = y;
+    }
+}
+
+Renderer::Object* createBlimp(Renderer::Material* bodyMat,
+                              Renderer::Material* cockpitMat) {
+    auto* capsule = Primitives::createCapsule(18, 72, 4, bodyMat);
+    rotateMeshYToZ(*capsule);
+
+    auto* cockpit = Primitives::createCube(20, 8, 14, cockpitMat);
+    translateMesh(*cockpit, 0, -16, 0);
+
+    auto* blimp = new Renderer::Object();
+    blimp->cullingMode = Renderer::CullingMode::NO_CULLING;
+    mergeMeshPart(*blimp, *capsule);
+    mergeMeshPart(*blimp, *cockpit);
+    delete capsule;
+    delete cockpit;
+
+    blimp->computeFlatNormals();
+    blimp->calculateBoundingBox();
+    const int32_t cx = blimp->centreVolume.x;
+    const int32_t cy = blimp->centreVolume.y;
+    const int32_t cz = blimp->centreVolume.z;
+    for (auto& v : blimp->vertices) {
+        v.position.x -= cx;
+        v.position.y -= cy;
+        v.position.z -= cz;
+    }
+    blimp->calculateBoundingBox();
+    return blimp;
+}
+
 static float wrapAngleDeg(float angle) {
     while (angle > 180.0f) angle -= 360.0f;
     while (angle < -180.0f) angle += 360.0f;
@@ -76,11 +137,16 @@ static float wrapAngleDeg(float angle) {
 } // namespace
 
 Enemy::EnemyKind Enemy::pickKind() {
-    // ~17% mech, ~17% air jet, ~66% tank
+    // ~15% mech, ~13% air jet, ~12% blimp, ~60% tank
     const uint32_t roll = Rng::nextRange(100);
-    if (roll < 17) return EnemyKind::Mech;
-    if (roll < 34) return EnemyKind::AirJet;
+    if (roll < 15) return EnemyKind::Mech;
+    if (roll < 28) return EnemyKind::AirJet;
+    if (roll < 40) return EnemyKind::Blimp;
     return EnemyKind::Tank;
+}
+
+bool Enemy::isAirborne() const {
+    return m_kind == EnemyKind::AirJet || m_kind == EnemyKind::Blimp;
 }
 
 Enemy::Enemy(Renderer::Scene& scene, ProjectileSystem& projectiles,
@@ -94,6 +160,8 @@ Enemy::Enemy(Renderer::Scene& scene, ProjectileSystem& projectiles,
     , m_tankTurretMat(Colors::TANK_TURRET)
     , m_tankBarrelMat(Colors::TANK_BARREL)
     , m_airJetMat(Colors::AIR_JET)
+    , m_blimpBodyMat(Colors::BLIMP_BODY)
+    , m_blimpCockpitMat(Colors::BLIMP_COCKPIT)
 {
     m_loadout.applyPreset(MechCatalog::LOADOUT_STRIKER_HOVER);
 
@@ -101,16 +169,20 @@ Enemy::Enemy(Renderer::Scene& scene, ProjectileSystem& projectiles,
     m_tankTurretMat.shadingMode = Renderer::ShadingMode::FLAT;
     m_tankBarrelMat.shadingMode = Renderer::ShadingMode::FLAT;
     m_airJetMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_blimpBodyMat.shadingMode = Renderer::ShadingMode::FLAT;
+    m_blimpCockpitMat.shadingMode = Renderer::ShadingMode::FLAT;
 
     m_tankBody = Primitives::createCube(36, 14, 28, &m_tankBodyMat);
     m_tankTurret = Primitives::createCube(18, 10, 18, &m_tankTurretMat);
     m_tankBarrel = Primitives::createCube(5, 5, 18, &m_tankBarrelMat);
     m_airJet = createStealthBomber(&m_airJetMat);
+    m_blimp = createBlimp(&m_blimpBodyMat, &m_blimpCockpitMat);
 
     m_scene.addObject(m_tankBody);
     m_scene.addObject(m_tankTurret);
     m_scene.addObject(m_tankBarrel);
     m_scene.addObject(m_airJet);
+    m_scene.addObject(m_blimp);
 
     hide();
 }
@@ -125,16 +197,22 @@ void Enemy::hideAirJet() {
     stashSceneObject(m_airJet);
 }
 
+void Enemy::hideBlimp() {
+    stashSceneObject(m_blimp);
+}
+
 void Enemy::hide() {
     m_rig.setHidden(true);
     hideTankParts();
     hideAirJet();
+    hideBlimp();
     m_ability.reset();
 }
 
 void Enemy::configureForKind() {
     hideTankParts();
     hideAirJet();
+    hideBlimp();
     m_rig.setHidden(true);
     m_willUseShield = false;
     m_shieldTriggerHealth = 0;
@@ -220,6 +298,12 @@ void Enemy::configureForKind() {
             m_speed = AIR_RUN_SPEED * m_speedScale;
             m_fireInterval = scaleFireInterval(1.8f);
             break;
+        case EnemyKind::Blimp:
+            m_health = scaleHp(BLIMP_MAX_HEALTH);
+            m_speed = BLIMP_SPEED * m_speedScale;
+            m_fireInterval = scaleFireInterval(BLIMP_LASER_FIRE_INTERVAL);
+            m_mechUsesLaser = true;
+            break;
     }
 }
 
@@ -256,6 +340,7 @@ float Enemy::getWidth() const {
     switch (m_kind) {
         case EnemyKind::Tank: return TANK_WIDTH;
         case EnemyKind::AirJet: return AIR_JET_WIDTH;
+        case EnemyKind::Blimp: return BLIMP_WIDTH;
         default: return m_loadout.hitWidth();
     }
 }
@@ -263,6 +348,7 @@ float Enemy::getWidth() const {
 float Enemy::getAimY() const {
     if (m_health <= 0) {
         if (m_kind == EnemyKind::AirJet) return FLIGHT_ALTITUDE;
+        if (m_kind == EnemyKind::Blimp) return BLIMP_ALTITUDE;
         if (m_kind == EnemyKind::Tank) return groundBaseY();
         return hoverBaseY() + MECH_BODY_CENTER_Y;
     }
@@ -270,6 +356,9 @@ float Enemy::getAimY() const {
         return groundBaseY() + TANK_TURRET_Y - 6.0f;
     }
     if (m_kind == EnemyKind::AirJet) {
+        return m_baseY;
+    }
+    if (m_kind == EnemyKind::Blimp) {
         return m_baseY;
     }
     return m_baseY + MECH_BODY_CENTER_Y;
@@ -296,6 +385,11 @@ void Enemy::getHitVerticalRange(float& minY, float& maxY) const {
     if (m_kind == EnemyKind::AirJet) {
         minY = aim - 14.0f;
         maxY = aim + 14.0f;
+        return;
+    }
+    if (m_kind == EnemyKind::Blimp) {
+        minY = aim - 20.0f;
+        maxY = aim + 20.0f;
         return;
     }
 
@@ -346,6 +440,13 @@ void Enemy::getTankMuzzleWorld(float& wx, float& wy, float& wz) const {
     wy = groundBaseY() + TANK_TURRET_Y;
 }
 
+void Enemy::getBlimpMuzzleWorld(float& wx, float& wy, float& wz) const {
+    const float radians = m_angle * static_cast<float>(M_PI) / 180.0f;
+    wx = m_x + sinf(radians) * BLIMP_MUZZLE_FORWARD;
+    wz = m_z + cosf(radians) * BLIMP_MUZZLE_FORWARD;
+    wy = m_baseY - BLIMP_MUZZLE_DROP;
+}
+
 void Enemy::spawnInRing(float playerX, float playerZ, float playerAngle, uint32_t spawnIndex,
                         AIState state, const ObstacleField* obstacles) {
     const uint32_t spawnSalt = Rng::nextU32();
@@ -376,6 +477,9 @@ void Enemy::spawnInRing(float playerX, float playerZ, float playerAngle, uint32_
         m_baseY = FLIGHT_ALTITUDE;
         syncRenderPivot();
         setupAirRun(playerX, playerZ, playerAngle);
+    } else if (m_kind == EnemyKind::Blimp) {
+        m_baseY = BLIMP_ALTITUDE;
+        syncRenderPivot();
     } else {
         m_baseY = groundBaseY();
         syncRenderPivot();
@@ -642,7 +746,14 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
 
             if (m_fireTimer >= m_fireInterval && distToPlayer < m_engageRange) {
                 m_fireTimer = 0;
-                if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
+                if (m_kind == EnemyKind::Blimp) {
+                    float mx = 0.0f;
+                    float my = 0.0f;
+                    float mz = 0.0f;
+                    getBlimpMuzzleWorld(mx, my, mz);
+                    m_projectiles.fireEnemyLaserAtTarget(
+                        mx, my, mz, playerX, playerZ, playerAimY, m_damageScale);
+                } else if (m_kind == EnemyKind::Mech || m_kind == EnemyKind::BossMech) {
                     float mx, my, mz;
                     if (m_kind == EnemyKind::Mech && m_mechUsesLaser) {
                         getLaserMuzzleWorld(mx, my, mz);
@@ -671,7 +782,7 @@ void Enemy::updateAI(float deltaTime, float playerX, float playerZ, float player
         const float radians = targetAngle * M_PI / 180.0f;
         const float newX = m_x + sinf(radians) * moveSpeed * deltaTime;
         const float newZ = m_z + cosf(radians) * moveSpeed * deltaTime;
-        if (obstacles) {
+        if (obstacles && m_kind != EnemyKind::Blimp) {
             obstacles->resolveMovement(m_x, m_z, newX, newZ, ENEMY_COLLISION_RADIUS);
         } else {
             m_x = newX;
@@ -727,6 +838,7 @@ void Enemy::updateVisual(float deltaTime) {
         m_baseY = m_smoothedHoverY;
         hideTankParts();
         hideAirJet();
+        hideBlimp();
         m_rig.updatePose(m_renderX, m_renderZ, m_baseY, m_renderAngle,
                          m_loadout.visualPitch(), m_loadout);
         m_ability.update(deltaTime, m_rig, m_renderX, m_renderZ, m_baseY,
@@ -739,6 +851,7 @@ void Enemy::updateVisual(float deltaTime) {
         m_baseY = FLIGHT_ALTITUDE;
         m_rig.setHidden(true);
         hideTankParts();
+        hideBlimp();
         showSceneObject(m_airJet, m_renderX,
                         static_cast<int32_t>(lroundf(m_baseY)), m_renderZ);
         m_airJet->setRotation(AIR_JET_NOSE_PITCH, m_renderAngle,
@@ -746,10 +859,22 @@ void Enemy::updateVisual(float deltaTime) {
         return;
     }
 
+    if (m_kind == EnemyKind::Blimp) {
+        m_baseY = BLIMP_ALTITUDE;
+        m_rig.setHidden(true);
+        hideTankParts();
+        hideAirJet();
+        showSceneObject(m_blimp, m_renderX,
+                        static_cast<int32_t>(lroundf(m_baseY)), m_renderZ);
+        m_blimp->setRotation(0, m_renderAngle, 0);
+        return;
+    }
+
     const float baseY = groundBaseY();
     m_baseY = baseY;
     m_rig.setHidden(true);
     hideAirJet();
+    hideBlimp();
 
     const int16_t ix = m_renderX;
     const int16_t iz = m_renderZ;

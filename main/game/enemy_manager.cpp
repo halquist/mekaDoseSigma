@@ -324,7 +324,7 @@ bool EnemyManager::findBestStrikeTarget(float fromX, float fromZ, float fromAngl
     int candidateCount = 0;
 
     const auto tryAdd = [&](const Enemy& e) {
-        if (!e.isAlive()) {
+        if (!e.isAlive() || e.isAirborne()) {
             return;
         }
         const float dx = e.getX() - fromX;
@@ -366,7 +366,7 @@ bool EnemyManager::findBestStrikeTarget(float fromX, float fromZ, float fromAngl
         int count = 0;
         for (int i = 0; i < MAX_ENEMIES; ++i) {
             const Enemy& e = *m_enemies[static_cast<size_t>(i)];
-            if (!e.isAlive()) {
+            if (!e.isAlive() || e.isAirborne()) {
                 continue;
             }
             const float dx = e.getX() - cx;

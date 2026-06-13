@@ -22,6 +22,8 @@ namespace Colors {
     constexpr uint16_t TRACER_YELLOW = rgb(255, 230, 120);
     constexpr uint16_t ENEMY_BODY    = rgb(180, 70, 60);
     constexpr uint16_t AIR_JET       = rgb(120, 130, 150);
+    constexpr uint16_t BLIMP_BODY    = rgb(188, 192, 198);
+    constexpr uint16_t BLIMP_COCKPIT = rgb(42, 46, 52);
     constexpr uint16_t BOMB_BODY     = rgb(45, 48, 42);
     constexpr uint16_t TANK_BODY     = rgb(60, 70, 45);
     constexpr uint16_t TANK_TURRET   = rgb(45, 52, 35);
